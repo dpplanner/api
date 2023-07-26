@@ -12,7 +12,6 @@ spring:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
 
-
 logging.level:
   org.hibernate.SQL: debug
   org.hibernate.type: trace
