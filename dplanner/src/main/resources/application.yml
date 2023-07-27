@@ -9,9 +9,8 @@ spring:
     hibernate:
       ddl-auto: create #create update none
       naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
-
 
 logging.level:
   org.hibernate.SQL: debug
