@@ -1,5 +1,6 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.domain.club.Club;
 import jakarta.persistence.*;
 import lombok.Getter;
 
