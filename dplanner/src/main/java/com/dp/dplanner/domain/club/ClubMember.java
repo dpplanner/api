@@ -42,7 +42,7 @@ public class ClubMember {
 
     private void setClub(Club club) {
         this.club = club;
-        club.getMembers().add(this);
+        club.getClubMembers().add(this);
     }
 
     public void setAdmin() {
@@ -53,5 +53,7 @@ public class ClubMember {
         this.role = ClubRole.MANAGER;
     }
 
-
+    public void confirm() {
+        this.isConfirmed = true;
+    }
 }

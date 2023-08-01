@@ -22,7 +22,7 @@ public class Club {
     private String info;
 
     @OneToMany(mappedBy = "club", cascade = CascadeType.REMOVE)
-    private List<ClubMember> members = new ArrayList<>();
+    private List<ClubMember> clubMembers = new ArrayList<>();
 
     @Builder
     public Club(String clubName, String info) {

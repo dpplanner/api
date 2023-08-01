@@ -50,7 +50,7 @@ class ClubMemberRepositoryTest {
 
     @Test
     @DisplayName("club과 member로 clubMember조회")
-    public void findByMember() throws Exception {
+    public void findByClubAndMember() throws Exception {
         //given
         ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
         ClubMember savedClubMember = clubMemberRepository.save(clubMember);
