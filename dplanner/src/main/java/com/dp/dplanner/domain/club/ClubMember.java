@@ -34,10 +34,15 @@ public class ClubMember {
 
     @Builder
     public ClubMember(Member member, Club club) {
-        this.member = member;
+        setMember(member);
         setClub(club);
         this.role = ClubRole.USER;
         this.isConfirmed = false;
+    }
+
+    private void setMember(Member member) {
+        this.member = member;
+        member.getClubMembers().add(this);
     }
 
     private void setClub(Club club) {

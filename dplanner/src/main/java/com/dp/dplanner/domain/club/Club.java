@@ -29,4 +29,9 @@ public class Club {
         this.clubName = clubName;
         this.info = info;
     }
+
+    public Club updateInfo(String updatedClubInfo) {
+        this.info = updatedClubInfo;
+        return this;
+    }
 }
