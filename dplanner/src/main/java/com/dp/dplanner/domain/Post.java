@@ -1,13 +1,15 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.dto.PostDto;
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post {
     @Id
     @GeneratedValue
@@ -22,7 +24,7 @@ public class Post {
     private Member member;
 
     private String content;
-    private Boolean isFixed;
+    private Boolean isFixed = false;
 
     @OneToMany(mappedBy = "post",cascade = CascadeType.REMOVE)
     private List<Attachment> attachments = new ArrayList();
@@ -30,4 +32,19 @@ public class Post {
     @OneToMany(mappedBy = "post",cascade = CascadeType.REMOVE)
     private List<Comment> comments = new ArrayList();
 
+    @Builder
+    public Post(Club club, Member member, String content, Boolean isFixed) {
+        this.club = club;
+        this.member = member;
+        this.content = content;
+        this.isFixed = isFixed;
+    }
+
+
+
+    public void update(PostDto.Update update) {
+
+        this.content = update.getContent();
+
+    }
 }
