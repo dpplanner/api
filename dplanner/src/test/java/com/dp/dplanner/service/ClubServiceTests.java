@@ -5,7 +5,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.club.ClubRole;
-import com.dp.dplanner.dto.ClubDTO;
+import com.dp.dplanner.dto.ClubDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
@@ -60,12 +60,13 @@ public class ClubServiceTests {
         given(clubRepository.save(any(Club.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        ClubDTO clubDTO = clubService.createClub(memberId, "newClub", "newClubInfo");
+        ClubDto.Create createDto = new ClubDto.Create("newClub", "newClubInfo");
+        ClubDto.Response responseDto = clubService.createClub(memberId, createDto);
 
         //then
-        assertThat(clubDTO).as("반환된 DTO가 존재해야 함").isNotNull();
-        assertThat(clubDTO.getClubName()).as("반환된 DTO의 이름이 요청한 이름과 동일해야 함").isEqualTo("newClub");
-        assertThat(clubDTO.getInfo()).as("반환된 DTO의 정보가 요청한 정보와 동일해야 함").isEqualTo("newClubInfo");
+        assertThat(responseDto).as("반환된 DTO가 존재해야 함").isNotNull();
+        assertThat(responseDto.getClubName()).as("반환된 DTO의 이름이 요청한 이름과 동일해야 함").isEqualTo("newClub");
+        assertThat(responseDto.getInfo()).as("반환된 DTO의 정보가 요청한 정보와 동일해야 함").isEqualTo("newClubInfo");
 
         Club club = captureClubFromMockRepository();
 
@@ -82,7 +83,8 @@ public class ClubServiceTests {
         given(clubRepository.save(any(Club.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        clubService.createClub(memberId, "newClub", "newClubInfo");
+        ClubDto.Create createDto = new ClubDto.Create("newClub", "newClubInfo");
+        clubService.createClub(memberId, createDto);
 
         //then
         Club club = captureClubFromMockRepository();
@@ -104,7 +106,8 @@ public class ClubServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubService.createClub(abstractMemberId, "newClub", "newClubInfo"))
+        ClubDto.Create createDto = new ClubDto.Create("newClub", "newClubInfo");
+        assertThatThrownBy(() -> clubService.createClub(abstractMemberId, createDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
     
@@ -117,12 +120,12 @@ public class ClubServiceTests {
         given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
         //when
-        ClubDTO clubDTO = clubService.findClubById(clubId);
+        ClubDto.Response responseDto = clubService.findClubById(clubId);
         
         //then
-        assertThat(clubDTO).as("반환된 DTO가 존재해야 함").isNotNull();
-        assertThat(clubDTO.getClubName()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽이름)").isEqualTo("newClub");
-        assertThat(clubDTO.getInfo()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽정보)").isEqualTo("newClubInfo");
+        assertThat(responseDto).as("반환된 DTO가 존재해야 함").isNotNull();
+        assertThat(responseDto.getClubName()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽이름)").isEqualTo("newClub");
+        assertThat(responseDto.getInfo()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽정보)").isEqualTo("newClubInfo");
 
     }
 
@@ -148,12 +151,12 @@ public class ClubServiceTests {
         setMyClubs(clubs, 2, 4);         // myClubs = [club2, club3]
 
         //when
-        List<ClubDTO> clubDTOS = clubService.findMyClubs(memberId);
+        List<ClubDto.Response> responseDto = clubService.findMyClubs(memberId);
 
         //then
-        assertThat(clubDTOS).as("결과가 존재해야 함").isNotNull();
+        assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
 
-        List<String> clubNames = clubDTOS.stream().map(ClubDTO::getClubName).toList();
+        List<String> clubNames = responseDto.stream().map(ClubDto.Response::getClubName).toList();
         assertThat(clubNames).as("내가 속한 클럽만 포함해야 함").containsExactly("club2", "club3");
     }
 
@@ -165,11 +168,11 @@ public class ClubServiceTests {
         List<Club> clubs = preparedClubs(5); // clubs = [club0, club1, club2, club3, club4]
 
         //when
-        List<ClubDTO> clubDTOS = clubService.findMyClubs(memberId);
+        List<ClubDto.Response> responseDtoList = clubService.findMyClubs(memberId);
 
         //then
-        assertThat(clubDTOS).as("결과가 존재해야 함").isNotNull();
-        assertThat(clubDTOS.isEmpty()).as("빈 리스트가 반환되어야 함").isTrue();
+        assertThat(responseDtoList).as("결과가 존재해야 함").isNotNull();
+        assertThat(responseDtoList.isEmpty()).as("빈 리스트가 반환되어야 함").isTrue();
     }
 
     @Test
@@ -195,11 +198,12 @@ public class ClubServiceTests {
         given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.of(clubMember));
         
         //when
-        ClubDTO clubDTO = clubService.updateClubInfo(clubId, memberId, "updatedClubInfo");
+        ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
+        ClubDto.Response responseDto = clubService.updateClubInfo(memberId, updateDto);
         
         //then
-        assertThat(clubDTO).as("결과가 존재해야 함").isNotNull();
-        assertThat(clubDTO.getInfo()).as("클럽 정보가 요청한대로 변경되어야 함").isEqualTo("updatedClubInfo");
+        assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
+        assertThat(responseDto.getInfo()).as("클럽 정보가 요청한대로 변경되어야 함").isEqualTo("updatedClubInfo");
     }
 
     @Test
@@ -221,9 +225,12 @@ public class ClubServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubService.updateClubInfo(clubId1, memberId, "updatedClubInfo"))
+        ClubDto.Update updateDto1 = new ClubDto.Update(clubId1, "updatedClubInfo");
+        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto1))
                 .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> clubService.updateClubInfo(clubId2, memberId, "updatedClubInfo"))
+
+        ClubDto.Update updateDto2 = new ClubDto.Update(clubId2, "updatedClubInfo");
+        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto2))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -236,7 +243,8 @@ public class ClubServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubService.updateClubInfo(clubId, memberId, "updatedClubInfo"))
+        ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
+        assertThatThrownBy(() -> clubService.updateClubInfo(clubId, updateDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 

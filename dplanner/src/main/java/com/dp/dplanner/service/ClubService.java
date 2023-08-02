@@ -4,7 +4,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.club.ClubRole;
-import com.dp.dplanner.dto.ClubDTO;
+import com.dp.dplanner.dto.ClubDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
@@ -25,28 +25,28 @@ public class ClubService {
     private final ClubMemberRepository clubMemberRepository;
 
 
-    public ClubDTO createClub(Long memberId, String clubName, String clubInfo) throws NoSuchElementException {
+    public ClubDto.Response createClub(Long memberId, ClubDto.Create createDto) throws NoSuchElementException {
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        Club club = Club.builder().clubName(clubName).info(clubInfo).build();
+        Club club = createDto.toEntity();
         clubRepository.save(club);
 
         ClubMember clubMember = joinClubAsAdmin(member, club);
         clubMemberRepository.save(clubMember);
 
-        return ClubDTO.of(club);
+        return ClubDto.Response.of(club);
     }
 
-    public ClubDTO findClubById(Long clubId) throws NoSuchElementException {
+    public ClubDto.Response findClubById(Long clubId) throws NoSuchElementException {
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(NoSuchElementException::new);
 
-        return ClubDTO.of(club);
+        return ClubDto.Response.of(club);
     }
 
-    public List<ClubDTO> findMyClubs(Long memberId) throws NoSuchElementException {
+    public List<ClubDto.Response> findMyClubs(Long memberId) throws NoSuchElementException {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(NoSuchElementException::new);
 
@@ -54,19 +54,19 @@ public class ClubService {
                 .map(ClubMember::getClub)
                 .toList();
 
-        return clubs.stream().map(ClubDTO::of).toList();
+        return clubs.stream().map(ClubDto.Response::of).toList();
     }
 
-    public ClubDTO updateClubInfo(Long clubId, Long memberId, String updatedClubInfo) throws IllegalStateException{
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)
+    public ClubDto.Response updateClubInfo(Long memberId, ClubDto.Update updateDto) throws IllegalStateException{
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(updateDto.getId(), memberId)
                 .orElseThrow(IllegalStateException::new);
 
         if (clubMember.getRole() != ClubRole.ADMIN) {
             throw new IllegalStateException();
         }
 
-        Club updatedClub = clubMember.getClub().updateInfo(updatedClubInfo);
-        return ClubDTO.of(updatedClub);
+        Club updatedClub = clubMember.getClub().updateInfo(updateDto.getInfo());
+        return ClubDto.Response.of(updatedClub);
     }
 
     private static ClubMember joinClubAsAdmin(Member member, Club club) {
