@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ClubServiceTest {
+public class ClubServiceTests {
 
     @Mock
     ClubRepository clubRepository;
@@ -40,13 +41,15 @@ public class ClubServiceTest {
     @InjectMocks
     ClubService clubService;
 
-    Long memberId;
-    Member member;
+
+    static Long memberId;
+    static Member member;
     @BeforeEach
     void setUp() {
         //레포지토리에 미리 저장된 member
         memberId = 1L;
         member = Member.builder().name("user").build();
+        ReflectionTestUtils.setField(member, "id", memberId);
     }
 
     @Test
@@ -110,7 +113,7 @@ public class ClubServiceTest {
     public void findClubByClubId() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = Club.builder().clubName("newClub").info("newClubInfo").build();
+        Club club = createClub("newClub", "newClubInfo");
         given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
         //when
@@ -187,8 +190,8 @@ public class ClubServiceTest {
     public void updateClubInfoByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = Club.builder().info("clubInfo").build();
-        ClubMember clubMember = prepareClubMemberAsAdmin(club);
+        Club club = createClub("club", "clubInfo");
+        ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.of(clubMember));
         
         //when
@@ -204,13 +207,13 @@ public class ClubServiceTest {
     public void updateClubInfoByNotAdminThenException() throws Exception {
         //given
         Long clubId1 = 1L;
-        Club club1 = Club.builder().info("clubInfo1").build();
-        ClubMember clubMember1 = ClubMember.builder().club(club1).member(member).build();
+        Club club1 = createClub("club1", "clubInfo1");
+        ClubMember clubMember1 = createClubMember(club1, member);
         given(clubMemberRepository.findByClubIdAndMemberId(clubId1, memberId)).willReturn(Optional.of(clubMember1));
 
         Long clubId2 = 2L;
-        Club club2 = Club.builder().info("clubInfo2").build();
-        ClubMember clubMember2 = ClubMember.builder().club(club2).member(member).build();
+        Club club2 = createClub("club2", "clubInfo2");
+        ClubMember clubMember2 = createClubMember(club2, member);
         clubMember2.setManager();
         given(clubMemberRepository.findByClubIdAndMemberId(clubId2, memberId)).willReturn(Optional.of(clubMember2));
 
@@ -237,29 +240,9 @@ public class ClubServiceTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
-
-
-    private ClubMember prepareClubMemberAsAdmin(Club club) {
-        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
-        clubMember.setAdmin();
-        clubMember.confirm();
-        return clubMember;
-    }
-
-    private void setMyClubs(List<Club> clubs, int from, int to) {
-        List<Club> myClubs = clubs.subList(from, to);
-        myClubs.forEach(this::prepareClubMemberAsAdmin);
-    }
-
-    private List<Club> preparedClubs(int size) {
-        List<Club> clubs = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            Club club = Club.builder().clubName("club" + i).build();
-            clubs.add(club);
-        }
-        return clubs;
-    }
-
+    /**
+     * Spy method
+     */
     private Club captureClubFromMockRepository() {
         ArgumentCaptor<Club> captor = ArgumentCaptor.forClass(Club.class);
         then(clubRepository).should().save(captor.capture());
@@ -272,4 +255,46 @@ public class ClubServiceTest {
         return captor.getValue();
     }
 
+
+    /**
+     * Club util method
+     */
+    private static Club createClub(String clubName, String info) {
+        return Club.builder()
+                .clubName(clubName)
+                .info(info)
+                .build();
+    }
+
+    private List<Club> preparedClubs(int size) {
+        List<Club> clubs = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            Club club = createClub("club" + i, null);
+            clubs.add(club);
+        }
+        return clubs;
+    }
+
+    private void setMyClubs(List<Club> clubs, int from, int to) {
+        List<Club> myClubs = clubs.subList(from, to);
+        myClubs.forEach(this::createClubMemberAsAdmin);
+    }
+
+
+    /**
+     * ClubMember util method
+     */
+    private static ClubMember createClubMember(Club club, Member member) {
+        return ClubMember.builder()
+                .club(club)
+                .member(member)
+                .build();
+    }
+
+    private ClubMember createClubMemberAsAdmin(Club club) {
+        ClubMember clubMember = createClubMember(club, member);
+        clubMember.setAdmin();
+        clubMember.confirm();
+        return clubMember;
+    }
 }
