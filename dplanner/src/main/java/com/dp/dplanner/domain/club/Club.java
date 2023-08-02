@@ -1,6 +1,5 @@
-package com.dp.dplanner.domain;
+package com.dp.dplanner.domain.club;
 
-import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -13,20 +12,26 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Member {
+public class Club {
     @Id
     @GeneratedValue
     private Long id;
 
-    private String name;
+    private String clubName;
+
     private String info;
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "club", cascade = CascadeType.REMOVE)
     private List<ClubMember> clubMembers = new ArrayList<>();
 
     @Builder
-    public Member(String name, String info) {
-        this.name = name;
+    public Club(String clubName, String info) {
+        this.clubName = clubName;
         this.info = info;
+    }
+
+    public Club updateInfo(String updatedClubInfo) {
+        this.info = updatedClubInfo;
+        return this;
     }
 }
