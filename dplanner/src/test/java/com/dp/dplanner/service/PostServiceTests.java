@@ -44,7 +44,7 @@ public class PostServiceTests {
 
         return Post.builder()
                 .member(member)
-                .content("test")
+                .content("test1")
                 .build();
     }
 
