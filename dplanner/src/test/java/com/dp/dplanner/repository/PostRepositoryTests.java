@@ -1,7 +1,7 @@
 package com.dp.dplanner.repository;
 
-import com.dp.dplanner.domain.Club;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.club.Club;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
