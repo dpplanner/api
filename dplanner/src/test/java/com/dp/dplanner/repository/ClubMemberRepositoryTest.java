@@ -69,7 +69,7 @@ class ClubMemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("clubIdd와 memberId로 clubMember조회")
+    @DisplayName("clubId와 memberId로 clubMember조회")
     public void findByClubIdAndMemberId() throws Exception {
         //given
         ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
