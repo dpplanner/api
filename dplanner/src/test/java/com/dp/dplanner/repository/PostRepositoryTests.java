@@ -1,6 +1,6 @@
 package com.dp.dplanner.repository;
 
-import com.dp.dplanner.domain.Club;
+import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.Post;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,10 +36,6 @@ public class PostRepositoryTests {
         testEntityManager.persist(club);
     }
 
-/*    private Post createPost() {
-        return Post.builder()
-                .build();
-    }*/
 
     private Post createPost(Club club) {
         return Post.builder()

@@ -37,13 +37,17 @@ public class PostDto {
     public static class Response{
         private Long id;
         private String content;
+        private Boolean isFixed;
+        private Long clubId;
 
         // Entity -> DTO
         public static PostDto.Response of(Post post) {
 
-            return PostDto.Response.builder()
+            return Response.builder()
                     .id(post.getId())
                     .content(post.getContent())
+                    .isFixed(post.getIsFixed())
+                    .clubId(post.getClub().getId())
                     .build();
         }
 
