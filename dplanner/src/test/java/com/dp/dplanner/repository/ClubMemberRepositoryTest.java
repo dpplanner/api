@@ -103,4 +103,48 @@ class ClubMemberRepositoryTest {
         //then
         assertThat(findClubMembers).containsExactly(savedClubMember1, savedClubMember2);
     }
+
+    @Test
+    @DisplayName("클럽의 승인된 회원만 조회")
+    public void findAllConfirmedClubMemberByClub() throws Exception {
+        //given
+        Member anotherMember = Member.builder().name("unConfirmedMember").build();
+        testEntityManager.persist(anotherMember);
+
+        ClubMember confirmedMember = ClubMember.builder().club(club).member(member).build();
+        confirmedMember.confirm();
+        testEntityManager.persist(confirmedMember);
+
+        ClubMember unConfirmedMember = ClubMember.builder().club(club).member(anotherMember).build();
+        testEntityManager.persist(unConfirmedMember);
+
+        //when
+        List<ClubMember> confirmedMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
+
+        //then
+        assertThat(confirmedMembers).as("승인된 회원만 포함해야 함.").containsExactly(confirmedMember);
+        assertThat(confirmedMembers).as("승인되지 않은 회원은 포함하지 않아야 함.").doesNotContain(unConfirmedMember);
+    }
+
+    @Test
+    @DisplayName("클럽의 승인되지 않은 회원만 조회")
+    public void findAllUnConfirmedClubMemberByClub() throws Exception {
+        //given
+        Member anotherMember = Member.builder().name("unConfirmedMember").build();
+        testEntityManager.persist(anotherMember);
+
+        ClubMember confirmedMember = ClubMember.builder().club(club).member(member).build();
+        confirmedMember.confirm();
+        testEntityManager.persist(confirmedMember);
+
+        ClubMember unConfirmedMember = ClubMember.builder().club(club).member(anotherMember).build();
+        testEntityManager.persist(unConfirmedMember);
+
+        //when
+        List<ClubMember> unConfirmedMembers = clubMemberRepository.findAllUnConfirmedClubMemberByClub(club);
+
+        //then
+        assertThat(unConfirmedMembers).as("승인되지 않은 회원만 포함해야 함.").containsExactly(unConfirmedMember);
+        assertThat(unConfirmedMembers).as("승인된 회원은 포함하지 않아야 함.").doesNotContain(confirmedMember);
+    }
 }
