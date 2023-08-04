@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Entity
 @Getter
-public class Attachment {
+public class Attachment extends BaseEntity{
 
 
     @Id
