@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Entity
 @Getter
-public class Comment {
+public class Comment extends BaseEntity{
 
     @Id
     @GeneratedValue
