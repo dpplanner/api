@@ -1,6 +1,5 @@
 package com.dp.dplanner.dto;
 
-import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
