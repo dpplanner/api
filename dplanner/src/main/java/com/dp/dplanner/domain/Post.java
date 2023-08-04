@@ -48,4 +48,8 @@ public class Post {
         this.content = update.getContent();
 
     }
+
+    public void toggleIsFixed() {
+        isFixed = !isFixed;
+    }
 }
