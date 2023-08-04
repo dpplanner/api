@@ -14,11 +14,10 @@ public class ClubMemberDto {
     @Setter
     @AllArgsConstructor
     public static class Response {
-        private Long id;
-        private String name;
-        private String info;
-
-        private String role;
+            private Long id;
+            private String name;
+            private String info;
+            private String role;
 
         public static ClubMemberDto.Response of(ClubMember clubMember) {
             return new ClubMemberDto.Response(
