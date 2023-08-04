@@ -3,8 +3,11 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
+import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.ClubRole;
 import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
+import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.repository.PostMemberLikeRepository;
 import com.dp.dplanner.repository.PostRepository;
@@ -24,6 +27,8 @@ public class PostService {
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
     private final PostMemberLikeRepository postMemberLikeRepository;
+
+    private final ClubMemberRepository clubMemberRepository;
 
     @Transactional(readOnly = true)
     public PostDto.Response getPostById(long postId) {
@@ -66,15 +71,23 @@ public class PostService {
 
 
     @Transactional
-    public void deletePostById(long postId, long memberId) {
+    public void deletePostById(long clubId, long memberId, long postId) {
 
         Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
-
-        if (!post.getMember().getId().equals(memberId)){
-            throw new RuntimeException();
-        }
-
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId).orElseThrow(RuntimeException::new);
+        checkDeletable(memberId, clubMember);
         postRepository.delete(post);
+
+    }
+
+    /**
+     *  추후에 검사 기능 추가
+     */
+    private void checkDeletable(long memberId, ClubMember clubMember) {
+
+        if (! (clubMember.getMember().getId().equals(memberId) || clubMember.getRole().equals(ClubRole.ADMIN))){
+            throw new RuntimeException(); // 권한 X
+        }
 
     }
 
@@ -105,6 +118,26 @@ public class PostService {
             return PostMemberLikeDto.Response.dislike(postMemberLike);
         }
 
+    }
+
+    @Transactional
+    public PostDto.Response toggleIsFixed(long clubId, long memberId, long postId) {
+
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId).orElseThrow(RuntimeException::new);
+        checkFixable(clubMember);
+        Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
+        post.toggleIsFixed();
+        return PostDto.Response.of(post);
+    }
+
+
+    /**
+     *  추후에 검사 기능 추가
+     */
+    private void checkFixable(ClubMember clubMember) {
+        if (!clubMember.getRole().equals(ClubRole.ADMIN)) {
+            throw new RuntimeException(); // 권한 x
+        }
     }
 }
 
