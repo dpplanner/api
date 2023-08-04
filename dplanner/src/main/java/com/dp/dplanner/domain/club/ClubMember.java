@@ -61,4 +61,12 @@ public class ClubMember {
     public void confirm() {
         this.isConfirmed = true;
     }
+
+    public boolean checkRoleIs(ClubRole role) {
+        return this.role == role;
+    }
+
+    public boolean checkRoleIsNot(ClubRole role) {
+        return this.role != role;
+    }
 }
