@@ -2,10 +2,10 @@ package com.dp.dplanner.service;
 
 
 import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.domain.club.ClubRole;
+import com.dp.dplanner.domain.club.*;
+import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
+import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
@@ -17,10 +17,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,6 +35,9 @@ public class ClubServiceTests {
     @Mock
     MemberRepository memberRepository;
 
+    @Mock
+    ClubAuthorityRepository clubAuthorityRepository;
+
     @InjectMocks
     ClubService clubService;
 
@@ -48,7 +48,7 @@ public class ClubServiceTests {
     void setUp() {
         //레포지토리에 미리 저장된 member
         memberId = 1L;
-        member = Member.builder().name("user").build();
+        member = Member.builder().name("member").build();
         ReflectionTestUtils.setField(member, "id", memberId);
     }
 
@@ -157,7 +157,7 @@ public class ClubServiceTests {
         assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
 
         List<String> clubNames = responseDto.stream().map(ClubDto.Response::getClubName).toList();
-        assertThat(clubNames).as("내가 속한 클럽만 포함해야 함").containsExactly("club2", "club3");
+        assertThat(clubNames).as("내가 속한 클럽만 포함해야 함").containsExactlyInAnyOrder("club2", "club3");
     }
 
     @Test
@@ -221,7 +221,7 @@ public class ClubServiceTests {
         clubMember2.setManager();
         given(clubMemberRepository.findByClubIdAndMemberId(clubId2, memberId)).willReturn(Optional.of(clubMember2));
 
-        assert clubMember1.getRole() != ClubRole.ADMIN && clubMember2.getRole() != ClubRole.ADMIN;
+        assert clubMember1.checkRoleIsNot(ClubRole.ADMIN) && clubMember2.checkRoleIsNot(ClubRole.ADMIN);
 
         //when
         //then
@@ -248,8 +248,261 @@ public class ClubServiceTests {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    @DisplayName("관리자가 아닌 회원이 매니저의 권한을 설정하려 하면 IllegalStateException")
+    public void setManagerAuthorityByNotAdminThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMember(club, member);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        assert clubMember.checkRoleIsNot(ClubRole.ADMIN);
+
+        //when
+        //then
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
+        assertThatThrownBy(() -> clubService.setManagerAuthority(memberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("관리자는 매니저에게 클럽회원 관리 권한을 설정할 수 있다.")
+    public void setManageMemberAuthorityByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
+        clubService.setManagerAuthority(memberId, updateDto);
+
+        //then
+        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+
+        assertThat(authorityTypes).as("매니저는 클럽 회원 관리 권한을 가져야 한다.")
+                .containsExactly(ClubAuthorityType.MEMBER_ALL);
+    }
+
+    @Test
+    @DisplayName("관리자는 매니저에게 스케줄 관리 권한을 설정할 수 있다.")
+    public void setManageScheduleAuthorityByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.SCHEDULE_ALL.name());
+        clubService.setManagerAuthority(memberId, updateDto);
+
+        //then
+        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+
+        assertThat(authorityTypes).as("매니저는 스케줄 관리 권한을 가져야 한다.")
+                .containsExactly(ClubAuthorityType.SCHEDULE_ALL);
+    }
+
+    @Test
+    @DisplayName("관리자는 매니저에게 게시판 관리 권한을 설정할 수 있다.")
+    public void setManagePostAuthorityByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.POST_ALL.name());
+        clubService.setManagerAuthority(memberId, updateDto);
+
+        //then
+        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+        assertThat(authorityTypes).as("매니저는 게시판 관리 권한을 가져야 한다.")
+                .containsExactly(ClubAuthorityType.POST_ALL);
+    }
+
+    @Test
+    @DisplayName("관리자는 매니저에게 메세지 관리 권한을 설정할 수 있다.")
+    public void setManageMessageAuthorityByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MESSAGE_ALL.name());
+        clubService.setManagerAuthority(memberId, updateDto);
+
+        //then
+        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+
+        assertThat(authorityTypes).as("매니저는 메세지 관리 권한을 가져야 한다.")
+                .containsExactly(ClubAuthorityType.MESSAGE_ALL);
+    }
+
+    @Test
+    @DisplayName("관리자는 매니저에게 복수개의 권한을 설정할 수 있다.")
+    public void setManagerAuthoritiesByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubAuthorityDto.Update updateDto =
+                new ClubAuthorityDto.Update(
+                        clubId,
+                        ClubAuthorityType.SCHEDULE_ALL.name(),
+                        ClubAuthorityType.MESSAGE_ALL.name());
+        clubService.setManagerAuthority(memberId, updateDto);
+
+        //then
+        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+
+        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
+                .containsExactly(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.MESSAGE_ALL);
+        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
+                .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL);
+    }
+
+    @Test
+    @DisplayName("관리자는 매니저의 권한을 변경할 수 있다.")
+    public void updateManagerAuthorityByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+
+        //when
+        ClubAuthorityDto.Update updateDto =
+                new ClubAuthorityDto.Update(
+                        clubId,
+                        ClubAuthorityType.SCHEDULE_ALL.name(),
+                        ClubAuthorityType.MESSAGE_ALL.name());
+        clubService.setManagerAuthority(memberId, updateDto);
+
+        //then
+        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+
+        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
+                .contains(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.MESSAGE_ALL);
+        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
+                .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL);
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 매니저 권한을 설정하려 하면 NoSuchElementException")
+    public void setOtherClubManagerAuthorityThenException() throws Exception {
+        //given
+        Long clubId = 2L;
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MESSAGE_ALL.name());
+        assertThatThrownBy(() -> clubService.setManagerAuthority(memberId, updateDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+    
+    @Test
+    @DisplayName("관리자는 자신이 속한 클럽의 매니저 권한을 확인할 수 있다.")
+    public void findManagerAuthoritiesByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+
+        //when
+        ClubAuthorityDto.Response responseDto =
+                clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId));
+        
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getAuthorities()).as("반환된 결과의 매니저 권한은 실제 클럽의 매니저 권한과 일치해아 한다.")
+                .containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+    }
+
+    @Test
+    @DisplayName("매니저는 자신이 속한 클럽의 매니저 권한을 확인할 수 있다.")
+    public void findManagerAuthoritiesByManager() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMember(club, member);
+        clubMember.setManager();
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+
+        //when
+        ClubAuthorityDto.Response responseDto =
+                clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId));
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getAuthorities()).as("반환된 결과의 매니저 권한은 실제 클럽의 매니저 권한과 일치해아 한다.")
+                .containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+    }
+
+    @Test
+    @DisplayName("일반회원이 자신이 속한 클럽의 매니저 권한을 확인하려 하면 IllegalStateException.")
+    public void findManagerAuthoritiesByUserThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub("club", null);
+
+        ClubMember clubMember = createClubMember(club, member);
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+
+        assert clubMember.checkRoleIs(ClubRole.USER);
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId)))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("자신이 속하지 않은 클럽의 매니저 권한을 확인하려 하면 NoSuchElementException.")
+    public void findOtherClubManagerAuthoritiesThenException() throws Exception {
+        //given
+        Long clubId = 2L;
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId)))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+
+
+
+
+
     /**
-     * Spy method
+     * Argument capture method
      */
     private Club captureClubFromMockRepository() {
         ArgumentCaptor<Club> captor = ArgumentCaptor.forClass(Club.class);
@@ -262,7 +515,6 @@ public class ClubServiceTests {
         then(clubMemberRepository).should().save(captor.capture());
         return captor.getValue();
     }
-
 
     /**
      * Club util method
@@ -288,15 +540,24 @@ public class ClubServiceTests {
         myClubs.forEach(this::createClubMemberAsAdmin);
     }
 
+    private static List<ClubAuthorityType> getClubAuthorityTypes(Club club) {
+        return club.getManagerAuthorities().stream()
+                .map(ClubAuthority::getClubAuthorityType)
+                .toList();
+    }
+
 
     /**
      * ClubMember util method
      */
     private static ClubMember createClubMember(Club club, Member member) {
-        return ClubMember.builder()
+        ClubMember clubMember = ClubMember.builder()
                 .club(club)
                 .member(member)
                 .build();
+
+        clubMember.confirm();
+        return clubMember;
     }
 
     private ClubMember createClubMemberAsAdmin(Club club) {
