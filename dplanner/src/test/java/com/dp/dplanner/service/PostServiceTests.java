@@ -5,8 +5,10 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
+import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.repository.PostMemberLikeRepository;
 import com.dp.dplanner.repository.PostRepository;
@@ -38,6 +40,9 @@ public class PostServiceTests {
     @Mock
     private PostMemberLikeRepository postMemberLikeRepository;
 
+    @Mock
+    private ClubMemberRepository clubMemberRepository;
+
     @InjectMocks
     private PostService postService;
     Member member;
@@ -45,6 +50,8 @@ public class PostServiceTests {
 
     Post post;
     PostMemberLike postMemberLike;
+    ClubMember adminMember;
+    ClubMember userMember;
 
     @BeforeEach
     public void setUp() {
@@ -65,6 +72,7 @@ public class PostServiceTests {
         post = Post.builder()
                 .member(member)
                 .club(club)
+                .isFixed(false)
                 .content("test")
                 .build();
 
@@ -76,6 +84,18 @@ public class PostServiceTests {
                 .build();
 
         ReflectionTestUtils.setField(postMemberLike, "id", 1L);
+
+        adminMember = ClubMember.builder()
+                .member(member)
+                .club(club)
+                .build();
+        adminMember.setAdmin();
+
+        userMember = ClubMember.builder()
+                .member(member)
+                .club(club)
+                .build();
+
     }
 
     private Post createPost() {
@@ -165,12 +185,20 @@ public class PostServiceTests {
 
 
     @Test
-    public void PostService_DeletePostById_ReturnPostResponseDto() {
+    public void PostService_DeletePostByUser_ReturnVoid() {
+        when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
+        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(userMember));
 
+        assertAll(() -> postService.deletePostById(1L, 1L, 1L));
+    }
+
+    @Test
+    public void PostService_DeletePostByAdmin_ReturnVoid() {
 
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
+        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(adminMember));
 
-        assertAll(() -> postService.deletePostById(1L,1L));
+        assertAll(() -> postService.deletePostById(1L,1L, 1L));
 
     }
 
@@ -200,4 +228,28 @@ public class PostServiceTests {
 
 
     }
+
+    @Test
+    public void PostService_FixPost_ReturnPostResponseDto() {
+        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(adminMember));
+        when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
+
+        PostDto.Response fixedPost = postService.toggleIsFixed(1L,1L,1L);
+
+        assertThat(fixedPost).isNotNull();
+        assertThat(fixedPost.getIsFixed()).isTrue();
+    }
+
+    @Test
+    public void PostService_UnFixPost_ReturnPostResponseDto(){
+        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(adminMember));
+        when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
+        ReflectionTestUtils.setField(post,"isFixed",true);
+
+        PostDto.Response unfixedPost = postService.toggleIsFixed(1L, 1L, 1L);
+
+        assertThat(unfixedPost).isNotNull();
+        assertThat(unfixedPost.getIsFixed()).isFalse();
+    }
+
 }
