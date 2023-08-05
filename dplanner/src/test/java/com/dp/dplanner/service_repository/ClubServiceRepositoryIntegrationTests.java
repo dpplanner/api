@@ -7,9 +7,6 @@ import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
-import com.dp.dplanner.repository.ClubMemberRepository;
-import com.dp.dplanner.repository.ClubRepository;
-import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.service.ClubService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +34,7 @@ public class ClubServiceRepositoryIntegrationTests {
     ClubMember clubMember;
     @BeforeEach
     void setup() {
-        Member member = Member.builder().name("member").build();
+        Member member = Member.builder().build();
         Club club = Club.builder().clubName("club").build();
         clubMember = ClubMember.builder().club(club).member(member).build();
         clubMember.setAdmin();

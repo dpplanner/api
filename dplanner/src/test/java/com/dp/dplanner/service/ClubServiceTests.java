@@ -48,7 +48,7 @@ public class ClubServiceTests {
     void setUp() {
         //레포지토리에 미리 저장된 member
         memberId = 1L;
-        member = Member.builder().name("member").build();
+        member = Member.builder().build();
         ReflectionTestUtils.setField(member, "id", memberId);
     }
 

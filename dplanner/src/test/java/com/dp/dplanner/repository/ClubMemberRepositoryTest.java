@@ -31,7 +31,7 @@ class ClubMemberRepositoryTest {
     @BeforeEach
     void setUp() {
         club = Club.builder().clubName("newClub").build();
-        member = Member.builder().name("user1").build();
+        member = Member.builder().build();
         testEntityManager.persist(club);
         testEntityManager.persist(member);
     }
@@ -108,14 +108,14 @@ class ClubMemberRepositoryTest {
     @DisplayName("클럽의 승인된 회원만 조회")
     public void findAllConfirmedClubMemberByClub() throws Exception {
         //given
-        Member anotherMember = Member.builder().name("unConfirmedMember").build();
-        testEntityManager.persist(anotherMember);
+        Member unconfirmedMember = Member.builder().build();
+        testEntityManager.persist(unconfirmedMember);
 
         ClubMember confirmedMember = ClubMember.builder().club(club).member(member).build();
         confirmedMember.confirm();
         testEntityManager.persist(confirmedMember);
 
-        ClubMember unConfirmedMember = ClubMember.builder().club(club).member(anotherMember).build();
+        ClubMember unConfirmedMember = ClubMember.builder().club(club).member(unconfirmedMember).build();
         testEntityManager.persist(unConfirmedMember);
 
         //when
@@ -130,14 +130,14 @@ class ClubMemberRepositoryTest {
     @DisplayName("클럽의 승인되지 않은 회원만 조회")
     public void findAllUnConfirmedClubMemberByClub() throws Exception {
         //given
-        Member anotherMember = Member.builder().name("unConfirmedMember").build();
-        testEntityManager.persist(anotherMember);
+        Member unconfirmedMember = Member.builder().build();
+        testEntityManager.persist(unconfirmedMember);
 
         ClubMember confirmedMember = ClubMember.builder().club(club).member(member).build();
         confirmedMember.confirm();
         testEntityManager.persist(confirmedMember);
 
-        ClubMember unConfirmedMember = ClubMember.builder().club(club).member(anotherMember).build();
+        ClubMember unConfirmedMember = ClubMember.builder().club(club).member(unconfirmedMember).build();
         testEntityManager.persist(unConfirmedMember);
 
         //when

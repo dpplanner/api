@@ -34,7 +34,7 @@ public class ClubMemberService {
             clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
         }
 
-        return clubMembers.stream().map(ClubMemberDto.Response::of).toList();
+        return ClubMemberDto.Response.ofList(clubMembers);
     }
 
     private static boolean isMemberManager(ClubMember clubMember) {

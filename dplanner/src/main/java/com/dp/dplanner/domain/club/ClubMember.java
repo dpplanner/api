@@ -27,15 +27,20 @@ public class ClubMember {
     @JoinColumn(name="club_id")
     private Club club;
 
+    private String name;
+    private String info;
+
     @Enumerated(EnumType.STRING)
     private ClubRole role;
 
     private Boolean isConfirmed;
 
     @Builder
-    public ClubMember(Member member, Club club) {
+    public ClubMember(Member member, Club club, String name, String info) {
         setMember(member);
         setClub(club);
+        this.name = name;
+        this.info = info;
         this.role = ClubRole.USER;
         this.isConfirmed = false;
     }

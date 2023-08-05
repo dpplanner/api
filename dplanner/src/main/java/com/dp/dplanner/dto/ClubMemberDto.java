@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -22,10 +24,14 @@ public class ClubMemberDto {
         public static ClubMemberDto.Response of(ClubMember clubMember) {
             return new ClubMemberDto.Response(
                     clubMember.getId(),
-                    clubMember.getMember().getName(),
-                    clubMember.getMember().getInfo(),
+                    clubMember.getName(),
+                    clubMember.getInfo(),
                     clubMember.getRole().name()
             );
+        }
+
+        public static List<ClubMemberDto.Response> ofList(List<ClubMember> clubMembers) {
+            return clubMembers.stream().map(ClubMemberDto.Response::of).toList();
         }
     }
 }

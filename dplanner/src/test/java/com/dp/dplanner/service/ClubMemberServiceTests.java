@@ -43,7 +43,7 @@ public class ClubMemberServiceTests {
     void setUp() {
         //레포지토리에 미리 저장된 member
         memberId = 1L;
-        member = createMember("member");
+        member = createMember();
         ReflectionTestUtils.setField(member, "id", memberId);
 
         //레포지토리에 미리 저장된 club
@@ -56,15 +56,16 @@ public class ClubMemberServiceTests {
     @DisplayName("사용자는 같은 클럽에 속한 회원들의 정보를 조회할 수 있다.")
     public void findMyClubMembers() throws Exception {
         //given
-        ClubMember clubMember = createConfirmedClubMember(club, member);
+        ClubMember clubMember = createConfirmedClubMember(club, member, "member");
         given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
 
         List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
         clubMembers.add(clubMember); //clubMembers = [member, clubMember0, clubMember1, clubMember2]
         given(clubMemberRepository.findAllConfirmedClubMemberByClub(club)).willReturn(clubMembers);
 
-        ClubMember unConfirmedMember = createClubMember(club, createMember("unConfirmedMember"));
-        ClubMember otherClubMember = createClubMember(createClub("otherClub"), createMember("otherClubMember"));
+        ClubMember unConfirmedMember = createClubMember(club, createMember(), "unConfirmedMember");
+        ClubMember otherClubMember = createClubMember(
+                createClub("otherClub"), createMember(), "otherClubMember");
 
         //when
         List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubId, memberId);
@@ -73,7 +74,7 @@ public class ClubMemberServiceTests {
         assertThat(findClubMembers).as("결과가 존재해야 함").isNotNull();
 
         List<String> findMemberNames = findClubMembers.stream().map(ClubMemberDto.Response::getName).toList();
-        assertThat(findMemberNames).as("결과에 본인이 포함되어야 함").contains(member.getName());
+        assertThat(findMemberNames).as("결과에 본인이 포함되어야 함").contains("member");
         assertThat(findMemberNames).as("결과에 같은 클럽의 다른 회원들이 포함되어야 함")
                 .contains("clubMember0", "clubMember1", "clubMember2");
         assertThat(findMemberNames).as("다른 클럽의 회원은 포함되지 않아야 함")
@@ -86,7 +87,7 @@ public class ClubMemberServiceTests {
     @DisplayName("관리자는 승인되지 않은 회원을 포함한 전체 클럽 회원을 조회할 수 있다.")
     public void findMyClubMemberByAdmin() throws Exception {
         //given
-        ClubMember clubMember = createConfirmedClubMember(club, member);
+        ClubMember clubMember = createConfirmedClubMember(club, member, "member");
         clubMember.setAdmin();
         given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
 
@@ -112,7 +113,7 @@ public class ClubMemberServiceTests {
         //given
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
 
-        ClubMember clubMember = createConfirmedClubMember(club, member);
+        ClubMember clubMember = createConfirmedClubMember(club, member, "member");
         clubMember.setManager();
 
         given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
@@ -150,10 +151,10 @@ public class ClubMemberServiceTests {
     @DisplayName("관리자는 일반 회원을 매니저로 설정할 수 있다.")
     public void makeUserToManagerByAdmin() throws Exception {
         //given
-        ClubMember admin = createConfirmedClubMember(club, member);
+        ClubMember admin = createConfirmedClubMember(club, member, "admin");
         admin.setAdmin();
 
-        ClubMember clubMember = createClubMember(club, createMember("clubMember"));
+        ClubMember clubMember = createClubMember(club, createMember(), "clubMember");
 
         //when
 
@@ -163,10 +164,8 @@ public class ClubMemberServiceTests {
     /**
      * Member util method
      */
-    private static Member createMember(String name) {
-        return Member.builder()
-                .name(name)
-                .build();
+    private static Member createMember() {
+        return Member.builder().build();
     }
 
     /**
@@ -185,30 +184,31 @@ public class ClubMemberServiceTests {
     private static List<ClubMember> createConfirmedClubMembers(Club club, int n) {
         List<ClubMember> clubMembers = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            Member anotherMember = createMember("clubMember" + i);
-            ClubMember anotherClubMember = createConfirmedClubMember(club, anotherMember);
+            Member anotherMember = createMember();
+            ClubMember anotherClubMember = createConfirmedClubMember(club, anotherMember, "clubMember" + i);
             clubMembers.add(anotherClubMember);
         }
         return clubMembers;
     }
 
-    private static ClubMember createConfirmedClubMember(Club club, Member member) {
-        ClubMember clubMember = createClubMember(club, member);
+    private static ClubMember createConfirmedClubMember(Club club, Member member, String name) {
+        ClubMember clubMember = createClubMember(club, member, name);
         clubMember.confirm();
         return clubMember;
     }
 
-    private static ClubMember createClubMember(Club club, Member member) {
+    private static ClubMember createClubMember(Club club, Member member, String name) {
         return ClubMember.builder()
                 .club(club)
                 .member(member)
+                .name(name)
                 .build();
     }
 
     private List<ClubMember> prepareClubMembersIncludeUnConfirmedMember(String unConfirmedMemberName) {
         List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
 
-        ClubMember unConfirmedMember = createClubMember(club, createMember(unConfirmedMemberName));
+        ClubMember unConfirmedMember = createClubMember(club, createMember(), unConfirmedMemberName);
         clubMembers.add(unConfirmedMember);
 
         return clubMembers;
