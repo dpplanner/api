@@ -6,8 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Getter
@@ -24,6 +23,9 @@ public class Club {
     @OneToMany(mappedBy = "club", cascade = CascadeType.REMOVE)
     private List<ClubMember> clubMembers = new ArrayList<>();
 
+    @OneToMany(mappedBy = "club", cascade = CascadeType.REMOVE)
+    private List<ClubAuthority> managerAuthorities = new ArrayList<>();
+
     @Builder
     public Club(String clubName, String info) {
         this.clubName = clubName;
@@ -33,5 +35,15 @@ public class Club {
     public Club updateInfo(String updatedClubInfo) {
         this.info = updatedClubInfo;
         return this;
+    }
+
+    public List<ClubAuthorityType> getManagerAuthorityTypes() {
+        return managerAuthorities.stream()
+                .map(ClubAuthority::getClubAuthorityType)
+                .toList();
+    }
+
+    public boolean hasAuthority(ClubAuthorityType authorityType) {
+        return this.getManagerAuthorityTypes().contains(authorityType);
     }
 }

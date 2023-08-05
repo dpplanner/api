@@ -27,15 +27,20 @@ public class ClubMember {
     @JoinColumn(name="club_id")
     private Club club;
 
+    private String name;
+    private String info;
+
     @Enumerated(EnumType.STRING)
     private ClubRole role;
 
     private Boolean isConfirmed;
 
     @Builder
-    public ClubMember(Member member, Club club) {
+    public ClubMember(Member member, Club club, String name, String info) {
         setMember(member);
         setClub(club);
+        this.name = name;
+        this.info = info;
         this.role = ClubRole.USER;
         this.isConfirmed = false;
     }
@@ -60,5 +65,13 @@ public class ClubMember {
 
     public void confirm() {
         this.isConfirmed = true;
+    }
+
+    public boolean checkRoleIs(ClubRole role) {
+        return this.role == role;
+    }
+
+    public boolean checkRoleIsNot(ClubRole role) {
+        return this.role != role;
     }
 }
