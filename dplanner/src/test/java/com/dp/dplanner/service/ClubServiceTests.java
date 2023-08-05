@@ -116,7 +116,7 @@ public class ClubServiceTests {
     public void findClubByClubId() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("newClub", "newClubInfo");
+        Club club = createClub(clubId, "newClub", "newClubInfo");
         given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
         //when
@@ -193,9 +193,11 @@ public class ClubServiceTests {
     public void updateClubInfoByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", "clubInfo");
+        Club club = createClub(clubId, "club", "clubInfo");
+
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.of(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
         
         //when
         ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
@@ -207,62 +209,116 @@ public class ClubServiceTests {
     }
 
     @Test
-    @DisplayName("관리자가 아닌 사용자가 클럽정보를 수정하려 하면 IllegalStateException")
-    public void updateClubInfoByNotAdminThenException() throws Exception {
+    @DisplayName("다른 클럽의 정보를 변경하려하면 IllegalStateException")
+    public void updateOtherClubInfoThenException() throws Exception {
         //given
-        Long clubId1 = 1L;
-        Club club1 = createClub("club1", "clubInfo1");
-        ClubMember clubMember1 = createClubMember(club1, member);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId1, memberId)).willReturn(Optional.of(clubMember1));
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubId2 = 2L;
-        Club club2 = createClub("club2", "clubInfo2");
-        ClubMember clubMember2 = createClubMember(club2, member);
-        clubMember2.setManager();
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId2, memberId)).willReturn(Optional.of(clubMember2));
-
-        assert clubMember1.checkRoleIsNot(ClubRole.ADMIN) && clubMember2.checkRoleIsNot(ClubRole.ADMIN);
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
         //when
         //then
-        ClubDto.Update updateDto1 = new ClubDto.Update(clubId1, "updatedClubInfo");
-        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto1))
-                .isInstanceOf(IllegalStateException.class);
-
-        ClubDto.Update updateDto2 = new ClubDto.Update(clubId2, "updatedClubInfo");
-        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto2))
+        ClubDto.Update updateDto = new ClubDto.Update(2L, "updatedClubInfo");
+        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("클럽에 가입되지 않은 회원이 클럽 정보를 수정하려 하면 IllegalStateException")
-    public void updateClubInfoByNotClubMemberThenException() throws Exception {
+    @DisplayName("일반 회원이 클럽정보를 수정하려 하면 IllegalStateException")
+    public void updateClubInfoByUserThenException() throws Exception {
         //given
         Long clubId = 1L;
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(null));
+        Club club = createClub(clubId, "club", "clubInfo");
+
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, member);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
+
+        assert clubMember.checkRoleIs(ClubRole.USER);
 
         //when
         //then
         ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
-        assertThatThrownBy(() -> clubService.updateClubInfo(clubId, updateDto))
+        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("관리자가 아닌 회원이 매니저의 권한을 설정하려 하면 IllegalStateException")
-    public void setManagerAuthorityByNotAdminThenException() throws Exception {
+    @DisplayName("매니저가 클럽정보를 수정하려 하면 IllegalStateException")
+    public void updateClubInfoByManagerThenException() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", "clubInfo");
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMember(club, member);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
-        assert clubMember.checkRoleIsNot(ClubRole.ADMIN);
+        clubMember.setManager();
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
+
+        assert clubMember.checkRoleIs(ClubRole.MANAGER);
+
+        //when
+        //then
+        ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
+        assertThatThrownBy(() -> clubService.updateClubInfo(memberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("정보 수정 시 클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void updateClubInfoByNotClubMemberThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubDto.Update updateDto = new ClubDto.Update(1L, "updatedClubInfo");
+        assertThatThrownBy(() -> clubService.updateClubInfo(clubMemberId, updateDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("일반 회원이 매니저의 권한을 설정하려 하면 IllegalStateException")
+    public void setManagerAuthorityByUserThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, member);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        assert clubMember.checkRoleIs(ClubRole.USER);
 
         //when
         //then
         ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
-        assertThatThrownBy(() -> clubService.setManagerAuthority(memberId, updateDto))
+        assertThatThrownBy(() -> clubService.setManagerAuthority(clubMemberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("매니저가 매니저의 권한을 설정하려 하면 IllegalStateException")
+    public void setManagerAuthorityByManagerThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, member);
+        clubMember.setManager();
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        assert clubMember.checkRoleIs(ClubRole.MANAGER);
+
+        //when
+        //then
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
+        assertThatThrownBy(() -> clubService.setManagerAuthority(clubMemberId, updateDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -271,14 +327,15 @@ public class ClubServiceTests {
     public void setManageMemberAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
         ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
-        clubService.setManagerAuthority(memberId, updateDto);
+        clubService.setManagerAuthority(clubMemberId, updateDto);
 
         //then
         List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
@@ -292,14 +349,15 @@ public class ClubServiceTests {
     public void setManageScheduleAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
         ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.SCHEDULE_ALL.name());
-        clubService.setManagerAuthority(memberId, updateDto);
+        clubService.setManagerAuthority(clubMemberId, updateDto);
 
         //then
         List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
@@ -313,14 +371,15 @@ public class ClubServiceTests {
     public void setManagePostAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
         ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.POST_ALL.name());
-        clubService.setManagerAuthority(memberId, updateDto);
+        clubService.setManagerAuthority(clubMemberId, updateDto);
 
         //then
         List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
@@ -333,14 +392,15 @@ public class ClubServiceTests {
     public void setManageMessageAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
         ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MESSAGE_ALL.name());
-        clubService.setManagerAuthority(memberId, updateDto);
+        clubService.setManagerAuthority(clubMemberId, updateDto);
 
         //then
         List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
@@ -354,10 +414,11 @@ public class ClubServiceTests {
     public void setManagerAuthoritiesByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
         ClubAuthorityDto.Update updateDto =
@@ -365,7 +426,8 @@ public class ClubServiceTests {
                         clubId,
                         ClubAuthorityType.SCHEDULE_ALL.name(),
                         ClubAuthorityType.MESSAGE_ALL.name());
-        clubService.setManagerAuthority(memberId, updateDto);
+
+        clubService.setManagerAuthority(clubMemberId, updateDto);
 
         //then
         List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
@@ -381,11 +443,12 @@ public class ClubServiceTests {
     public void updateManagerAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
-
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
 
         //when
@@ -394,7 +457,8 @@ public class ClubServiceTests {
                         clubId,
                         ClubAuthorityType.SCHEDULE_ALL.name(),
                         ClubAuthorityType.MESSAGE_ALL.name());
-        clubService.setManagerAuthority(memberId, updateDto);
+        
+        clubService.setManagerAuthority(clubMemberId, updateDto);
 
         //then
         List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
@@ -406,16 +470,34 @@ public class ClubServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 매니저 권한을 설정하려 하면 NoSuchElementException")
+    @DisplayName("다른 클럽의 매니저 권한을 변경하려하면 IllegalStateException")
     public void setOtherClubManagerAuthorityThenException() throws Exception {
         //given
-        Long clubId = 2L;
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(null));
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", "clubInfo");
+
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
         //when
         //then
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MESSAGE_ALL.name());
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(2L, ClubAuthorityType.SCHEDULE_ALL.name());
         assertThatThrownBy(() -> clubService.setManagerAuthority(memberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("권한 설정 시 클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void setClubManagerAuthorityByNotClubMemberThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(1L, ClubAuthorityType.MESSAGE_ALL.name());
+        assertThatThrownBy(() -> clubService.setManagerAuthority(clubMemberId, updateDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
     
@@ -424,16 +506,17 @@ public class ClubServiceTests {
     public void findManagerAuthoritiesByAdmin() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
 
         //when
         ClubAuthorityDto.Response responseDto =
-                clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId));
+                clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
         
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
@@ -446,17 +529,18 @@ public class ClubServiceTests {
     public void findManagerAuthoritiesByManager() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMember(club, member);
         clubMember.setManager();
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
 
         //when
         ClubAuthorityDto.Response responseDto =
-                clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId));
+                clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
@@ -469,29 +553,48 @@ public class ClubServiceTests {
     public void findManagerAuthoritiesByUserThenException() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub("club", null);
+        Club club = createClub(clubId, "club", null);
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createClubMember(club, member);
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         assert clubMember.checkRoleIs(ClubRole.USER);
 
         //when
         //then
-        assertThatThrownBy(() -> clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId)))
+        assertThatThrownBy(() -> clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId)))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("자신이 속하지 않은 클럽의 매니저 권한을 확인하려 하면 NoSuchElementException.")
+    @DisplayName("다른 클럽의 매니저 권한을 조회하려하면 IllegalStateException")
     public void findOtherClubManagerAuthoritiesThenException() throws Exception {
         //given
-        Long clubId = 2L;
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(null));
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", "clubInfo");
+
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
         //when
         //then
-        assertThatThrownBy(() -> clubService.findClubManagerAuthorities(memberId, new ClubAuthorityDto.Request(clubId)))
+        assertThatThrownBy(() ->
+                clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(2L))
+        ).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("권한 조회 시 클럽 회원 데이터가 없으면 NoSuchElementException. -- 정상적으로는 불가능한 케이스")
+    public void findManagerAuthoritiesByNotClubMemberThenException() throws Exception {
+        //given
+        Long clubMemberId = 2L;
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(1L)))
                 .isInstanceOf(NoSuchElementException.class);
     }
 
@@ -519,17 +622,20 @@ public class ClubServiceTests {
     /**
      * Club util method
      */
-    private static Club createClub(String clubName, String info) {
-        return Club.builder()
+    private static Club createClub(Long clubId, String clubName, String info) {
+        Club club = Club.builder()
                 .clubName(clubName)
                 .info(info)
                 .build();
+        ReflectionTestUtils.setField(club, "id", clubId);
+        
+        return club;
     }
 
     private List<Club> preparedClubs(int size) {
         List<Club> clubs = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            Club club = createClub("club" + i, null);
+            Club club = createClub((long) i, "club" + i, null);
             clubs.add(club);
         }
         return clubs;

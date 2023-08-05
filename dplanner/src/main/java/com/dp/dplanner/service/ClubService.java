@@ -64,10 +64,15 @@ public class ClubService {
         return ClubDto.Response.ofList(clubs);
     }
 
-    public ClubDto.Response updateClubInfo(Long memberId, ClubDto.Update updateDto) throws IllegalStateException{
+    public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto)
+            throws NoSuchElementException, IllegalStateException{
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(updateDto.getId(), memberId)
-                .orElseThrow(IllegalStateException::new);
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (!isValidRequest(clubMember, updateDto.getClubId())) {
+            throw new IllegalStateException();
+        }
 
         if (clubMember.checkRoleIsNot(ADMIN)) {
             throw new IllegalStateException();
@@ -77,14 +82,18 @@ public class ClubService {
         return ClubDto.Response.of(updatedClub);
     }
 
-    public void setManagerAuthority(Long memberId, ClubAuthorityDto.Update updateDto)
+    public void setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto)
             throws IllegalStateException, NoSuchElementException {
 
-        Long clubId = updateDto.getClubId();
+        //TODO clubMemberId를 dto에 담아서 받을까?
         List<ClubAuthorityType> authorities = updateDto.toClubAuthorityTypeList();
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
+
+        if (!isValidRequest(clubMember, updateDto.getClubId())) {
+            throw new IllegalStateException();
+        }
 
         if (clubMember.checkRoleIsNot(ADMIN)) {
             throw new IllegalStateException();
@@ -96,11 +105,15 @@ public class ClubService {
         clubAuthorityRepository.saveAll(clubAuthorities);
     }
 
-    public ClubAuthorityDto.Response findClubManagerAuthorities(Long memberId, ClubAuthorityDto.Request requestDto)
+    public ClubAuthorityDto.Response findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto)
             throws IllegalStateException, NoSuchElementException {
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(requestDto.getClubId(), memberId)
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
+
+        if (!isValidRequest(clubMember, requestDto.getClubId())) {
+            throw new IllegalStateException();
+        }
 
         if (clubMember.checkRoleIs(USER)) {
             throw new IllegalStateException();
@@ -118,6 +131,10 @@ public class ClubService {
         clubMember.setAdmin();
         clubMember.confirm();
         return clubMember;
+    }
+
+    private static boolean isValidRequest(ClubMember clubMember, Long requestClubId) {
+        return requestClubId.equals(clubMember.getClub().getId());
     }
 
 }

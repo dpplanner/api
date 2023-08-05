@@ -34,7 +34,7 @@ public class ClubDto {
     @Builder
     @AllArgsConstructor
     public static class Update{
-        private Long id;
+        private Long clubId;
         private String info;
 
     }
