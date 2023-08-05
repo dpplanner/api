@@ -60,7 +60,7 @@ public class ClubMember {
     }
 
     public void setManager() {
-        this.role = ClubRole.MANAGER;
+        changeRole(ClubRole.MANAGER);
     }
 
     public void confirm() {
@@ -73,5 +73,13 @@ public class ClubMember {
 
     public boolean checkRoleIsNot(ClubRole role) {
         return this.role != role;
+    }
+
+    public void changeRole(ClubRole role) {
+        this.role = role;
+    }
+
+    public boolean isConfirmed() {
+        return this.isConfirmed;
     }
 }

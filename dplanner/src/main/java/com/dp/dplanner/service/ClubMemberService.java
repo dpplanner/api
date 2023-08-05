@@ -23,9 +23,6 @@ public class ClubMemberService {
 
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) throws NoSuchElementException{
 
-//        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)
-//                .orElseThrow(NoSuchElementException::new);
-
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
         Club club = clubMember.getClub();
@@ -40,8 +37,39 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(clubMembers);
     }
 
+    public void changeClubMemberRole(Long adminId, ClubMemberDto.Update updateDto)
+            throws IllegalStateException, NoSuchElementException{
+
+        if (adminId.equals(updateDto.getId())) {
+            throw new IllegalStateException();
+        }
+
+        ClubMember admin = clubMemberRepository.findById(adminId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (admin.checkRoleIs(ADMIN)) {
+
+            Long clubMemberId = updateDto.getId();
+            ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                    .orElseThrow(NoSuchElementException::new);
+
+            if (!clubMember.isConfirmed() || !isSameClubMember(admin, clubMember)) {
+                throw new IllegalStateException();
+            }
+
+            clubMember.changeRole(ClubRole.valueOf(updateDto.getRole()));
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+    private static boolean isSameClubMember(ClubMember memberManager, ClubMember clubMember) {
+        return clubMember.getClub().equals(memberManager.getClub());
+    }
+
     private static boolean isMemberManager(ClubMember clubMember) {
         return clubMember.checkRoleIs(MANAGER) &&
                 clubMember.getClub().hasAuthority(MEMBER_ALL);
     }
+
 }
