@@ -1,10 +1,7 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubAuthority;
-import com.dp.dplanner.domain.club.ClubAuthorityType;
-import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,8 +87,7 @@ public class ClubMemberServiceTests {
     public void findMyClubMemberByAdmin() throws Exception {
         //given
         Long clubMemberId = 1L;
-        ClubMember clubMember = createConfirmedClubMember(club, member, "member");
-        clubMember.setAdmin();
+        ClubMember clubMember = createClubMemberAsAdmin("member");
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         List<ClubMember> clubMembers = prepareClubMembersIncludeUnConfirmedMember("unConfirmedMember");
@@ -117,8 +113,7 @@ public class ClubMemberServiceTests {
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
 
         Long clubMemberId = 1L;
-        ClubMember clubMember = createConfirmedClubMember(club, member, "member");
-        clubMember.setManager();
+        ClubMember clubMember = createClubMemberAsManager("manager");
 
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
@@ -165,19 +160,177 @@ public class ClubMemberServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+    //TODO user -> manager, admin / manager -> user, admin / admin -> manager, user
     @Test
-    @DisplayName("관리자는 일반 회원을 매니저로 설정할 수 있다.")
-    public void makeUserToManagerByAdmin() throws Exception {
+    @DisplayName("관리자는 임의의 클럽 회원을 매니저로 설정할 수 있다.")
+    public void changeClubMemberRoleToManagerByAdmin() throws Exception {
         //given
-        ClubMember admin = createConfirmedClubMember(club, member, "admin");
-        admin.setAdmin();
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
 
-        ClubMember clubMember = createClubMember(club, createMember(), "clubMember");
+        Long clubMemberId = 2L;
+        ClubMember clubMember = createConfirmedClubMember(club, createMember(), "clubMember");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
+        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, ClubRole.MANAGER);
+        clubMemberService.changeClubMemberRole(adminId, updateDto);
 
         //then
+        assertThat(clubMember.getRole()).as("클럽 회원의 역할은 매니저여야 함").isEqualTo(ClubRole.MANAGER);
     }
+
+    @Test
+    @DisplayName("관리자는 임의의 클럽 회원을 관리자로 설정할 수 있다")
+    public void changeClubMemberRoleToAdminByAdmin() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long clubMemberId = 2L;
+        ClubMember clubMember = createConfirmedClubMember(club, createMember(), "clubMember");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, ClubRole.ADMIN);
+        clubMemberService.changeClubMemberRole(adminId, updateDto);
+
+        //then
+        assertThat(clubMember.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.ADMIN);
+    }
+
+    @Test
+    @DisplayName("매니저가 임의의 클럽 회원의 역할을 변경하려 하면 IllegalStateException")
+    public void changeClubMemberRoleByManagerThenException() throws Exception {
+        //given
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        Long anotherClubMemberId = 2L;
+        ClubMember anotherClubMember = createConfirmedClubMember(club, createMember(), "anotherClubMember");
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(anotherClubMemberId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(managerId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("일반 회원이 임의의 클럽 회원의 역할을 변경하려 하면 IllegalStateException")
+    public void changeClubMemberRoleByUserThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, createMember(), "clubMember");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        Long anotherClubMemberId = 2L;
+        ClubMember anotherClubMember = createConfirmedClubMember(club, createMember(), "anotherClubMember");
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(anotherClubMemberId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(clubMemberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("승인되지 않은 회원의 역할을 변경하는 경우 IllegalStateException")
+    public void changeNotConfirmedClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long notConfirmedId = 2L;
+        ClubMember notConfirmed = createClubMember(club, createMember(), "notConfirmed");
+        given(clubMemberRepository.findById(notConfirmedId)).willReturn(Optional.ofNullable(notConfirmed));
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(notConfirmedId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("다른 클럽 회원의 역할을 변경하는 경우 IllegalStateException")
+    public void changeOtherClubMemberRoleThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long otherClubId = 2L;
+        Club otherClub = createClubWithId(2L, "otherClub");
+
+        Long otherClubMemberId = 2L;
+        ClubMember otherClubMember = createConfirmedClubMember(otherClub, createMember(), "otherClubMember");
+        given(clubMemberRepository.findById(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(otherClubMemberId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("자신의 역할을 변경하는 경우 IllegalStateException")
+    public void changeMyRoleThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(adminId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("역할을 바꾸려는 회원의 데이터가 존재하지 않을 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void changeNotClubMemberRole() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long wrongClubId = 2L;
+        given(clubMemberRepository.findById(wrongClubId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(wrongClubId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
+                .isInstanceOf(NoSuchElementException.class);
+
+    }
+
+    @Test
+    @DisplayName("회원 역할 변경 시 관리자의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void changeClubMemberRoleByAdminWithNoData() throws Exception {
+        //given
+        Long adminId = 1L;
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(null));
+
+        Long clubMemberId = 2L;
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, ClubRole.MANAGER);
+        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+
+
+
 
     /**
      * Member util method
@@ -193,6 +346,13 @@ public class ClubMemberServiceTests {
         return Club.builder()
                 .clubName(clubName)
                 .build();
+    }
+
+    private static Club createClubWithId(Long clubId, String clubName) {
+        Club newClub = createClub(clubName);
+        ReflectionTestUtils.setField(newClub, "id", clubId);
+
+        return newClub;
     }
 
 
@@ -230,5 +390,28 @@ public class ClubMemberServiceTests {
         clubMembers.add(unConfirmedMember);
 
         return clubMembers;
+    }
+
+    private static ClubMember createClubMemberAsAdmin(String name) {
+        ClubMember admin = createConfirmedClubMember(club, member, name);
+        admin.setAdmin();
+        return admin;
+    }
+
+    private static ClubMember createClubMemberAsManager(String name) {
+        ClubMember manager = createConfirmedClubMember(club, createMember(), name);
+        manager.setManager();
+        return manager;
+    }
+
+
+    /**
+     * Dto util method
+     */
+    private static ClubMemberDto.Update createUpdateDto(Long clubMemberId, ClubRole role) {
+        return ClubMemberDto.Update.builder()
+                .id(clubMemberId)
+                .role(role.name())
+                .build();
     }
 }
