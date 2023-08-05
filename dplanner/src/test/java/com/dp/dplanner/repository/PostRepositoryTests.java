@@ -36,10 +36,6 @@ public class PostRepositoryTests {
         testEntityManager.persist(club);
     }
 
-/*    private Post createPost() {
-        return Post.builder()
-                .build();
-    }*/
 
     private Post createPost(Club club) {
         return Post.builder()

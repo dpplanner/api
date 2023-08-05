@@ -13,6 +13,7 @@ import java.util.List;
 @Entity
 @Getter
 public class Member {
+
     @Id
     @GeneratedValue
     private Long id;

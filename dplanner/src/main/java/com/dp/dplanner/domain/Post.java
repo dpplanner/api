@@ -11,7 +11,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Post {
+public class Post extends BaseEntity{
     @Id
     @GeneratedValue
     private Long id;
@@ -47,5 +47,9 @@ public class Post {
 
         this.content = update.getContent();
 
+    }
+
+    public void toggleIsFixed() {
+        isFixed = !isFixed;
     }
 }
