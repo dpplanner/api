@@ -11,13 +11,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2 )
-public class PostRepositoryTests {
+public class PostRepositoryTest {
 
     @Autowired
     private PostRepository postRepository;
@@ -120,9 +119,8 @@ public class PostRepositoryTests {
         postRepository.save(post);
 
         postRepository.deleteById(post.getId());
-        Optional<Post> deletedPost = postRepository.findById(post.getId());
 
-        assertThat(deletedPost).isEmpty();
+        assertThat(postRepository.findById(post.getId())).isEmpty();
     }
 
 

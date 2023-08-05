@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PostServiceTests {
+public class PostServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
