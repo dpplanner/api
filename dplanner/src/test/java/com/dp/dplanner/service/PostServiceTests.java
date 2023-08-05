@@ -56,8 +56,6 @@ public class PostServiceTests {
     @BeforeEach
     public void setUp() {
         member = Member.builder()
-                .name("test")
-                .info("test")
                 .build();
 
         ReflectionTestUtils.setField(member, "id", 1L);
@@ -88,6 +86,8 @@ public class PostServiceTests {
         adminMember = ClubMember.builder()
                 .member(member)
                 .club(club)
+                .name("test")
+                .info("test")
                 .build();
         adminMember.setAdmin();
 
