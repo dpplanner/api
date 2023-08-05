@@ -21,9 +21,12 @@ public class ClubMemberService {
     private final ClubMemberRepository clubMemberRepository;
 
 
-    public List<ClubMemberDto.Response> findMyClubMembers(Long clubId, Long memberId) throws NoSuchElementException{
+    public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) throws NoSuchElementException{
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)
+//        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)
+//                .orElseThrow(NoSuchElementException::new);
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
         Club club = clubMember.getClub();
 

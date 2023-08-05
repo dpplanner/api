@@ -8,6 +8,7 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,8 +57,9 @@ public class ClubMemberServiceTests {
     @DisplayName("사용자는 같은 클럽에 속한 회원들의 정보를 조회할 수 있다.")
     public void findMyClubMembers() throws Exception {
         //given
+        Long clubMemberId = 1L;
         ClubMember clubMember = createConfirmedClubMember(club, member, "member");
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
         clubMembers.add(clubMember); //clubMembers = [member, clubMember0, clubMember1, clubMember2]
@@ -68,7 +70,7 @@ public class ClubMemberServiceTests {
                 createClub("otherClub"), createMember(), "otherClubMember");
 
         //when
-        List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubId, memberId);
+        List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubMemberId);
 
         //then
         assertThat(findClubMembers).as("결과가 존재해야 함").isNotNull();
@@ -87,9 +89,10 @@ public class ClubMemberServiceTests {
     @DisplayName("관리자는 승인되지 않은 회원을 포함한 전체 클럽 회원을 조회할 수 있다.")
     public void findMyClubMemberByAdmin() throws Exception {
         //given
+        Long clubMemberId = 1L;
         ClubMember clubMember = createConfirmedClubMember(club, member, "member");
         clubMember.setAdmin();
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         List<ClubMember> clubMembers = prepareClubMembersIncludeUnConfirmedMember("unConfirmedMember");
         clubMembers.add(clubMember); //clubMembers = [member, clubMember0, clubMember1, clubMember2]
@@ -97,7 +100,7 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findAllByClub(club)).willReturn(clubMembers);
 
         //when
-        List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubId, memberId);
+        List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubMemberId);
 
         //then
         assertThat(findClubMembers).as("결과가 존재해야 함").isNotNull();
@@ -113,10 +116,11 @@ public class ClubMemberServiceTests {
         //given
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
 
+        Long clubMemberId = 1L;
         ClubMember clubMember = createConfirmedClubMember(club, member, "member");
         clubMember.setManager();
 
-        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         List<ClubMember> clubMembers = prepareClubMembersIncludeUnConfirmedMember("unConfirmedMember");
         clubMembers.add(clubMember); //clubMembers = [member, clubMember0, clubMember1, clubMember2]
@@ -124,7 +128,7 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findAllByClub(club)).willReturn(clubMembers);
 
         //when
-        List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubId, memberId);
+        List<ClubMemberDto.Response> findClubMembers = clubMemberService.findMyClubMembers(clubMemberId);
 
         //then
         assertThat(findClubMembers).as("결과가 존재해야 함").isNotNull();
@@ -136,14 +140,28 @@ public class ClubMemberServiceTests {
     
     @Test
     @DisplayName("다른 클럽의 회원을 조회하려 하면 NoSuchElementException")
+    @Disabled("clubMemberId 사용으로 전환하면서 이런 경우가 생기지 않음")
     public void findOtherClubMemberThenException() throws Exception {
+//        //given
+//        Long otherClubId = 2L;
+//        given(clubMemberRepository.findByClubIdAndMemberId(otherClubId, memberId)).willReturn(Optional.ofNullable(null));
+//
+//        //when
+//        //then
+//        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(otherClubId, memberId))
+//                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void findClubMemberThenException() throws Exception {
         //given
-        Long otherClubId = 2L;
-        given(clubMemberRepository.findByClubIdAndMemberId(otherClubId, memberId)).willReturn(Optional.ofNullable(null));
+        Long wrongClubMemberId = 2L;
+        given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(otherClubId, memberId))
+        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(wrongClubMemberId))
                 .isInstanceOf(NoSuchElementException.class);
     }
 
