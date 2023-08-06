@@ -142,6 +142,22 @@ public class ClubMemberServiceTests {
     }
 
     @Test
+    @DisplayName("승인되지 않은 회원이 클럽 회원을 조회하려 하면 IllegalStateException")
+    public void findMyClubMembersByNotConfirmedMemberThenException() throws Exception {
+        //given
+        Long notConfirmedId = 1L;
+        ClubMember notConfirmed = createClubMember(club, "notConfirmed");
+        given(clubMemberRepository.findById(notConfirmedId)).willReturn(Optional.ofNullable(notConfirmed));
+
+        assert !notConfirmed.isConfirmed();
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(notConfirmedId))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     @DisplayName("클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
     public void findClubMemberThenException() throws Exception {
         //given
