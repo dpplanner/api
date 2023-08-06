@@ -36,7 +36,7 @@ public class ClubMemberServiceTests {
 
     static Long clubId;
     static Club club;
-    
+
     @BeforeEach
     void setUp() {
         //레포지토리에 미리 저장된 member
@@ -49,7 +49,7 @@ public class ClubMemberServiceTests {
         club = createClub("club");
         ReflectionTestUtils.setField(club, "id", clubId);
     }
-    
+
     @Test
     @DisplayName("사용자는 같은 클럽에 속한 회원들의 정보를 조회할 수 있다.")
     public void findMyClubMembers() throws Exception {
@@ -132,7 +132,7 @@ public class ClubMemberServiceTests {
         assertThat(findMemberNames).as("결과에 승인되지 않은 회원이 포함되어야 함")
                 .contains("unConfirmedMember");
     }
-    
+
     @Test
     @DisplayName("다른 클럽의 회원을 조회하려 하면 NoSuchElementException")
     @Disabled("clubMemberId 사용으로 전환하면서 이런 경우가 생기지 않음")
@@ -162,44 +162,95 @@ public class ClubMemberServiceTests {
 
     //TODO user -> manager, admin / manager -> user, admin / admin -> manager, user
     @Test
-    @DisplayName("관리자는 임의의 클럽 회원을 매니저로 설정할 수 있다.")
-    public void changeClubMemberRoleToManagerByAdmin() throws Exception {
+    @DisplayName("관리자는 일반 회원을 매니저나 관리자로 설정할 수 있다.")
+    public void changeUserToManagerAndAdmin() throws Exception {
         //given
         Long adminId = 1L;
         ClubMember admin = createClubMemberAsAdmin("admin");
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
 
-        Long clubMemberId = 2L;
-        ClubMember clubMember = createConfirmedClubMember(club, createMember(), "clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        Long toBeManagerId = 2L;
+        ClubMember toBeManager = createConfirmedClubMember(club, createMember(), "toBeManager");
+        given(clubMemberRepository.findById(toBeManagerId)).willReturn(Optional.ofNullable(toBeManager));
+
+        Long toBeAdminId = 3L;
+        ClubMember toBeAdmin = createConfirmedClubMember(club, createMember(), "toBeAdmin");
+        given(clubMemberRepository.findById(toBeAdminId)).willReturn(Optional.ofNullable(toBeAdmin));
+
+        assert toBeManager.checkRoleIs(ClubRole.USER) && toBeAdmin.checkRoleIs(ClubRole.USER);
 
         //when
-        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, ClubRole.MANAGER);
-        clubMemberService.changeClubMemberRole(adminId, updateDto);
+        ClubMemberDto.Update updateDto1 = createUpdateDto(toBeManagerId, ClubRole.MANAGER);
+        clubMemberService.changeClubMemberRole(adminId, updateDto1);
+
+        ClubMemberDto.Update updateDto2 = createUpdateDto(toBeAdminId, ClubRole.ADMIN);
+        clubMemberService.changeClubMemberRole(adminId, updateDto2);
 
         //then
-        assertThat(clubMember.getRole()).as("클럽 회원의 역할은 매니저여야 함").isEqualTo(ClubRole.MANAGER);
+        assertThat(toBeManager.getRole()).as("클럽 회원의 역할은 매니저여야 함").isEqualTo(ClubRole.MANAGER);
+        assertThat(toBeAdmin.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.ADMIN);
     }
 
     @Test
-    @DisplayName("관리자는 임의의 클럽 회원을 관리자로 설정할 수 있다")
-    public void changeClubMemberRoleToAdminByAdmin() throws Exception {
+    @DisplayName("관리자는 매니저를 일반 회원이나 관리자로 설정할 수 있다.")
+    public void changeManagerToUserAndAdmin() throws Exception {
         //given
         Long adminId = 1L;
         ClubMember admin = createClubMemberAsAdmin("admin");
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
 
-        Long clubMemberId = 2L;
-        ClubMember clubMember = createConfirmedClubMember(club, createMember(), "clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        Long toBeUserId = 2L;
+        ClubMember toBeUser = createClubMemberAsManager("toBeUser");
+        given(clubMemberRepository.findById(toBeUserId)).willReturn(Optional.ofNullable(toBeUser));
+
+        Long toBeAdminId = 3L;
+        ClubMember toBeAdmin = createClubMemberAsManager("toBeAdmin");
+        given(clubMemberRepository.findById(toBeAdminId)).willReturn(Optional.ofNullable(toBeAdmin));
+
+        assert toBeUser.checkRoleIs(ClubRole.MANAGER) && toBeAdmin.checkRoleIs(ClubRole.MANAGER);
 
         //when
-        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, ClubRole.ADMIN);
-        clubMemberService.changeClubMemberRole(adminId, updateDto);
+        ClubMemberDto.Update updateDto1 = createUpdateDto(toBeUserId, ClubRole.USER);
+        clubMemberService.changeClubMemberRole(adminId, updateDto1);
+
+        ClubMemberDto.Update updateDto2 = createUpdateDto(toBeAdminId, ClubRole.ADMIN);
+        clubMemberService.changeClubMemberRole(adminId, updateDto2);
 
         //then
-        assertThat(clubMember.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.ADMIN);
+        assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
+        assertThat(toBeAdmin.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.ADMIN);
     }
+
+    @Test
+    @DisplayName("관리자는 다른 관리자를 일반 회원이나 매니저로 설정할 수 있다.")
+    public void changeAdminToUserAndManager() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long toBeUserId = 2L;
+        ClubMember toBeUser = createClubMemberAsAdmin("toBeUser");
+        given(clubMemberRepository.findById(toBeUserId)).willReturn(Optional.ofNullable(toBeUser));
+
+        Long toBeManagerId = 3L;
+        ClubMember toBeManager = createClubMemberAsAdmin("toBeManager");
+        given(clubMemberRepository.findById(toBeManagerId)).willReturn(Optional.ofNullable(toBeManager));
+
+        assert toBeUser.checkRoleIs(ClubRole.ADMIN) && toBeManager.checkRoleIs(ClubRole.ADMIN);
+
+        //when
+        ClubMemberDto.Update updateDto1 = createUpdateDto(toBeUserId, ClubRole.USER);
+        clubMemberService.changeClubMemberRole(adminId, updateDto1);
+
+        ClubMemberDto.Update updateDto2 = createUpdateDto(toBeManagerId, ClubRole.MANAGER);
+        clubMemberService.changeClubMemberRole(adminId, updateDto2);
+
+        //then
+        assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
+        assertThat(toBeManager.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.MANAGER);
+    }
+
 
     @Test
     @DisplayName("매니저가 임의의 클럽 회원의 역할을 변경하려 하면 IllegalStateException")
