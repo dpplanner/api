@@ -17,7 +17,7 @@ public class PostMemberLikeDto {
     static public class Response {
 
         private long id;
-        private long memberId;
+        private long clubMemberId;
         private long postId;
         private Status status;
 
@@ -25,7 +25,7 @@ public class PostMemberLikeDto {
         public static Response like(PostMemberLike postMemberLike) {
             return Response.builder()
                     .id(postMemberLike.getId())
-                    .memberId(postMemberLike.getMember().getId())
+                    .clubMemberId(postMemberLike.getClubMember().getId())
                     .postId(postMemberLike.getPost().getId())
                     .status(Status.LIKE)
                     .build();
@@ -35,7 +35,7 @@ public class PostMemberLikeDto {
 
             return   Response.builder()
                     .id(postMemberLike.getId())
-                    .memberId(postMemberLike.getMember().getId())
+                    .clubMemberId(postMemberLike.getClubMember().getId())
                     .postId(postMemberLike.getPost().getId())
                     .status(Status.DISLIKE)
                     .build();
