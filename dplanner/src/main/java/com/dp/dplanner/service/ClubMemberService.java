@@ -21,6 +21,17 @@ public class ClubMemberService {
     private final ClubMemberRepository clubMemberRepository;
 
 
+    public ClubMemberDto.Response findById(Long clubMemberId) throws NoSuchElementException{
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (!clubMember.isConfirmed()) {
+            throw new NoSuchElementException();
+        }
+
+        return ClubMemberDto.Response.of(clubMember);
+    }
+
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) throws NoSuchElementException{
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -35,6 +46,24 @@ public class ClubMemberService {
         }
 
         return ClubMemberDto.Response.ofList(clubMembers);
+    }
+
+    public ClubMemberDto.Response update(Long clubMemberId, ClubMemberDto.Update updateDto)
+        throws IllegalStateException, NoSuchElementException{
+
+        if (!clubMemberId.equals(updateDto.getId())) {
+            throw new IllegalStateException();
+        }
+
+        ClubMember clubMember = clubMemberRepository.findById(updateDto.getId())
+                .orElseThrow(NoSuchElementException::new);
+
+        if (!clubMember.isConfirmed()) {
+            throw new IllegalStateException();
+        }
+
+        clubMember.update(updateDto.getName(), updateDto.getInfo());
+        return ClubMemberDto.Response.of(clubMember);
     }
 
     public void changeClubMemberRole(Long adminId, ClubMemberDto.Update updateDto)
@@ -63,6 +92,41 @@ public class ClubMemberService {
         }
     }
 
+    public void leaveClub(Long clubMemberId) throws IllegalStateException, NoSuchElementException{
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (clubMember.checkRoleIs(ADMIN)) {
+            throw new IllegalStateException();
+        }
+
+        clubMemberRepository.delete(clubMember);
+    }
+
+    public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto)
+            throws IllegalStateException, NoSuchElementException{
+
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
+            ClubMember clubMember = clubMemberRepository.findById(deleteDto.getId())
+                    .orElseThrow(NoSuchElementException::new);
+
+            if (invalidKickOutRequest(manager, clubMember)) {
+                throw new IllegalStateException();
+            }
+
+            clubMemberRepository.delete(clubMember);
+        } else {
+            throw new IllegalStateException();
+        }
+
+    }
+
+    /**
+     * utility methods
+     */
     private static boolean isSameClubMember(ClubMember memberManager, ClubMember clubMember) {
         return clubMember.getClub().equals(memberManager.getClub());
     }
@@ -72,4 +136,20 @@ public class ClubMemberService {
                 clubMember.getClub().hasAuthority(MEMBER_ALL);
     }
 
+    private static boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
+
+        if (clubMember.equals(manager)) {
+            return true;
+        }
+
+        if (!isSameClubMember(manager, clubMember)) {
+            return true;
+        }
+
+        if ((isMemberManager(manager) && clubMember.checkRoleIs(ADMIN))) {
+            return true;
+        }
+
+        return false;
+    }
 }
