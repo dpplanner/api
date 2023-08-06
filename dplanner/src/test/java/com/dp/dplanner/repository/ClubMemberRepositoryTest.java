@@ -85,6 +85,23 @@ class ClubMemberRepositoryTest {
     }
 
     @Test
+    @DisplayName("clubMemberId로 조회")
+    public void findById() throws Exception {
+        //given
+        ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
+        ClubMember savedClubMember = testEntityManager.persist(clubMember);
+
+        //when
+        ClubMember findClubMember = clubMemberRepository.findById(savedClubMember.getId()).orElse(null);
+
+        //then
+        assertThat(findClubMember.getId()).isEqualTo(savedClubMember.getId());
+        assertThat(findClubMember.getClub()).isEqualTo(club);
+        assertThat(findClubMember.getMember()).isEqualTo(member);
+    }
+
+
+    @Test
     @DisplayName("club으로 clubMember 리스트 조회")
     public void findAllByClub() throws Exception {
         //given
@@ -146,5 +163,35 @@ class ClubMemberRepositoryTest {
         //then
         assertThat(unConfirmedMembers).as("승인되지 않은 회원만 포함해야 함.").containsExactly(unConfirmedMember);
         assertThat(unConfirmedMembers).as("승인된 회원은 포함하지 않아야 함.").doesNotContain(confirmedMember);
+    }
+
+    @Test
+    @DisplayName("클럽회원 삭제")
+    public void delete() throws Exception {
+        //given
+        ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
+        ClubMember savedClubMember = testEntityManager.persist(clubMember);
+
+        //when
+        clubMemberRepository.delete(savedClubMember);
+
+        //then
+        ClubMember findClubMember = testEntityManager.find(ClubMember.class, savedClubMember.getId());
+        assertThat(findClubMember).as("영속성 컨텍스트에 삭제된 회원이 없어야 함").isNull();
+    }
+
+    @Test
+    @DisplayName("id로 클럽회원 삭제")
+    public void deleteById() throws Exception {
+        //given
+        ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
+        ClubMember savedClubMember = testEntityManager.persist(clubMember);
+
+        //when
+        clubMemberRepository.deleteById(savedClubMember.getId());
+
+        //then
+        ClubMember findClubMember = testEntityManager.find(ClubMember.class, savedClubMember.getId());
+        assertThat(findClubMember).as("영속성 컨텍스트에 삭제된 회원이 없어야 함").isNull();
     }
 }
