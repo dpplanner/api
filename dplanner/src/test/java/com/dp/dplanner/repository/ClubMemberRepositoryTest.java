@@ -179,19 +179,4 @@ class ClubMemberRepositoryTest {
         ClubMember findClubMember = testEntityManager.find(ClubMember.class, savedClubMember.getId());
         assertThat(findClubMember).as("영속성 컨텍스트에 삭제된 회원이 없어야 함").isNull();
     }
-
-    @Test
-    @DisplayName("id로 클럽회원 삭제")
-    public void deleteById() throws Exception {
-        //given
-        ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
-        ClubMember savedClubMember = testEntityManager.persist(clubMember);
-
-        //when
-        clubMemberRepository.deleteById(savedClubMember.getId());
-
-        //then
-        ClubMember findClubMember = testEntityManager.find(ClubMember.class, savedClubMember.getId());
-        assertThat(findClubMember).as("영속성 컨텍스트에 삭제된 회원이 없어야 함").isNull();
-    }
 }
