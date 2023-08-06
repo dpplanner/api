@@ -20,6 +20,9 @@ public class ClubMemberService {
 
     private final ClubMemberRepository clubMemberRepository;
 
+    //TODO createMember
+    //TODO findNotConfirmedClubMembers
+    //TODO confirm(여러명)
 
     public ClubMemberDto.Response findById(Long clubMemberId) throws NoSuchElementException{
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -32,10 +35,16 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(clubMember);
     }
 
-    public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) throws NoSuchElementException{
+    public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId)
+            throws IllegalStateException, NoSuchElementException{
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
+
+        if (!clubMember.isConfirmed()) {
+            throw new IllegalStateException();
+        }
+
         Club club = clubMember.getClub();
 
         List<ClubMember> clubMembers;
@@ -103,6 +112,7 @@ public class ClubMemberService {
         clubMemberRepository.delete(clubMember);
     }
 
+    //TODO 여러명 한번에 삭제하는 기능 추가(DTO 변경?)
     public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto)
             throws IllegalStateException, NoSuchElementException{
 
