@@ -82,4 +82,9 @@ public class ClubMember {
     public boolean isConfirmed() {
         return this.isConfirmed;
     }
+
+    public void update(String name, String info) {
+        this.name = name;
+        this.info = info;
+    }
 }

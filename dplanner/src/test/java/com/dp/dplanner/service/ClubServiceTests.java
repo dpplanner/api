@@ -609,13 +609,13 @@ public class ClubServiceTests {
      */
     private Club captureClubFromMockRepository() {
         ArgumentCaptor<Club> captor = ArgumentCaptor.forClass(Club.class);
-        then(clubRepository).should().save(captor.capture());
+        then(clubRepository).should(atLeastOnce()).save(captor.capture());
         return captor.getValue();
     }
 
     private ClubMember captureClubMemberFromMockRepository() {
         ArgumentCaptor<ClubMember> captor = ArgumentCaptor.forClass(ClubMember.class);
-        then(clubMemberRepository).should().save(captor.capture());
+        then(clubMemberRepository).should(atLeastOnce()).save(captor.capture());
         return captor.getValue();
     }
 

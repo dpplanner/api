@@ -47,4 +47,11 @@ public class ClubMemberDto {
             return clubMembers.stream().map(ClubMemberDto.Response::of).toList();
         }
     }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    public static class Delete {
+        private Long id;
+    }
 }
