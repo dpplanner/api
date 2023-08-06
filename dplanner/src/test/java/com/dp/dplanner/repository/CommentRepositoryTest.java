@@ -4,6 +4,7 @@ import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +14,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
@@ -24,18 +23,19 @@ public class CommentRepositoryTest {
 
     @Autowired
     private CommentRepository commentRepository;
-
     @Autowired
     private TestEntityManager testEntityManager;
 
-    Member member;
-    Post post;
-    Club club;
 
-    private Comment createComment(Member member, Post post, Comment parent) {
+    Club club;
+    Member member;
+    ClubMember clubMember;
+    Post post;
+
+    private Comment createComment(ClubMember clubMember, Post post, Comment parent) {
 
         Comment comment = Comment.builder()
-                .member(member)
+                .clubMember(clubMember)
                 .post(post)
                 .parent(parent)
                 .build();
@@ -49,14 +49,27 @@ public class CommentRepositoryTest {
 
     @BeforeEach
     public void setUp() {
+        member = Member.builder().build();
+        testEntityManager.persist(member);
 
         club = Club.builder().clubName("test").info("test").build();
         testEntityManager.persist(club);
 
-        member = Member.builder().name("test").info("test").build();
-        testEntityManager.persist(member);
+        clubMember = clubMember.builder()
+                .member(member)
+                .club(club)
+                .name("test")
+                .info("test")
+                .build();
 
-        post = Post.builder().member(member).content("test").isFixed(false).build();
+        testEntityManager.persist(clubMember);
+
+        post = Post.builder()
+                .club(club)
+                .clubMember(clubMember)
+                .content("test")
+                .isFixed(false)
+                .build();
         testEntityManager.persist(post);
 
     }
@@ -64,7 +77,7 @@ public class CommentRepositoryTest {
     @Test
     public void CommentRepository_SaveComment_ReturnSavedComment(){
 
-        Comment savedComment = commentRepository.save(createComment(member,post ,null));
+        Comment savedComment = commentRepository.save(createComment(clubMember,post ,null));
 
         assertThat(savedComment).isNotNull();
         assertThat(savedComment.getId()).isGreaterThan(0L);
@@ -75,10 +88,10 @@ public class CommentRepositoryTest {
     @Test
     public void CommentRepository_SaveReplyComment_ReturnSavedComment(){
 
-        Comment parentComment = commentRepository.save(createComment(member,post ,null));
+        Comment parentComment = commentRepository.save(createComment(clubMember,post ,null));
 
-        Comment savedReplyComment = commentRepository.save(createComment(member,post ,parentComment));
-        Comment savedReplyComment2 = commentRepository.save(createComment(member, post, parentComment));
+        Comment savedReplyComment = commentRepository.save(createComment(clubMember,post ,parentComment));
+        Comment savedReplyComment2 = commentRepository.save(createComment(clubMember, post, parentComment));
 
 
         assertThat(savedReplyComment).isNotNull();
@@ -90,7 +103,7 @@ public class CommentRepositoryTest {
     @Test
     public void CommentRepository_findById_ReturnComment(){
 
-        Comment comment = commentRepository.save(createComment(member,post ,null));
+        Comment comment = commentRepository.save(createComment(clubMember,post ,null));
 
         Comment foundComment = commentRepository.findById(comment.getId()).get();
 
@@ -101,9 +114,9 @@ public class CommentRepositoryTest {
     @Test
     public void CommentRepository_findByMemberId_ReturnComment() {
 
-        Comment comment = commentRepository.save(createComment(member,post ,null));
+        Comment comment = commentRepository.save(createComment(clubMember,post ,null));
 
-        Comment foundComment = commentRepository.findCommentByMemberId(member.getId()).get();
+        Comment foundComment = commentRepository.findCommentByClubMemberId(clubMember.getId()).get();
 
         assertThat(foundComment).isNotNull();
         assertThat(foundComment.getId()).isEqualTo(comment.getId());
@@ -112,11 +125,11 @@ public class CommentRepositoryTest {
     @Test
     public void CommentRepository_findByPostId_ReturnComments() {
 
-        Comment comment = commentRepository.save(createComment(member,post ,null));
-        Comment comment2 = commentRepository.save(createComment(member,post ,null));
-        Comment comment3 = commentRepository.save(createComment(member,post ,comment));
-        Comment comment4 = commentRepository.save(createComment(member,post ,comment));
-        Comment comment5 = commentRepository.save(createComment(member,post ,comment2));
+        Comment comment = commentRepository.save(createComment(clubMember,post ,null));
+        Comment comment2 = commentRepository.save(createComment(clubMember,post ,null));
+        Comment comment3 = commentRepository.save(createComment(clubMember,post ,comment));
+        Comment comment4 = commentRepository.save(createComment(clubMember,post ,comment));
+        Comment comment5 = commentRepository.save(createComment(clubMember,post ,comment2));
 
         List<Comment> commentsList = commentRepository.findCommentsUsingPostId(post.getId());
 
@@ -127,8 +140,8 @@ public class CommentRepositoryTest {
     @Test
     public void CommentRepository_delete_ReturnVoid() {
 
-        Comment comment = commentRepository.save(createComment(member, post, null));
-        Comment comment2 = commentRepository.save(createComment(member,post ,comment));
+        Comment comment = commentRepository.save(createComment(clubMember, post, null));
+        Comment comment2 = commentRepository.save(createComment(clubMember,post ,comment));
 
         commentRepository.delete(comment);
 

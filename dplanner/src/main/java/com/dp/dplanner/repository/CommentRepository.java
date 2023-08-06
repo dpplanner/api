@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    Optional<Comment> findCommentByMemberId(Long memberId);
+    Optional<Comment> findCommentByClubMemberId(Long clubMemberId);
 
     @Query( "SELECT c FROM Comment c " +
             "LEFT JOIN FETCH c.parent " +

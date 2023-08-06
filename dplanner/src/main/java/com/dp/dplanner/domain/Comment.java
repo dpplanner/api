@@ -1,5 +1,6 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,8 +21,8 @@ public class Comment extends BaseEntity{
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @JoinColumn(name = "club_member_id")
+    private ClubMember clubMember;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
@@ -38,8 +39,8 @@ public class Comment extends BaseEntity{
 
 
     @Builder
-    public Comment(Member member, Post post, Comment parent, String content) {
-        this.member = member;
+    public Comment(ClubMember clubMember, Post post, Comment parent, String content) {
+        this.clubMember = clubMember;
         this.post = post;
         this.parent = parent;
         this.content = content;

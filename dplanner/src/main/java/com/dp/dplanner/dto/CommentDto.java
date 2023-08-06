@@ -1,8 +1,8 @@
 package com.dp.dplanner.dto;
 
 import com.dp.dplanner.domain.Comment;
-import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.club.ClubMember;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,14 +21,14 @@ public class CommentDto {
     @Builder
     @AllArgsConstructor
     public static class Create {
-        private String content;
-        private Long parentId;
         private Long postId;
+        private Long parentId;
+        private String content;
 
-        public Comment toEntity(Member member, Post post,Comment parent) {
+        public Comment toEntity(ClubMember clubMember, Post post, Comment parent) {
             return  Comment.builder()
                     .post(post)
-                    .member(member)
+                    .clubMember(clubMember)
                     .parent(parent)
                     .content(this.getContent())
                     .build();
@@ -44,7 +44,7 @@ public class CommentDto {
         private Long id;
         private Long parentId;
         private Long postId;
-        private Long memberId;
+        private Long clubMemberId;
         private String content;
         private List<Response> children;
 
@@ -63,7 +63,7 @@ public class CommentDto {
                     .id(comment.getId())
                     .content(comment.getContent())
                     .parentId(parentId)
-                    .memberId(comment.getMember().getId())
+                    .clubMemberId(comment.getClubMember().getId())
                     .postId(comment.getPost().getId())
                     .children(children)
                     .build();

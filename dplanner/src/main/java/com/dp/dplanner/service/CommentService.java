@@ -2,11 +2,11 @@ package com.dp.dplanner.service;
 
 
 import com.dp.dplanner.domain.Comment;
-import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.CommentDto;
+import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentRepository;
-import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,23 +20,27 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final MemberRepository memberRepository;
+    private final ClubMemberRepository clubMemberRepository;
 
-    public CommentDto.Response createComment(CommentDto.Create createDto,Long memberId) {
+    public CommentDto.Response createComment(Long clubMemberId,CommentDto.Create createDto) {
 
-        Member member = memberRepository.findById(memberId).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
         Post post = postRepository.findById(createDto.getPostId()).orElseThrow(RuntimeException::new);
         Comment parent = null;
 
         if (createDto.getParentId() != null) {
             parent = commentRepository.findById(createDto.getParentId()).orElseThrow(RuntimeException::new);
             checkIsParent(parent, post.getId());
-            parent.addChildren(parent);
         }
 
-        Comment savedComment = commentRepository.save(createDto.toEntity(member, post, parent));
+        Comment savedComment = commentRepository.save(createDto.toEntity(clubMember, post, parent));
+
+        if(parent != null)  parent.addChildren(savedComment);
+
 
         return CommentDto.Response.of(savedComment);
+
+
 
     }
 
