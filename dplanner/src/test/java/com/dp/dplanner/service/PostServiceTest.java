@@ -8,10 +8,7 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
-import com.dp.dplanner.repository.ClubMemberRepository;
-import com.dp.dplanner.repository.MemberRepository;
-import com.dp.dplanner.repository.PostMemberLikeRepository;
-import com.dp.dplanner.repository.PostRepository;
+import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +35,8 @@ public class PostServiceTest {
     @Mock
     private PostRepository postRepository;
     @Mock
+    private ClubRepository clubRepository;
+    @Mock
     private PostMemberLikeRepository postMemberLikeRepository;
 
     @Mock
@@ -47,11 +46,10 @@ public class PostServiceTest {
     private PostService postService;
     Member member;
     Club club;
-
+    ClubMember clubMember;
     Post post;
     PostMemberLike postMemberLike;
     ClubMember adminMember;
-    ClubMember userMember;
 
     @BeforeEach
     public void setUp() {
@@ -67,8 +65,26 @@ public class PostServiceTest {
 
         ReflectionTestUtils.setField(club, "id", 1L);
 
-        post = Post.builder()
+        clubMember = ClubMember.builder()
+                .club(club)
                 .member(member)
+                .name("test")
+                .info("test")
+                .build();
+
+        ReflectionTestUtils.setField(clubMember, "id", 1L);
+
+        adminMember = ClubMember.builder()
+                .club(club)
+                .member(member)
+                .name("test")
+                .info("test")
+                .build();
+        adminMember.setAdmin();
+        ReflectionTestUtils.setField(adminMember, "id", 1L);
+
+        post = Post.builder()
+                .clubMember(clubMember)
                 .club(club)
                 .isFixed(false)
                 .content("test")
@@ -77,32 +93,22 @@ public class PostServiceTest {
         ReflectionTestUtils.setField(post, "id", 1L);
 
         postMemberLike = PostMemberLike.builder()
-                .member(member)
+                .clubMember(clubMember)
                 .post(post)
                 .build();
 
         ReflectionTestUtils.setField(postMemberLike, "id", 1L);
 
-        adminMember = ClubMember.builder()
-                .member(member)
-                .club(club)
-                .name("test")
-                .info("test")
-                .build();
-        adminMember.setAdmin();
 
-        userMember = ClubMember.builder()
-                .member(member)
-                .club(club)
-                .build();
+
 
     }
 
     private Post createPost() {
 
         return Post.builder()
-                .member(member)
                 .club(club)
+                .clubMember(clubMember)
                 .content("test")
                 .build();
     }
@@ -111,15 +117,19 @@ public class PostServiceTest {
     public void PostService_CreatePost_ReturnPostResponseDto() {
 
 
-        PostDto.Create createDto = PostDto.Create.builder().content("test").build();
+        PostDto.Create createDto = PostDto.Create.builder().clubId(1L).content("test").build();
 
         when(postRepository.save(Mockito.any(Post.class))).thenReturn(post);
+        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(clubMember));
+        when(clubRepository.findById(1L)).thenReturn(Optional.ofNullable(club));
 
-        PostDto.Response createdPost = postService.createPost(createDto);
+        PostDto.Response createdPost = postService.createPost(1L,createDto);
 
         assertThat(createdPost).isNotNull();
         assertThat(createdPost.getId()).isGreaterThan(0L);
         assertThat(createdPost.getContent()).isEqualTo("test");
+        assertThat(createdPost.getClubId()).isEqualTo(1L);
+        assertThat(createdPost.getIsFixed()).isEqualTo(false);
 
     }
 
@@ -135,6 +145,8 @@ public class PostServiceTest {
         assertThat(foundPost).isNotNull();
         assertThat(foundPost.getId()).isGreaterThan(0L);
         assertThat(foundPost.getContent()).isEqualTo("test");
+        assertThat(foundPost.getClubId()).isEqualTo(1L);
+        assertThat(foundPost.getIsFixed()).isEqualTo(false);
     }
 
     @Test
@@ -175,7 +187,7 @@ public class PostServiceTest {
 
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
 
-        PostDto.Response updatedPost = postService.updatePost(updateDto,1L);
+        PostDto.Response updatedPost = postService.updatePost(1L, updateDto);
 
         assertThat(updatedPost).isNotNull();
         assertThat(updatedPost.getId()).isGreaterThan(0L);
@@ -187,27 +199,27 @@ public class PostServiceTest {
     @Test
     public void PostService_DeletePostByUser_ReturnVoid() {
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
-        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(userMember));
+        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(clubMember));
 
-        assertAll(() -> postService.deletePostById(1L, 1L, 1L));
+        assertAll(() -> postService.deletePostById(1L, 1L));
     }
 
     @Test
     public void PostService_DeletePostByAdmin_ReturnVoid() {
 
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
-        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(adminMember));
+        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(adminMember));
 
-        assertAll(() -> postService.deletePostById(1L,1L, 1L));
+        assertAll(() -> postService.deletePostById(1L, 1L));
 
     }
 
     @Test
     public void PostService_LikePost_ReturnResponseDto(){
 
-        when(postMemberLikeRepository.findPostMemberLikeByMemberIdAndPostId(1L, 1L)).thenReturn(Optional.empty());
+        when(postMemberLikeRepository.findPostMemberLikeByClubMemberIdAndPostId(1L, 1L)).thenReturn(Optional.empty());
         when(postMemberLikeRepository.save(Mockito.any(PostMemberLike.class))).thenReturn(postMemberLike);
-        when(memberRepository.findById(1L)).thenReturn(Optional.ofNullable(member));
+        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(clubMember));
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
 
         PostMemberLikeDto.Response response = postService.likePost(1L, 1L);
@@ -220,7 +232,7 @@ public class PostServiceTest {
     public void PostService_DisLikePost_ReturnResponseDto(){
 
 
-        when(postMemberLikeRepository.findPostMemberLikeByMemberIdAndPostId(1L, 1L)).thenReturn(Optional.ofNullable(postMemberLike));
+        when(postMemberLikeRepository.findPostMemberLikeByClubMemberIdAndPostId(1L, 1L)).thenReturn(Optional.ofNullable(postMemberLike));
 
         PostMemberLikeDto.Response response = postService.likePost(1L, 1L);
 
@@ -231,10 +243,10 @@ public class PostServiceTest {
 
     @Test
     public void PostService_FixPost_ReturnPostResponseDto() {
-        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(adminMember));
+        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(adminMember));
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
 
-        PostDto.Response fixedPost = postService.toggleIsFixed(1L,1L,1L);
+        PostDto.Response fixedPost = postService.toggleIsFixed(1L,1L);
 
         assertThat(fixedPost).isNotNull();
         assertThat(fixedPost.getIsFixed()).isTrue();
@@ -242,11 +254,11 @@ public class PostServiceTest {
 
     @Test
     public void PostService_UnFixPost_ReturnPostResponseDto(){
-        when(clubMemberRepository.findByClubIdAndMemberId(1L, 1L)).thenReturn(Optional.ofNullable(adminMember));
+        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(adminMember));
         when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
         ReflectionTestUtils.setField(post,"isFixed",true);
 
-        PostDto.Response unfixedPost = postService.toggleIsFixed(1L, 1L, 1L);
+        PostDto.Response unfixedPost = postService.toggleIsFixed(1L, 1L);
 
         assertThat(unfixedPost).isNotNull();
         assertThat(unfixedPost.getIsFixed()).isFalse();

@@ -1,6 +1,7 @@
 package com.dp.dplanner.domain;
 
 
+import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -21,12 +22,12 @@ public class PostMemberLike {
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @JoinColumn(name = "club_member_id")
+    private ClubMember clubMember;
 
     @Builder
-    public PostMemberLike(Post post, Member member) {
+    public PostMemberLike(Post post, ClubMember clubMember) {
         this.post = post;
-        this.member = member;
+        this.clubMember = clubMember;
     }
 }

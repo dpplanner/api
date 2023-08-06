@@ -1,7 +1,9 @@
 package com.dp.dplanner.repository;
 
+import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2 )
+@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 public class PostRepositoryTest {
 
     @Autowired
@@ -25,41 +27,56 @@ public class PostRepositoryTest {
     private TestEntityManager testEntityManager;
 
     private Club club;
+    private Member member;
+    private ClubMember clubMember;
 
     @BeforeEach
     public void setUp() {
         club = Club.builder()
-                .clubName("testA")
+                .clubName("test")
+                .build();
+
+        member = Member.builder()
+                .build();
+
+        clubMember = ClubMember.builder()
+                .member(member)
+                .club(club)
+                .name("test")
+                .info("test")
                 .build();
 
         testEntityManager.persist(club);
+        testEntityManager.persist(member);
+        testEntityManager.persist(clubMember);
     }
 
 
-    private Post createPost(Club club) {
+    private Post createPost(Club club, ClubMember clubMember) {
         return Post.builder()
                 .club(club)
+                .clubMember(clubMember)
                 .build();
     }
 
     @Test
     public void PostRepository_Save_ReturnSavedPost() {
 
-        Post post = createPost(club);
+        Post post = createPost(club,clubMember);
 
         Post savedPost = postRepository.save(post);
 
         assertThat(savedPost).isNotNull();
         assertThat(savedPost.getId()).isGreaterThan(0);
-
+        assertThat(savedPost.getClubMember()).isEqualTo(clubMember);
     }
 
     @Test
     public void PostRepository_GetAll_ReturnMoreThanOnePost() {
 
-        Post post = createPost(club);
-        Post post2 = createPost(club);
-        Post post3 = createPost(null);
+        Post post = createPost(club,clubMember);
+        Post post2 = createPost(club,clubMember);
+        Post post3 = createPost(null,clubMember);
 
         postRepository.save(post);
         postRepository.save(post2);
@@ -70,16 +87,16 @@ public class PostRepositoryTest {
         assertThat(postList).isNotNull();
         assertThat(postList).extracting(Post::getId).isNotNull();
         assertThat(postList.size()).isEqualTo(3);
-        assertThat(postList).containsExactly(post, post2,post3);
+        assertThat(postList).containsExactly(post, post2, post3);
     }
 
     @Test
     public void PostRepository_GetAllByClubId_ReturnMoreThanOnePost() {
 
 
-        Post post = createPost(club);
-        Post post2 = createPost(club);
-        Post post3 = createPost(null);
+        Post post = createPost(club,clubMember);
+        Post post2 = createPost(club,clubMember);
+        Post post3 = createPost(null,clubMember);
 
         postRepository.save(post);
         postRepository.save(post2);
@@ -93,13 +110,12 @@ public class PostRepositoryTest {
         assertThat(postList).containsExactly(post, post2);
 
 
-
     }
 
     @Test
     public void PostRepository_FindById_ReturnPost() {
 
-        Post post = createPost(club);
+        Post post = createPost(club,clubMember);
 
         postRepository.save(post);
 
@@ -108,13 +124,12 @@ public class PostRepositoryTest {
         assertThat(findPost).isNotNull();
         assertThat(findPost).isEqualTo(post);
         assertThat(findPost.getId()).isGreaterThan(0);
-        assertThat(findPost.getId()).isEqualTo(post.getId());
     }
-    
-    @Test
-    public void PostRepository_PostDelete_ReturnPostEmpty(){
 
-        Post post = createPost(club);
+    @Test
+    public void PostRepository_PostDelete_ReturnPostEmpty() {
+
+        Post post = createPost(club,clubMember);
 
         postRepository.save(post);
 
@@ -122,7 +137,6 @@ public class PostRepositoryTest {
 
         assertThat(postRepository.findById(post.getId())).isEmpty();
     }
-
 
 
 }

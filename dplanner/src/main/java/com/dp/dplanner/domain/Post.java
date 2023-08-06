@@ -1,6 +1,7 @@
 package com.dp.dplanner.domain;
 
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.PostDto;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,8 +22,8 @@ public class Post extends BaseEntity{
     private Club club;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @JoinColumn(name = "club_member_id")
+    private ClubMember clubMember;
 
     private String content;
     private Boolean isFixed = false;
@@ -34,9 +35,9 @@ public class Post extends BaseEntity{
     private List<Comment> comments = new ArrayList();
 
     @Builder
-    public Post(Club club, Member member, String content, Boolean isFixed) {
+    public Post(Club club, ClubMember clubMember, String content, Boolean isFixed) {
         this.club = club;
-        this.member = member;
+        this.clubMember = clubMember;
         this.content = content;
         this.isFixed = isFixed;
     }

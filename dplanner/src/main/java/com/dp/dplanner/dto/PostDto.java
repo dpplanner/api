@@ -1,6 +1,8 @@
 package com.dp.dplanner.dto;
 
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
 import lombok.*;
 
 import java.util.List;
@@ -18,10 +20,14 @@ public class PostDto {
     public static class Create{
 
         private String content;
+        private long clubId;
 
-        public Post toEntity() {
+        public Post toEntity(ClubMember clubMember, Club club) {
             return Post.builder()
+                    .clubMember(clubMember)
+                    .club(club)
                     .content(this.content)
+                    .isFixed(false)
                     .build();
         }
 
