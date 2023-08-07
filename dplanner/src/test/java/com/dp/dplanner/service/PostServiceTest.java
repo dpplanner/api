@@ -8,6 +8,7 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
+import com.dp.dplanner.dto.Status;
 import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -217,7 +218,7 @@ public class PostServiceTest {
     }
 
     @Test
-    public void PostService_LikePost_ReturnResponseDto(){
+    public void PostService_LikePost_ReturnPostMemberLikeResponseDto(){
 
         when(postMemberLikeRepository.findPostMemberLikeByClubMemberIdAndPostId(clubMemberId,postId)).thenReturn(Optional.empty());
         when(postMemberLikeRepository.save(Mockito.any(PostMemberLike.class))).thenReturn(postMemberLike);
@@ -226,19 +227,19 @@ public class PostServiceTest {
 
         PostMemberLikeDto.Response response = postService.likePost(clubMemberId,postId);
 
-        assertThat(response.getStatus()).isEqualTo(PostMemberLikeDto.Status.LIKE);
+        assertThat(response.getStatus()).isEqualTo(Status.LIKE);
 
     }
 
     @Test
-    public void PostService_DisLikePost_ReturnResponseDto(){
+    public void PostService_DisLikePost_ReturnPostMemberLikeResponseDto(){
 
 
         when(postMemberLikeRepository.findPostMemberLikeByClubMemberIdAndPostId(clubMemberId,postId)).thenReturn(Optional.ofNullable(postMemberLike));
 
         PostMemberLikeDto.Response response = postService.likePost(clubMemberId,postId);
 
-        assertThat(response.getStatus()).isEqualTo(PostMemberLikeDto.Status.DISLIKE);
+        assertThat(response.getStatus()).isEqualTo(Status.DISLIKE);
 
 
     }
