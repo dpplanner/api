@@ -179,7 +179,7 @@ class ClubMemberRepositoryTest {
         testEntityManager.persist(unConfirmedMember);
 
         //when
-        List<ClubMember> unConfirmedMembers = clubMemberRepository.findAllUnConfirmedClubMemberByClub(club);
+        List<ClubMember> unConfirmedMembers = clubMemberRepository.findAllUnconfirmedClubMemberByClub(club);
 
         //then
         assertThat(unConfirmedMembers).as("승인되지 않은 회원만 포함해야 함.").containsExactly(unConfirmedMember);
