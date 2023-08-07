@@ -1,11 +1,16 @@
 package com.dp.dplanner.domain;
 
 
+import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CommentMemberLike {
 
     @Id
@@ -17,7 +22,12 @@ public class CommentMemberLike {
     private Comment comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @JoinColumn(name = "club_member_id")
+    private ClubMember clubMember;
 
+    @Builder
+    public CommentMemberLike(Comment comment, ClubMember clubMember) {
+        this.comment = comment;
+        this.clubMember = clubMember;
+    }
 }
