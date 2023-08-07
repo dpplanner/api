@@ -21,7 +21,6 @@ import java.util.Optional;
 public class PostService {
 
     private final PostRepository postRepository;
-//    private final MemberRepository memberRepository;
     private final PostMemberLikeRepository postMemberLikeRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;

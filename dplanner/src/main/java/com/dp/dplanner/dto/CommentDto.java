@@ -77,14 +77,30 @@ public class CommentDto {
             comments.forEach(comment -> {
                         Response response = Response.of(comment);
                         responseMap.put(response.getId(), response);
-                        if (comment.getParent() != null) responseMap.get(comment.getParent().getId()).getChildren().add(response);
+                        if (comment.getParent() != null) {
+                            try {
+                                responseMap.get(comment.getParent().getId()).getChildren().add(response);
+                            } catch (NullPointerException e) {
+                                commentResponseList.add(response); // CommentService :: getCommentsByClubMemberId 할 때 다른 사람이 작성한 원본 댓글에 대댓글 달았을 때 발생하는 오류
+                            }
+                        }
                         else commentResponseList.add(response);
                     }
             );
 
             return commentResponseList;
         }
+
     }
 
 
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class Update {
+        private Long id;
+        private String content;
+
+    }
 }

@@ -6,12 +6,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    Optional<Comment> findCommentByClubMemberId(Long clubMemberId);
 
-    @Query( "SELECT c FROM Comment c " +
+    @Query("SELECT c FROM Comment c " +
+            "LEFT JOIN FETCH c.parent " +
+            "WHERE c.clubMember.id = :clubMemberId " +
+            "ORDER BY c.parent.id ASC NULLS FIRST, c.createdDate ASC")
+    List<Comment> findCommentsByClubMemberId(@Param(value = "clubMemberId") Long clubMemberId);
+
+    @Query("SELECT c FROM Comment c " +
             "LEFT JOIN FETCH c.parent " +
             "WHERE c.post.id = :postId " +
             "ORDER BY c.parent.id ASC NULLS FIRST, c.createdDate ASC")

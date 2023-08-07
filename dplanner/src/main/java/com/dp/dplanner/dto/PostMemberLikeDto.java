@@ -8,8 +8,6 @@ import lombok.Setter;
 
 public class PostMemberLikeDto {
 
-    public enum Status {LIKE, DISLIKE}
-
     @Getter
     @Setter
     @Builder

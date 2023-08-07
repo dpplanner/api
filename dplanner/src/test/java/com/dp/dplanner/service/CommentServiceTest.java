@@ -1,14 +1,16 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.domain.Comment;
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.CommentDto;
+import com.dp.dplanner.dto.CommentMemberLikeDto;
+import com.dp.dplanner.dto.Status;
 import com.dp.dplanner.repository.ClubMemberRepository;
+import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
 import com.dp.dplanner.repository.PostRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,28 +38,49 @@ public class CommentServiceTest {
     @Mock
     private ClubMemberRepository clubMemberRepository;
 
+    @Mock
+    private CommentMemberLikeRepository commentMemberLikeRepository;
     @InjectMocks
     private CommentService commentService;
 
     Member member;
     Post post;
     Club club;
-
     ClubMember clubMember;
+
+    Long memberId;
+    Long clubId;
+    Long clubMemberId;
+    Long postId;
+    Long commentId = 0L;
+
+    private Comment createComment(ClubMember clubMember,Post post,Comment parent, String content) {
+        commentId += 1;
+        Comment comment = Comment.builder()
+                .clubMember(clubMember)
+                .post(post)
+                .parent(parent)
+                .content(content)
+                .build();
+        ReflectionTestUtils.setField(comment, "id", commentId);
+        return comment;
+    }
 
     @BeforeEach
     public void setUp() {
 
         member = Member.builder()
                 .build();
+        memberId = 10L;
 
-        ReflectionTestUtils.setField(member,"id",1L);
+        ReflectionTestUtils.setField(member,"id",memberId);
 
         club = Club.builder()
                 .clubName("test")
                 .info("test")
                 .build();
-        ReflectionTestUtils.setField(club,"id",1L);
+        clubId = 20L;
+        ReflectionTestUtils.setField(club,"id",clubId);
 
         clubMember = ClubMember.builder()
                 .club(club)
@@ -64,7 +88,9 @@ public class CommentServiceTest {
                 .name("test")
                 .info("test")
                 .build();
+        clubMemberId = 30L;
 
+        ReflectionTestUtils.setField(clubMember,"id",clubMemberId);
 
         post = Post.builder()
                 .content("test")
@@ -72,37 +98,36 @@ public class CommentServiceTest {
                 .clubMember(clubMember)
                 .isFixed(false)
                 .build();
+        postId = 40L;
+        ReflectionTestUtils.setField(post,"id",postId);
 
-        ReflectionTestUtils.setField(post,"id",1L);
 
+    }
+
+    @AfterEach
+    public void clear() {
+        commentId = 0L;
     }
     @Test
     public void CommentService_CreateComment_ReturnCommentResponseDto() {
 
         CommentDto.Create createDto = CommentDto.Create.builder()
                 .content("test")
-                .postId(1L)
+                .postId(postId)
                 .parentId(null)
                 .build();
 
-        Comment comment = Comment.builder()
-                .content("test")
-                .parent(null)
-                .clubMember(clubMember)
-                .post(post)
-                .build();
+        Comment comment = createComment(clubMember, post, null,"test");
 
-        ReflectionTestUtils.setField(comment,"id",1L);
-
-        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(clubMember));
-        when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(commentRepository.save(Mockito.any(Comment.class))).thenReturn(comment);
 
-        CommentDto.Response createdComment = commentService.createComment(1L, createDto);
+        CommentDto.Response createdComment = commentService.createComment(clubMemberId, createDto);
 
         assertThat(createdComment).isNotNull();
         assertThat(createdComment.getParentId()).isNull();
-        assertThat(createdComment.getId()).isEqualTo(1L);
+        assertThat(createdComment.getId()).isEqualTo(commentId);
         assertThat(createdComment.getClubMemberId()).isEqualTo(clubMember.getId());
         assertThat(createdComment.getContent()).isEqualTo("test");
         assertThat(createdComment.getChildren()).isEmpty();
@@ -112,19 +137,14 @@ public class CommentServiceTest {
     @Test
     public void CommentService_CreateReplyComment_ReturnCommentResponseDto() {
 
+        Comment parent = createComment(clubMember, post, null,"parent");
+        Long parentId = parent.getId();
+
         CommentDto.Create createDto = CommentDto.Create.builder()
                 .content("test")
-                .postId(1L)
-                .parentId(1L)
+                .postId(postId)
+                .parentId(parentId)
                 .build();
-
-        Comment parent = Comment.builder()
-                .content("parent")
-                .parent(null)
-                .clubMember(clubMember)
-                .post(post)
-                .build();
-        ReflectionTestUtils.setField(parent, "id", 1L);
 
         Comment replyComment = Comment.builder()
                 .content("test")
@@ -132,43 +152,33 @@ public class CommentServiceTest {
                 .clubMember(clubMember)
                 .post(post)
                 .build();
-        ReflectionTestUtils.setField(replyComment,"id",2L);
+        ReflectionTestUtils.setField(replyComment,"id",commentId);
 
-        when(clubMemberRepository.findById(1L)).thenReturn(Optional.ofNullable(clubMember));
-        when(postRepository.findById(1L)).thenReturn(Optional.ofNullable(post));
-        when(commentRepository.findById(1L)).thenReturn(Optional.ofNullable(parent));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(commentRepository.findById(parentId)).thenReturn(Optional.ofNullable(parent));
         when(commentRepository.save(Mockito.any(Comment.class))).thenReturn(replyComment);
 
-        CommentDto.Response createdComment = commentService.createComment(1L, createDto);
+        CommentDto.Response createdComment = commentService.createComment(clubMemberId, createDto);
 
         assertThat(createdComment).isNotNull();
-        assertThat(createdComment.getId()).isEqualTo(2L);
-        assertThat(createdComment.getParentId()).isEqualTo(1L);
+        assertThat(createdComment.getId()).isEqualTo(commentId);
+        assertThat(createdComment.getParentId()).isEqualTo(parentId);
         assertThat(createdComment.getClubMemberId()).isEqualTo(clubMember.getId());
         assertThat(createdComment.getContent()).isEqualTo("test");
         assertThat(createdComment.getChildren()).isEmpty();
-        assertThat(parent.getChildren().size()).isEqualTo(1L);
-        assertThat(parent.getChildren().get(0).getId()).isEqualTo(2L);
+        assertThat(parent.getChildren().size()).isEqualTo(1);
+        assertThat(parent.getChildren().get(0).getId()).isEqualTo(commentId);
     }
 
+
+
     @Test
-    public void CommentService_GetCommentByPostId_ReturnListCommentResponseDto(){
+    public void CommentService_GetCommentsByPostId_ReturnListCommentResponseDto(){
 
-        Comment comment = Comment.builder().post(post).clubMember(clubMember).parent(null).content("test1").build();
-        Comment comment2 = Comment.builder().post(post).clubMember(clubMember).parent(comment).content("test2").build();
-        Comment comment3 = Comment.builder().post(post).clubMember(clubMember).parent(comment).content("test3").build();
+        when(commentRepository.findCommentsUsingPostId(postId)).thenReturn(createComments());
 
-        ReflectionTestUtils.setField(comment, "id", 1L);
-        ReflectionTestUtils.setField(comment2, "id", 2L);
-        ReflectionTestUtils.setField(comment3, "id", 3L);
-
-        Comment comment4 = Comment.builder().post(post).clubMember(clubMember).parent(null).content("test4").build();
-        ReflectionTestUtils.setField(comment4, "id", 4L);
-
-
-        when(commentRepository.findCommentsUsingPostId(1L)).thenReturn(Arrays.asList(comment, comment4, comment2, comment3));
-
-        List<CommentDto.Response> commentsList =  commentService.getCommentsByPostId(1L);
+        List<CommentDto.Response> commentsList =  commentService.getCommentsByPostId(postId);
 
         assertThat(commentsList.size()).isEqualTo(2);
         assertThat(commentsList.get(0).getChildren().size()).isEqualTo(2);
@@ -176,4 +186,178 @@ public class CommentServiceTest {
 
     }
 
+    private List<Comment> createComments() {
+        Comment comment = createComment(clubMember, post, null, "test1");
+        Comment comment2 = createComment(clubMember, post, comment, "test2");
+        Comment comment3 = createComment(clubMember, post, comment, "test3");
+        Comment comment4 = createComment(clubMember, post, null, "test4");
+
+        return Arrays.asList(comment, comment4, comment2, comment3);
+    }
+    @Test
+    public void CommentService_GetCommentsByClubMemberId_ReturnListCommentResponseDto() {
+
+        Member newMember = Member.builder().build();
+        ClubMember newClubMember =  ClubMember.builder()
+                .club(club)
+                .member(newMember)
+                .name("test")
+                .info("test")
+                .build();
+        ReflectionTestUtils.setField(newMember,"id",memberId+1);
+        ReflectionTestUtils.setField(newClubMember,"id",clubMemberId+1);
+
+        Comment comment = createComment(clubMember, post, null, "test1");
+        Comment comment2 = createComment(clubMember, post, comment, "test2");
+        Comment comment3 = createComment(newClubMember, post,null, "test3");
+        Comment comment4 = createComment(clubMember, post,comment3, "test4");
+
+        Long newCommentId = comment3.getId();
+
+        when(commentRepository.findCommentsByClubMemberId(clubMemberId)).thenReturn(Arrays.asList(comment, comment2, comment4));
+
+        List<CommentDto.Response> commentsList = commentService.getCommentsByClubMemberId(clubMemberId);
+
+        assertThat(commentsList).isNotNull();
+        assertThat(commentsList.size()).isEqualTo(2);
+        assertThat(commentsList.get(0).getChildren().size()).isEqualTo(1);
+        assertThat(commentsList.get(0).getChildren().get(0).getClubMemberId()).isEqualTo(clubMemberId);
+        assertThat(commentsList.get(0).getChildren().get(0).getPostId()).isEqualTo(postId);
+        assertThat(commentsList.get(1).getParentId()).isEqualTo(newCommentId);
+        assertThat(commentsList).extracting(CommentDto.Response::getClubMemberId).containsOnly(clubMemberId);
+        assertThat(commentsList).extracting(CommentDto.Response::getPostId).containsOnly(postId);
+    }
+
+    @Test
+    public void CommentService_UpdateComment_ReturnCommentResponseDto(){
+        Comment comment = createComment(clubMember,post,null,"test");
+
+        CommentDto.Update updateDto = CommentDto.Update.builder()
+                .id(commentId)
+                .content("update")
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+
+        CommentDto.Response updatedComment = commentService.updateComment(clubMemberId, updateDto);
+
+        assertThat(updatedComment).isNotNull();
+        assertThat(updatedComment.getPostId()).isEqualTo(postId);
+        assertThat(updatedComment.getClubMemberId()).isEqualTo(clubMemberId);
+        assertThat(updatedComment.getContent()).isEqualTo("update");
+
+    }
+
+    @Test
+    public void CommentService_UpdateComment_ThrowException(){
+
+        Member newMember = Member.builder().build();
+        ClubMember newClubMember = ClubMember.builder()
+                .name("different")
+                .member(newMember)
+                .club(club)
+                .build();
+        ReflectionTestUtils.setField(newClubMember, "id", clubMemberId + 1);
+
+
+        Comment comment =  createComment(newClubMember,post,null,"test");
+
+        CommentDto.Update updateDto = CommentDto.Update.builder()
+                .id(commentId)
+                .content("update")
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+
+        assertThatThrownBy(() -> commentService.updateComment(clubMemberId, updateDto))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    public void CommentService_DeleteComment_ReturnVoid_UsualCase() {
+
+        Comment comment = createComment(clubMember, post, null, "test");
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+        assertAll(() -> commentService.deleteComment(clubMemberId, commentId));
+    }
+
+    @Test
+    public void CommentService_DeleteComment_ReturnVoid_UsualCaseAdmin() {
+        Long adminMemberId = clubMemberId + 1;
+        Member adminMember = Member.builder().build();
+        ClubMember adminClubMember = ClubMember.builder()
+                .member(adminMember)
+                .club(club)
+                .build();
+        ReflectionTestUtils.setField(adminClubMember, "id", adminMemberId);
+        adminClubMember.setAdmin();
+
+        Comment comment = createComment(clubMember, post, null, "test");
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+        when(clubMemberRepository.findById(adminMemberId)).thenReturn(Optional.ofNullable(adminClubMember));
+
+        assertAll(() -> commentService.deleteComment(adminMemberId, commentId));
+
+    }
+
+    @Test
+    public void CommentService_DeleteComment_ThrowException() {
+        Long usualClubMemberId = clubMemberId + 1;
+        Member usualMember = Member.builder().build();
+        ClubMember usualClubMember = ClubMember.builder()
+                .member(usualMember)
+                .club(club)
+                .build();
+        ReflectionTestUtils.setField(usualClubMember, "id", usualClubMemberId);
+
+        Comment comment = createComment(clubMember, post, null, "test");
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+        when(clubMemberRepository.findById(usualClubMemberId)).thenReturn(Optional.ofNullable(usualClubMember));
+
+        assertThatThrownBy(() -> commentService.deleteComment(usualClubMemberId, commentId))
+                .isInstanceOf(RuntimeException.class);
+
+    }
+
+    @Test
+    public void CommentService_LikeComment_ReturnCommentMemberLikeResponseDto(){
+
+        Long commentMemberLikeId = 50L;
+        Comment comment = createComment(clubMember, post, null, "test");
+        CommentMemberLike commentMemberLike = CommentMemberLike.builder()
+                .comment(comment)
+                .clubMember(clubMember)
+                .build();
+        ReflectionTestUtils.setField(commentMemberLike,"id",commentMemberLikeId);
+
+        when(commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId,commentId)).thenReturn(Optional.empty());
+        when(commentMemberLikeRepository.save(Mockito.any(CommentMemberLike.class))).thenReturn(commentMemberLike);
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+
+        CommentMemberLikeDto.Response response = commentService.likeComment(clubMemberId,commentId);
+
+        assertThat(response.getStatus()).isEqualTo(Status.LIKE);
+
+    }
+
+    @Test
+    public void CommentService_DisLikeComment_ReturnCommentMemberLikeResponseDto(){
+
+        Long commentMemberLikeId = 50L;
+        Comment comment = createComment(clubMember, post, null, "test");
+        CommentMemberLike commentMemberLike = CommentMemberLike.builder()
+                .comment(comment)
+                .clubMember(clubMember)
+                .build();
+        ReflectionTestUtils.setField(commentMemberLike,"id",commentMemberLikeId);
+
+        when(commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId,commentId)).thenReturn(Optional.ofNullable(commentMemberLike));
+
+        CommentMemberLikeDto.Response response = commentService.likeComment(clubMemberId,commentId);
+
+        assertThat(response.getStatus()).isEqualTo(Status.DISLIKE);
+
+
+    }
 }
