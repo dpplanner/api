@@ -134,6 +134,31 @@ public class ClubMemberService {
 
     }
 
+    public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Delete> deleteDto)
+            throws IllegalStateException {
+
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
+            List<Long> requestIds = deleteDto.stream().map(ClubMemberDto.Delete::getId).toList();
+            List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
+
+            List<ClubMember> deletedClubMembers = clubMembers.stream()
+                    .filter(clubMember -> !invalidKickOutRequest(manager, clubMember))
+                    .toList();
+
+            clubMemberRepository.deleteAll(deletedClubMembers);
+
+            clubMembers.removeAll(deletedClubMembers);
+
+            return ClubMemberDto.Response.ofList(clubMembers);
+
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
     /**
      * utility methods
      */
@@ -162,4 +187,5 @@ public class ClubMemberService {
 
         return false;
     }
+
 }

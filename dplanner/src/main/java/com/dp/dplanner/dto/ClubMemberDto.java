@@ -53,5 +53,9 @@ public class ClubMemberDto {
     @AllArgsConstructor
     public static class Delete {
         private Long id;
+
+        public static List<ClubMemberDto.Delete> ofList(List<Long> clubMembersIds) {
+            return clubMembersIds.stream().map(Delete::new).toList();
+        }
     }
 }
