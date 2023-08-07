@@ -510,7 +510,7 @@ public class ClubMemberServiceTests {
         clubMemberService.leaveClub(clubMemberId);
 
         //then
-        ClubMember deletedClubMember = captureClubMemberFromMockRepository();
+        ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("삭제된 회원은 실제 회원과 일치해야 한다.").isEqualTo(clubMember);
     }
 
@@ -570,21 +570,21 @@ public class ClubMemberServiceTests {
         ClubMemberDto.Delete deleteDto1 = new ClubMemberDto.Delete(anotherAdminId);
         clubMemberService.kickOut(adminId, deleteDto1);
         //then
-        ClubMember deletedAdmin = captureClubMemberFromMockRepository();
+        ClubMember deletedAdmin = captureFromMockRepositoryWhenDelete();
         assertThat(deletedAdmin).as("퇴출된 관리자는 실제 관리자와 일치해야 한다").isEqualTo(anotherAdmin);
 
         //when
         ClubMemberDto.Delete deleteDto2 = new ClubMemberDto.Delete(managerId);
         clubMemberService.kickOut(adminId, deleteDto2);
         //then
-        ClubMember deletedManager = captureClubMemberFromMockRepository();
+        ClubMember deletedManager = captureFromMockRepositoryWhenDelete();
         assertThat(deletedManager).as("퇴출된 매니저는 실제 매니저와 일치해야 한다").isEqualTo(manager);
 
         //when
         ClubMemberDto.Delete deleteDto3 = new ClubMemberDto.Delete(clubMemberId);
         clubMemberService.kickOut(adminId, deleteDto3);
         //then
-        ClubMember deletedClubMember = captureClubMemberFromMockRepository();
+        ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("퇴출된 회원은 실제 회원과 일치해야 한다").isEqualTo(clubMember);
     }
 
@@ -614,14 +614,14 @@ public class ClubMemberServiceTests {
         ClubMemberDto.Delete deleteDto1 = new ClubMemberDto.Delete(anotherManagerId);
         clubMemberService.kickOut(managerId, deleteDto1);
         //then
-        ClubMember deletedManager = captureClubMemberFromMockRepository();
+        ClubMember deletedManager = captureFromMockRepositoryWhenDelete();
         assertThat(deletedManager).as("퇴출된 매니저는 실제 매니저와 일치해야 한다").isEqualTo(anotherManager);
 
         //when
         ClubMemberDto.Delete deleteDto2 = new ClubMemberDto.Delete(clubMemberId);
         clubMemberService.kickOut(managerId, deleteDto2);
         //then
-        ClubMember deletedClubMember = captureClubMemberFromMockRepository();
+        ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("퇴출된 회원은 실제 회원과 일치해야 한다").isEqualTo(clubMember);
     }
 
@@ -759,13 +759,171 @@ public class ClubMemberServiceTests {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    @DisplayName("관리자는 여러명의 회원을 한번에 퇴출할 수 있다.")
+    public void kickOutAllByAdmin() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
+        given(clubMemberRepository.findAllById(clubMemberIds)).willReturn(clubMembers);
+
+        //when
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(adminId, deleteDto);
+
+        //then
+        assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDtoList.isEmpty()).as("모든 회원이 삭제되면 빈 리스트를 반환한다").isTrue();
+
+        List<ClubMember> deletedClubMembers = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedClubMembers).as("삭제된 회원들은 실제 회원과 일치해야 한다")
+                .containsAll(clubMembers);
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한이 있는 매니저는 여러 명의 회원을 한번에 퇴출할 수 있다.")
+    public void kickOutAllByManagerHasMEMBER_ALL() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
+        given(clubMemberRepository.findAllById(clubMemberIds)).willReturn(clubMembers);
+
+        //when
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, deleteDto);
+
+        //then
+        assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDtoList.isEmpty()).as("모든 회원이 삭제되면 빈 리스트를 반환한다").isTrue();
+
+        List<ClubMember> deletedClubMembers = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedClubMembers).as("삭제된 회원들은 실제 회원과 일치해야 한다")
+                .containsAll(clubMembers);
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한이 없는 매니저가 다른 회원들을 퇴출하려하면 IllegalStateException")
+    public void kickOutAllByMangerNotHasMEMBER_ALLThenException() throws Exception {
+        //given
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+
+        assert !club.hasAuthority(ClubAuthorityType.MEMBER_ALL);
+
+        //when
+        //then
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(managerId, deleteDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("일반 회원이 다른 회원들을 퇴출하려하면 IllegalStateException")
+    public void kickOutAllByUserThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMemberAsManager("clubMembmer");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+
+        //when
+        //then
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(clubMemberId, deleteDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("퇴출하려는 회원 중 퇴출이 불가능한 회원이 존재하면 이들을 제외한 회원들을 모두 퇴출한다.")
+    public void kickOutAllByAdminIncludeSelf() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> clubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
+
+        Long adminId = 5L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+
+        Long otherClubMemberId = 6L;
+        ClubMember otherClubMember = createClubMember(createClub("otherClub"), "otherClubMember");
+
+        List<Long> savedClubMemberIds = new ArrayList<>(clubMemberIds);
+        savedClubMemberIds.addAll(List.of(managerId, adminId, otherClubMemberId));
+        List<ClubMember> savedClubMembers = new ArrayList<>(clubMembers);
+        savedClubMembers.addAll(List.of(manager, admin, otherClubMember));
+
+        given(clubMemberRepository.findAllById(savedClubMemberIds)).willReturn(savedClubMembers);
+
+        assert club.hasAuthority(ClubAuthorityType.MEMBER_ALL);
+
+
+        //when
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(savedClubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, deleteDto);
+
+        //then
+        assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
+
+        List<String> responseNames = responseDtoList.stream().map(ClubMemberDto.Response::getName).toList();
+        assertThat(responseNames).as("삭제되지 않은 회원에는 본인, 관리자, 다른 클럽의 회원이 포함되어야 한다")
+                .containsExactlyInAnyOrder("manager", "admin", "otherClubMember");
+
+        List<ClubMember> deletedClubMembers = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedClubMembers).as("삭제된 회원들은 실제 회원과 일치해야 한다")
+                .containsAll(clubMembers);
+        assertThat(deletedClubMembers).as("본인, 관리자, 다른 클럽의 회원은 삭제되지 않아야 한다")
+                .doesNotContain(manager, admin, otherClubMember);
+    }
+
+    @Test
+    @DisplayName("여러명의 클럽 회원 퇴출 시 관리자/매니저의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void kickOutAllNotAdminThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(null));
+
+        Long clubMemberId = 2L;
+
+        //when
+        //then
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(List.of(clubMemberId));
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(adminId, deleteDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
 
     /**
      * Argument capture method
      */
-    private ClubMember captureClubMemberFromMockRepository() {
+    private ClubMember captureFromMockRepositoryWhenDelete() {
         ArgumentCaptor<ClubMember> captor = ArgumentCaptor.forClass(ClubMember.class);
         then(clubMemberRepository).should(atLeastOnce()).delete(captor.capture());
+        return captor.getValue();
+    }
+
+    private List<ClubMember> captureFromMockRepositoryWhenDeleteAll() {
+        ArgumentCaptor<List<ClubMember>> captor = ArgumentCaptor.forClass(List.class);
+        then(clubMemberRepository).should(atLeastOnce()).deleteAll(captor.capture());
         return captor.getValue();
     }
 
