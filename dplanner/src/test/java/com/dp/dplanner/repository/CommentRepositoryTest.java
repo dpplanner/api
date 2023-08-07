@@ -55,7 +55,7 @@ public class CommentRepositoryTest {
         club = Club.builder().clubName("test").info("test").build();
         testEntityManager.persist(club);
 
-        clubMember = clubMember.builder()
+        clubMember = ClubMember.builder()
                 .member(member)
                 .club(club)
                 .name("test")
@@ -112,14 +112,19 @@ public class CommentRepositoryTest {
     }
 
     @Test
-    public void CommentRepository_findByMemberId_ReturnComment() {
+    public void CommentRepository_findByClubMemberId_ReturnComment() {
 
         Comment comment = commentRepository.save(createComment(clubMember,post ,null));
 
-        Comment foundComment = commentRepository.findCommentByClubMemberId(clubMember.getId()).get();
+        List<Comment> foundComments = commentRepository.findCommentsByClubMemberId(clubMember.getId());
 
-        assertThat(foundComment).isNotNull();
-        assertThat(foundComment.getId()).isEqualTo(comment.getId());
+        assertThat(foundComments).isNotNull();
+        assertThat(foundComments.size()).isEqualTo(1);
+        assertThat(foundComments)
+                .extracting(Comment::getClubMember)
+                .extracting(ClubMember::getId)
+                .containsOnly(clubMember.getId());
+
     }
 
     @Test
