@@ -1,8 +1,11 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
+import com.dp.dplanner.repository.ClubRepository;
+import com.dp.dplanner.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -18,14 +21,37 @@ import static com.dp.dplanner.domain.club.ClubRole.*;
 @RequiredArgsConstructor
 public class ClubMemberService {
 
+    private final MemberRepository memberRepository;
+    private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
 
-    //TODO createMember
-    //TODO findNotConfirmedClubMembers
-    //TODO confirm(여러명)
 
-    public ClubMemberDto.Response findById(Long clubMemberId) throws NoSuchElementException{
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+    public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto)
+            throws NoSuchElementException, IllegalStateException {
+
+        ClubMember exsitingClubMember =
+                clubMemberRepository.findByClubIdAndMemberId(createDto.getClubId(), memberId)
+                        .orElse(null);
+
+        if (exsitingClubMember != null) {
+            throw new IllegalStateException();
+        }
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(NoSuchElementException::new);
+
+        Club club = clubRepository.findById(createDto.getClubId())
+                .orElseThrow(NoSuchElementException::new);
+
+        ClubMember clubMember = createDto.toEntity(member, club);
+        ClubMember savedMember = clubMemberRepository.save(clubMember);
+
+        return ClubMemberDto.Response.of(savedMember);
+    }
+
+    public ClubMemberDto.Response findById(ClubMemberDto.Request requestDto) throws NoSuchElementException {
+
+        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(NoSuchElementException::new);
 
         if (!clubMember.isConfirmed()) {
@@ -36,7 +62,7 @@ public class ClubMemberService {
     }
 
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId)
-            throws IllegalStateException, NoSuchElementException{
+            throws IllegalStateException, NoSuchElementException {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
@@ -57,8 +83,27 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(clubMembers);
     }
 
+    public List<ClubMemberDto.Response> findUnconfirmedClubMembers(Long managerId)
+            throws IllegalStateException, NoSuchElementException {
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+
+
+        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
+
+            List<ClubMember> unconfirmedClubMember = clubMemberRepository
+                    .findAllUnconfirmedClubMemberByClub(manager.getClub());
+
+            return ClubMemberDto.Response.ofList(unconfirmedClubMember);
+
+        } else {
+            throw new IllegalStateException();
+        }
+
+    }
+
     public ClubMemberDto.Response update(Long clubMemberId, ClubMemberDto.Update updateDto)
-        throws IllegalStateException, NoSuchElementException{
+            throws IllegalStateException, NoSuchElementException {
 
         if (!clubMemberId.equals(updateDto.getId())) {
             throw new IllegalStateException();
@@ -76,7 +121,7 @@ public class ClubMemberService {
     }
 
     public void changeClubMemberRole(Long adminId, ClubMemberDto.Update updateDto)
-            throws IllegalStateException, NoSuchElementException{
+            throws IllegalStateException, NoSuchElementException {
 
         if (adminId.equals(updateDto.getId())) {
             throw new IllegalStateException();
@@ -101,7 +146,23 @@ public class ClubMemberService {
         }
     }
 
-    public void leaveClub(Long clubMemberId) throws IllegalStateException, NoSuchElementException{
+    public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto)
+            throws IllegalStateException, NoSuchElementException{
+
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
+            List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
+            List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
+
+            unconfirmedClubMembers.forEach(ClubMember::confirm);
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+    public void leaveClub(Long clubMemberId) throws IllegalStateException, NoSuchElementException {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
@@ -112,9 +173,8 @@ public class ClubMemberService {
         clubMemberRepository.delete(clubMember);
     }
 
-    //TODO 여러명 한번에 삭제하는 기능 추가(DTO 변경?)
     public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto)
-            throws IllegalStateException, NoSuchElementException{
+            throws IllegalStateException, NoSuchElementException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
@@ -158,6 +218,7 @@ public class ClubMemberService {
             throw new IllegalStateException();
         }
     }
+
 
     /**
      * utility methods
