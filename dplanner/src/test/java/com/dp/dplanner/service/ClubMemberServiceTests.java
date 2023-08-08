@@ -4,6 +4,8 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
+import com.dp.dplanner.repository.ClubRepository;
+import com.dp.dplanner.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +23,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.atLeastOnce;
@@ -28,6 +31,10 @@ import static org.mockito.Mockito.atLeastOnce;
 @ExtendWith(MockitoExtension.class)
 public class ClubMemberServiceTests {
 
+    @Mock
+    MemberRepository memberRepository;
+    @Mock
+    ClubRepository clubRepository;
     @Mock
     ClubMemberRepository clubMemberRepository;
 
@@ -45,6 +52,151 @@ public class ClubMemberServiceTests {
         ReflectionTestUtils.setField(club, "id", clubId);
     }
 
+    /**
+     * create
+     */
+    @Test
+    @DisplayName("사용자는 클럽 가입시 클럽회원으로 등록된다")
+    public void createClubMember() throws Exception {
+        //given
+        Long memberId = 1L;
+        Member member = createMember();
+        given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(member));
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
+        given(clubMemberRepository.save(any(ClubMember.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        //when
+        ClubMemberDto.Create createDto =
+                new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
+        ClubMemberDto.Response responseDto = clubMemberService.create(memberId, createDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getName()).as("반환된 이름은 요청한 이름과 일치해야 한다")
+                .isEqualTo("newClubMember");
+        assertThat(responseDto.getInfo()).as("반환된 부가정보는 요청한 부가정보와 일치해야 한다")
+                .isEqualTo("newClubMemberInfo");
+        assertThat(responseDto.getRole()).as("회원의 역할은 USER여야 한다")
+                .isEqualTo(ClubRole.USER.name());
+
+        ClubMember savedClubMember = captureFromMockRepositoryWhenCreate();
+        assertThat(savedClubMember).as("클럽회원이 생성되어야 한다").isNotNull();
+        assertThat(savedClubMember.getMember()).as("생성된 클럽 회원은 member와 매핑되어야 한다").isEqualTo(member);
+        assertThat(savedClubMember.getClub()).as("생성된 클럽 회원은 club과 매핑되어야 한다").isEqualTo(club);
+        assertThat(savedClubMember.getRole()).as("생성된 클럽 회원의 역할은 USER여야 한다").isEqualTo(ClubRole.USER);
+        assertThat(savedClubMember.isConfirmed()).as("생성된 클럽회원은 승인대기상태여야 한다").isFalse();
+
+    }
+
+    @Test
+    @DisplayName("가입하려는 클럽이 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void createClubMemberWithNotClubThenException() throws Exception {
+        //given
+        Long memberId = 1L;
+        Member member = createMember();
+        given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(member));
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubMemberDto.Create createDto =
+                new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
+        assertThatThrownBy(() -> clubMemberService.create(memberId, createDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("서비스에 등록되지 않은 회원일 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void createClubMemberWithNotMemberThenException() throws Exception {
+        //given
+        Long memberId = 1L;
+        given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubMemberDto.Create createDto =
+                new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
+        assertThatThrownBy(() -> clubMemberService.create(memberId, createDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("이미 클럽에 가입된 회원일 경우 IllegalStateException")
+    public void createExistingClubMemberThenException() throws Exception {
+        //given
+        Long memberId = 1L;
+        ClubMember existingClubMember = createClubMember(club, "existingClubMember");
+        given(clubMemberRepository.findByClubIdAndMemberId(clubId, memberId)).
+                willReturn(Optional.ofNullable(existingClubMember));
+
+        //when
+        //then
+        ClubMemberDto.Create createDto =
+                new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
+        assertThatThrownBy(() -> clubMemberService.create(memberId, createDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+
+    /**
+     * findById
+     */
+    @Test
+    @DisplayName("사용자는 클럽 회원의 정보를 조회할 수 있다.")
+    public void findClubMemberById() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        ReflectionTestUtils.setField(clubMember, "id", clubMemberId);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(clubMemberId);
+        ClubMemberDto.Response responseDto = clubMemberService.findById(requestDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
+        assertThat(responseDto.getId()).as("조회한 clubMemberId가 일치해야 한다.").isEqualTo(clubMemberId);
+        assertThat(responseDto.getName()).as("조회한 이름이 실제 회원의 이름과 일치해야 한다.").isEqualTo("member");
+    }
+
+    @Test
+    @DisplayName("승인되지 않은 회원의 정보를 조회하려 하면 NoSuchElementException")
+    public void findNotConfirmedClubMemberThenException() throws Exception {
+        //given
+        Long notConfirmedClubMemberId = 1L;
+        ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
+        given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
+
+        assert !notConfirmedClubMember.isConfirmed();
+
+        //when
+        //then
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(notConfirmedClubMemberId);
+        assertThatThrownBy(() -> clubMemberService.findById(requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+
+    }
+
+    @Test
+    @DisplayName("클럽 회원 조회시 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void findNotClubMemberThenException() throws Exception {
+        //given
+        Long wrongClubMemberId = 1L;
+        given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(wrongClubMemberId);
+        assertThatThrownBy(() -> clubMemberService.findById(requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    /**
+     * findMyClubMembers
+     */
     @Test
     @DisplayName("사용자는 같은 클럽에 속한 회원들의 정보를 조회할 수 있다.")
     public void findMyClubMembers() throws Exception {
@@ -53,7 +205,7 @@ public class ClubMemberServiceTests {
         ClubMember clubMember = createConfirmedClubMember(club, "member");
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
-        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3, "clubMember");
         clubMembers.add(clubMember); //clubMembers = [member, clubMember0, clubMember1, clubMember2]
         given(clubMemberRepository.findAllConfirmedClubMemberByClub(club)).willReturn(clubMembers);
 
@@ -142,8 +294,24 @@ public class ClubMemberServiceTests {
     }
 
     @Test
+    @DisplayName("승인되지 않은 회원이 클럽 회원을 조회하려 하면 IllegalStateException")
+    public void findMyClubMembersByNotConfirmedMemberThenException() throws Exception {
+        //given
+        Long notConfirmedId = 1L;
+        ClubMember notConfirmed = createClubMember(club, "notConfirmed");
+        given(clubMemberRepository.findById(notConfirmedId)).willReturn(Optional.ofNullable(notConfirmed));
+
+        assert !notConfirmed.isConfirmed();
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(notConfirmedId))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     @DisplayName("클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
-    public void findClubMemberThenException() throws Exception {
+    public void findNotMyClubMemberThenException() throws Exception {
         //given
         Long wrongClubMemberId = 2L;
         given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
@@ -154,6 +322,179 @@ public class ClubMemberServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * findUnconfirmedClubMembers
+     */
+    @Test
+    @DisplayName("관리자는 승인되지 않은 회원들을 리스트로 조회할 수 있다.")
+    public void findUnconfirmedClubMembersByAdmin() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        List<ClubMember> confirmedClubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
+
+        given(clubMemberRepository.findAllUnconfirmedClubMemberByClub(club))
+                .willReturn(unconfirmedClubMembers);
+
+        //when
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findUnconfirmedClubMembers(adminId);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+
+        List<String> responseNames = responseDto.stream().map(ClubMemberDto.Response::getName).toList();
+        assertThat(responseNames).as("승인되지 않은 회원들을 포함해야 한다")
+                .contains("unconfirmed0", "unconfirmed1", "unconfirmed2");
+        assertThat(responseNames).as("승인된 회원들을 포함하지 않아야 한다")
+                .doesNotContain("clubMember0", "clubMember1", "clubMember2");
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한을 가진 매니저는 승인되지 않은 회원을 리스트로 조회할 수 있다.")
+    public void findUnconfirmedClubMembersByManagerHasMEMBER_ALL() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<ClubMember> confirmedClubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
+
+        given(clubMemberRepository.findAllUnconfirmedClubMemberByClub(club))
+                .willReturn(unconfirmedClubMembers);
+
+        //when
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findUnconfirmedClubMembers(managerId);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+
+        List<String> responseNames = responseDto.stream().map(ClubMemberDto.Response::getName).toList();
+        assertThat(responseNames).as("승인되지 않은 회원들을 포함해야 한다")
+                .contains("unconfirmed0", "unconfirmed1", "unconfirmed2");
+        assertThat(responseNames).as("승인된 회원들을 포함하지 않아야 한다")
+                .doesNotContain("clubMember0", "clubMember1", "clubMember2");
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한이 없는 매니저가 승인되지 않은 회원들을 조회하려 하면 IllegalStateException")
+    public void findUnconfirmedClubMembersByManagerNotHasMEMBER_ALLThenException() throws Exception {
+        //given
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        assert !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
+        //when
+        //then
+        assertThatThrownBy(() -> clubMemberService.findUnconfirmedClubMembers(managerId))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("일반 회원이 승인되지 않은 회원들을 조회하려 하면 IllegalStateException")
+    public void findUnconfirmedClubMembersByUserThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, "clubMember");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubMemberService.findUnconfirmedClubMembers(clubMemberId))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("승인되지 않은 회원 조회시 본인의 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void findUnconfirmedClubMembersByNotClubMemberThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubMemberService.findUnconfirmedClubMembers(clubMemberId))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    /**
+     * update
+     */
+    @Test
+    @DisplayName("사용자는 클럽회원의 이름과 부가정보를 수정할 수 있다.")
+    public void updateClubMember() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, "updatedMember", "updatedInfo");
+        ClubMemberDto.Response responseDto = clubMemberService.update(clubMemberId, updateDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getName()).as("이름이 변경되어야 한다").isEqualTo("updatedMember");
+        assertThat(responseDto.getInfo()).as("부가정보가 변경되어야 한다").isEqualTo("updatedInfo");
+    }
+
+    @Test
+    @DisplayName("다른 클럽회원의 정보를 수정하려하면 IllegalStateException")
+    public void updateOtherClubMemberThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(2L, "updatedMember", "updatedInfo");
+        assertThatThrownBy(() -> clubMemberService.update(clubMemberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("승인되지 않은 회원의 정보를 수정하려 하면 IllegalStateException")
+    public void updateNotConfirmedClubMemberThenException() throws Exception {
+        //given
+        Long notConfirmedClubMemberId = 1L;
+        ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
+        given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
+
+        assert !notConfirmedClubMember.isConfirmed();
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(notConfirmedClubMemberId, "updatedMember", "updatedInfo");
+        assertThatThrownBy(() -> clubMemberService.update(notConfirmedClubMemberId, updateDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("클럽회원 정보 수정시 클럽 회원의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void updateNotClubMemberThenException() throws Exception {
+        //given
+        Long wrongClubMemberId = 1L;
+        given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ClubMemberDto.Update updateDto = createUpdateDto(wrongClubMemberId, "updatedMember", "updatedInfo");
+        assertThatThrownBy(() -> clubMemberService.update(wrongClubMemberId, updateDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    /**
+     * changeClubMemberRole
+     */
     @Test
     @DisplayName("관리자는 일반 회원을 매니저나 관리자로 설정할 수 있다.")
     public void changeUserToManagerAndAdmin() throws Exception {
@@ -243,7 +584,6 @@ public class ClubMemberServiceTests {
         assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
         assertThat(toBeManager.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.MANAGER);
     }
-
 
     @Test
     @DisplayName("매니저가 임의의 클럽 회원의 역할을 변경하려 하면 IllegalStateException")
@@ -371,117 +711,112 @@ public class ClubMemberServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * confirmAll
+     */
     @Test
-    @DisplayName("사용자는 클럽 회원의 정보를 조회할 수 있다.")
-    public void findClubMemberById() throws Exception {
+    @DisplayName("관리자는 승인 대기중인 회원들을 승인할 수 있다.")
+    public void confirmAllByAdmin() throws Exception {
         //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createConfirmedClubMember(club, "member");
-        ReflectionTestUtils.setField(clubMember, "id", clubMemberId);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
+        given(clubMemberRepository.findAllById(unconfirmedClubMemberIds)).willReturn(unconfirmedClubMembers);
 
         //when
-        ClubMemberDto.Response responseDto = clubMemberService.findById(clubMemberId);
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
+        clubMemberService.confirmAll(adminId, requestDto);
 
         //then
-        assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
-        assertThat(responseDto.getId()).as("조회한 clubMemberId가 일치해야 한다.").isEqualTo(clubMemberId);
-        assertThat(responseDto.getName()).as("조회한 이름이 실제 회원의 이름과 일치해야 한다.").isEqualTo("member");
+        unconfirmedClubMembers.forEach(clubMember ->
+                assertThat(clubMember.isConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue()
+        );
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원의 정보를 조회하려 하면 NoSuchElementException")
-    public void findNotConfirmedClubMemberThenException() throws Exception {
+    @DisplayName("회원 관리 권한이 있는 매니저는 승인 대기중인 회원들을 승인할 수 있다.")
+    public void confirmAllByManagerHasMEMBER_ALL() throws Exception {
         //given
-        Long notConfirmedClubMemberId = 1L;
-        ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
-        given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
 
-        assert !notConfirmedClubMember.isConfirmed();
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
+        given(clubMemberRepository.findAllById(unconfirmedClubMemberIds)).willReturn(unconfirmedClubMembers);
 
         //when
-        //then
-        assertThatThrownBy(() -> clubMemberService.findById(notConfirmedClubMemberId))
-                .isInstanceOf(NoSuchElementException.class);
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
+        clubMemberService.confirmAll(managerId, requestDto);
 
+        //then
+        unconfirmedClubMembers.forEach(clubMember ->
+                assertThat(clubMember.isConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue()
+        );
     }
 
     @Test
-    @DisplayName("클럽 회원 조회시 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
-    public void findNotClubMemberThenException() throws Exception {
+    @DisplayName("회원 관리 권한이 없는 매니저가 승인 대기중인 회원을 승인하려 하면 IllegalStateException")
+    public void confirmAllByManagerNotHasMEMBER_ALLThenException() throws Exception {
         //given
-        Long wrongClubMemberId = 1L;
-        given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
+
+        assert !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findById(wrongClubMemberId))
-                .isInstanceOf(NoSuchElementException.class);
-    }
-
-    @Test
-    @DisplayName("사용자는 클럽회원의 이름과 부가정보를 수정할 수 있다.")
-    public void updateClubMember() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createConfirmedClubMember(club, "member");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        ClubMemberDto.Update updateDto = createUpdateDto(clubMemberId, "updatedMember", "updatedInfo");
-        ClubMemberDto.Response responseDto = clubMemberService.update(clubMemberId, updateDto);
-
-        //then
-        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
-        assertThat(responseDto.getName()).as("이름이 변경되어야 한다").isEqualTo("updatedMember");
-        assertThat(responseDto.getInfo()).as("부가정보가 변경되어야 한다").isEqualTo("updatedInfo");
-    }
-
-    @Test
-    @DisplayName("다른 클럽회원의 정보를 수정하려하면 IllegalStateException")
-    public void updateOtherClubMemberThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createConfirmedClubMember(club, "member");
-
-        //when
-        //then
-        ClubMemberDto.Update updateDto = createUpdateDto(2L, "updatedMember", "updatedInfo");
-        assertThatThrownBy(() -> clubMemberService.update(clubMemberId, updateDto))
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.confirmAll(managerId, requestDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원의 정보를 수정하려 하면 IllegalStateException")
-    public void updateNotConfirmedClubMemberThenException() throws Exception {
+    @DisplayName("일반 회원이 승인 대기중인 회원을 승인하려 하면 IllegalStateException")
+    public void confirmAllByUserThenException() throws Exception {
         //given
-        Long notConfirmedClubMemberId = 1L;
-        ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
-        given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, "clubMember");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
-        assert !notConfirmedClubMember.isConfirmed();
+        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
 
         //when
         //then
-        ClubMemberDto.Update updateDto = createUpdateDto(notConfirmedClubMemberId, "updatedMember", "updatedInfo");
-        assertThatThrownBy(() -> clubMemberService.update(notConfirmedClubMemberId, updateDto))
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.confirmAll(clubMemberId, requestDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("클럽회원 정보 수정시 클럽 회원의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
-    public void updateNotClubMemberThenException() throws Exception {
+    @DisplayName("회원 승인시 본인의 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void confirmAllByNotMemberThenException() throws Exception {
         //given
-        Long wrongClubMemberId = 1L;
-        given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
+        Long adminId = 1L;
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(null));
+
+        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
 
         //when
         //then
-        ClubMemberDto.Update updateDto = createUpdateDto(wrongClubMemberId, "updatedMember", "updatedInfo");
-        assertThatThrownBy(() -> clubMemberService.update(wrongClubMemberId, updateDto))
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.confirmAll(adminId, requestDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * leaveClub
+     */
     @Test
     @DisplayName("사용자가 클럽에서 탈퇴할 때 클럽회원 데이터가 삭제된다.")
     public void leaveClub() throws Exception {
@@ -494,7 +829,7 @@ public class ClubMemberServiceTests {
         clubMemberService.leaveClub(clubMemberId);
 
         //then
-        ClubMember deletedClubMember = captureClubMemberFromMockRepository();
+        ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("삭제된 회원은 실제 회원과 일치해야 한다.").isEqualTo(clubMember);
     }
 
@@ -525,6 +860,10 @@ public class ClubMemberServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * kickOut
+     */
     @Test
     @DisplayName("관리자는 임의의 클럽 회원을 퇴출할 수 있다.")
     public void kickOutByAdmin() throws Exception {
@@ -554,21 +893,21 @@ public class ClubMemberServiceTests {
         ClubMemberDto.Delete deleteDto1 = new ClubMemberDto.Delete(anotherAdminId);
         clubMemberService.kickOut(adminId, deleteDto1);
         //then
-        ClubMember deletedAdmin = captureClubMemberFromMockRepository();
+        ClubMember deletedAdmin = captureFromMockRepositoryWhenDelete();
         assertThat(deletedAdmin).as("퇴출된 관리자는 실제 관리자와 일치해야 한다").isEqualTo(anotherAdmin);
 
         //when
         ClubMemberDto.Delete deleteDto2 = new ClubMemberDto.Delete(managerId);
         clubMemberService.kickOut(adminId, deleteDto2);
         //then
-        ClubMember deletedManager = captureClubMemberFromMockRepository();
+        ClubMember deletedManager = captureFromMockRepositoryWhenDelete();
         assertThat(deletedManager).as("퇴출된 매니저는 실제 매니저와 일치해야 한다").isEqualTo(manager);
 
         //when
         ClubMemberDto.Delete deleteDto3 = new ClubMemberDto.Delete(clubMemberId);
         clubMemberService.kickOut(adminId, deleteDto3);
         //then
-        ClubMember deletedClubMember = captureClubMemberFromMockRepository();
+        ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("퇴출된 회원은 실제 회원과 일치해야 한다").isEqualTo(clubMember);
     }
 
@@ -598,14 +937,14 @@ public class ClubMemberServiceTests {
         ClubMemberDto.Delete deleteDto1 = new ClubMemberDto.Delete(anotherManagerId);
         clubMemberService.kickOut(managerId, deleteDto1);
         //then
-        ClubMember deletedManager = captureClubMemberFromMockRepository();
+        ClubMember deletedManager = captureFromMockRepositoryWhenDelete();
         assertThat(deletedManager).as("퇴출된 매니저는 실제 매니저와 일치해야 한다").isEqualTo(anotherManager);
 
         //when
         ClubMemberDto.Delete deleteDto2 = new ClubMemberDto.Delete(clubMemberId);
         clubMemberService.kickOut(managerId, deleteDto2);
         //then
-        ClubMember deletedClubMember = captureClubMemberFromMockRepository();
+        ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("퇴출된 회원은 실제 회원과 일치해야 한다").isEqualTo(clubMember);
     }
 
@@ -745,11 +1084,180 @@ public class ClubMemberServiceTests {
 
 
     /**
+     * kickOutAll
+     */
+    @Test
+    @DisplayName("관리자는 여러명의 회원을 한번에 퇴출할 수 있다.")
+    public void kickOutAllByAdmin() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+        given(clubMemberRepository.findAllById(clubMemberIds)).willReturn(clubMembers);
+
+        //when
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(adminId, deleteDto);
+
+        //then
+        assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDtoList.isEmpty()).as("모든 회원이 삭제되면 빈 리스트를 반환한다").isTrue();
+
+        List<ClubMember> deletedClubMembers = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedClubMembers).as("삭제된 회원들은 실제 회원과 일치해야 한다")
+                .containsAll(clubMembers);
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한이 있는 매니저는 여러 명의 회원을 한번에 퇴출할 수 있다.")
+    public void kickOutAllByManagerHasMEMBER_ALL() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+        given(clubMemberRepository.findAllById(clubMemberIds)).willReturn(clubMembers);
+
+        //when
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, deleteDto);
+
+        //then
+        assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDtoList.isEmpty()).as("모든 회원이 삭제되면 빈 리스트를 반환한다").isTrue();
+
+        List<ClubMember> deletedClubMembers = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedClubMembers).as("삭제된 회원들은 실제 회원과 일치해야 한다")
+                .containsAll(clubMembers);
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한이 없는 매니저가 다른 회원들을 퇴출하려하면 IllegalStateException")
+    public void kickOutAllByMangerNotHasMEMBER_ALLThenException() throws Exception {
+        //given
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+
+        assert !club.hasAuthority(ClubAuthorityType.MEMBER_ALL);
+
+        //when
+        //then
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(managerId, deleteDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("일반 회원이 다른 회원들을 퇴출하려하면 IllegalStateException")
+    public void kickOutAllByUserThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMemberAsManager("clubMembmer");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
+
+        //when
+        //then
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(clubMemberId, deleteDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("퇴출하려는 회원 중 퇴출이 불가능한 회원이 존재하면 이들을 제외한 회원들을 모두 퇴출한다.")
+    public void kickOutAllByAdminIncludeSelf() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<Long> clubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+
+        Long adminId = 5L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+
+        Long otherClubMemberId = 6L;
+        ClubMember otherClubMember = createClubMember(createClub("otherClub"), "otherClubMember");
+
+        List<Long> savedClubMemberIds = new ArrayList<>(clubMemberIds);
+        savedClubMemberIds.addAll(List.of(managerId, adminId, otherClubMemberId));
+        List<ClubMember> savedClubMembers = new ArrayList<>(clubMembers);
+        savedClubMembers.addAll(List.of(manager, admin, otherClubMember));
+
+        given(clubMemberRepository.findAllById(savedClubMemberIds)).willReturn(savedClubMembers);
+
+        assert club.hasAuthority(ClubAuthorityType.MEMBER_ALL);
+
+
+        //when
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(savedClubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, deleteDto);
+
+        //then
+        assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
+
+        List<String> responseNames = responseDtoList.stream().map(ClubMemberDto.Response::getName).toList();
+        assertThat(responseNames).as("삭제되지 않은 회원에는 본인, 관리자, 다른 클럽의 회원이 포함되어야 한다")
+                .containsExactlyInAnyOrder("manager", "admin", "otherClubMember");
+
+        List<ClubMember> deletedClubMembers = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedClubMembers).as("삭제된 회원들은 실제 회원과 일치해야 한다")
+                .containsAll(clubMembers);
+        assertThat(deletedClubMembers).as("본인, 관리자, 다른 클럽의 회원은 삭제되지 않아야 한다")
+                .doesNotContain(manager, admin, otherClubMember);
+    }
+
+    @Test
+    @DisplayName("여러명의 클럽 회원 퇴출 시 관리자/매니저의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void kickOutAllNotAdminThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(null));
+
+        Long clubMemberId = 2L;
+
+        //when
+        //then
+        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(List.of(clubMemberId));
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(adminId, deleteDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+
+
+    /**
      * Argument capture method
      */
-    private ClubMember captureClubMemberFromMockRepository() {
+    private ClubMember captureFromMockRepositoryWhenCreate() {
+        ArgumentCaptor<ClubMember> captor = ArgumentCaptor.forClass(ClubMember.class);
+        then(clubMemberRepository).should(atLeastOnce()).save(captor.capture());
+        return captor.getValue();
+    }
+
+    private ClubMember captureFromMockRepositoryWhenDelete() {
         ArgumentCaptor<ClubMember> captor = ArgumentCaptor.forClass(ClubMember.class);
         then(clubMemberRepository).should(atLeastOnce()).delete(captor.capture());
+        return captor.getValue();
+    }
+
+    private List<ClubMember> captureFromMockRepositoryWhenDeleteAll() {
+        ArgumentCaptor<List<ClubMember>> captor = ArgumentCaptor.forClass(List.class);
+        then(clubMemberRepository).should(atLeastOnce()).deleteAll(captor.capture());
         return captor.getValue();
     }
 
@@ -780,10 +1288,10 @@ public class ClubMemberServiceTests {
     /**
      * ClubMember util method
      */
-    private static List<ClubMember> createConfirmedClubMembers(Club club, int n) {
+    private static List<ClubMember> createConfirmedClubMembers(Club club, int n, String name) {
         List<ClubMember> clubMembers = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            ClubMember anotherClubMember = createConfirmedClubMember(club, "clubMember" + i);
+            ClubMember anotherClubMember = createConfirmedClubMember(club, name + i);
             clubMembers.add(anotherClubMember);
         }
         return clubMembers;
@@ -795,6 +1303,15 @@ public class ClubMemberServiceTests {
         return clubMember;
     }
 
+    private static List<ClubMember> createUnconfirmedClubMembers(Club club, int n, String name) {
+        List<ClubMember> unconfirmedClubMembers = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            ClubMember clubMember = createClubMember(club, name + i);
+            unconfirmedClubMembers.add(clubMember);
+        }
+        return unconfirmedClubMembers;
+    }
+
     private static ClubMember createClubMember(Club club, String name) {
         return ClubMember.builder()
                 .club(club)
@@ -804,7 +1321,7 @@ public class ClubMemberServiceTests {
     }
 
     private List<ClubMember> prepareClubMembersIncludeUnConfirmedMember(String unConfirmedMemberName) {
-        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3);
+        List<ClubMember> clubMembers = createConfirmedClubMembers(club, 3, "clubMember");
 
         ClubMember unConfirmedMember = createClubMember(club, unConfirmedMemberName);
         clubMembers.add(unConfirmedMember);
