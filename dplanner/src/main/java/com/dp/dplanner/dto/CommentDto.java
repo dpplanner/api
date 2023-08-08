@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CommentDto {
 
@@ -30,7 +29,7 @@ public class CommentDto {
                     .post(post)
                     .clubMember(clubMember)
                     .parent(parent)
-                    .content(this.getContent())
+                    .content(content)
                     .build();
         }
 
@@ -51,14 +50,10 @@ public class CommentDto {
         public static Response of(Comment comment) {
 
             Long parentId = null;
-            List<Response> children;
+            List<Response> children = new ArrayList<>();
             if (comment.getParent() != null) {
                 parentId = comment.getParent().getId();
-                children = new ArrayList<>();
-            }else{
-                children = comment.getChildren().stream().map(Response::of).collect(Collectors.toList());
             }
-
             return Response.builder()
                     .id(comment.getId())
                     .content(comment.getContent())

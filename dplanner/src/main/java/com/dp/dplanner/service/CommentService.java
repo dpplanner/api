@@ -40,10 +40,8 @@ public class CommentService {
             parent = commentRepository.findById(createDto.getParentId()).orElseThrow(RuntimeException::new);
             checkIsParent(parent, post.getId());
         }
-
         Comment savedComment = commentRepository.save(createDto.toEntity(clubMember, post, parent));
 
-        if(parent != null)  parent.addChildren(savedComment);
 
         return CommentDto.Response.of(savedComment);
     }

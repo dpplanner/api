@@ -134,10 +134,11 @@ public class CommentServiceTest {
 
     }
 
+
     @Test
     public void CommentService_CreateReplyComment_ReturnCommentResponseDto() {
 
-        Comment parent = createComment(clubMember, post, null,"parent");
+        Comment parent = createComment(clubMember, post, null, "parent");
         Long parentId = parent.getId();
 
         CommentDto.Create createDto = CommentDto.Create.builder()
@@ -146,29 +147,20 @@ public class CommentServiceTest {
                 .parentId(parentId)
                 .build();
 
-        Comment replyComment = Comment.builder()
-                .content("test")
-                .parent(parent)
-                .clubMember(clubMember)
-                .post(post)
-                .build();
-        ReflectionTestUtils.setField(replyComment,"id",commentId);
-
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(commentRepository.findById(parentId)).thenReturn(Optional.ofNullable(parent));
-        when(commentRepository.save(Mockito.any(Comment.class))).thenReturn(replyComment);
+        when(commentRepository.save(Mockito.any(Comment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CommentDto.Response createdComment = commentService.createComment(clubMemberId, createDto);
 
         assertThat(createdComment).isNotNull();
-        assertThat(createdComment.getId()).isEqualTo(commentId);
         assertThat(createdComment.getParentId()).isEqualTo(parentId);
         assertThat(createdComment.getClubMemberId()).isEqualTo(clubMember.getId());
         assertThat(createdComment.getContent()).isEqualTo("test");
         assertThat(createdComment.getChildren()).isEmpty();
         assertThat(parent.getChildren().size()).isEqualTo(1);
-        assertThat(parent.getChildren().get(0).getId()).isEqualTo(commentId);
+        assertThat(parent.getChildren().get(0).getContent()).isEqualTo("test");
     }
 
 
@@ -176,8 +168,8 @@ public class CommentServiceTest {
     @Test
     public void CommentService_GetCommentsByPostId_ReturnListCommentResponseDto(){
 
-        when(commentRepository.findCommentsUsingPostId(postId)).thenReturn(createComments());
-
+//        when(commentRepository.findCommentsUsingPostId(postId)).thenReturn(createComments());
+        doReturn(createComments()).when(commentRepository).findCommentsUsingPostId(postId);
         List<CommentDto.Response> commentsList =  commentService.getCommentsByPostId(postId);
 
         assertThat(commentsList.size()).isEqualTo(2);
