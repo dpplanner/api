@@ -39,11 +39,6 @@ public class CommentRepositoryTest {
                 .post(post)
                 .parent(parent)
                 .build();
-
-        if (parent != null) {
-            parent.addChildren(comment);
-        }
-
         return comment;
     }
 
@@ -83,6 +78,9 @@ public class CommentRepositoryTest {
         assertThat(savedComment.getId()).isGreaterThan(0L);
         assertThat(savedComment.getParent()).isNull();
 
+        assertThat(post.getComments().size()).isEqualTo(1);
+        assertThat(post.getComments().get(0)).isEqualTo(savedComment);
+
     }
 
     @Test
@@ -97,7 +95,8 @@ public class CommentRepositoryTest {
         assertThat(savedReplyComment).isNotNull();
         assertThat(savedReplyComment.getId()).isGreaterThan(0L);
         assertThat(savedReplyComment.getParent().getId()).isEqualTo(parentComment.getId());
-        assertThat(parentComment.getChildren().size()).isEqualTo(2L);
+        assertThat(parentComment.getChildren().size()).isEqualTo(2);
+        assertThat(post.getComments().size()).isEqualTo(3);
     }
 
     @Test

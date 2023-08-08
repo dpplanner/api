@@ -40,16 +40,22 @@ public class Comment extends BaseEntity{
 
     @Builder
     public Comment(ClubMember clubMember, Post post, Comment parent, String content) {
+        setPost(post);
+        if (parent != null) {
+            addChildren(parent);
+        }
         this.clubMember = clubMember;
-        this.post = post;
         this.parent = parent;
         this.content = content;
     }
 
-    public void addChildren(Comment child) {
-        this.getChildren().add(child);
-        child.parent = this;
-
+    private void setPost(Post post) {
+        post.getComments().add(this);
+        this.post = post;
+    }
+    private void addChildren(Comment parent) {
+        parent.getChildren().add(this);
+        this.parent = parent;
     }
 
 
