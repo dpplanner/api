@@ -55,6 +55,9 @@ public class ClubServiceTests {
         ReflectionTestUtils.setField(member, "id", memberId);
     }
 
+    /**
+     * createClub
+     */
     @Test
     @DisplayName("사용자는 클럽을 생성할 수 있음")
     public void createClub() throws Exception {
@@ -113,7 +116,11 @@ public class ClubServiceTests {
         assertThatThrownBy(() -> clubService.createClub(abstractMemberId, createDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
-    
+
+
+    /**
+     * findClubById
+     */
     @Test
     @DisplayName("사용자는 clubId로 클럽을 조회할 수 있음")
     public void findClubByClubId() throws Exception {
@@ -145,6 +152,10 @@ public class ClubServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * findMyClubs
+     */
     @Test
     @DisplayName("사용자는 자신이 속한 클럽들을 조회할 수 있음")
     public void findMyClub() throws Exception {
@@ -190,7 +201,11 @@ public class ClubServiceTests {
         assertThatThrownBy(() -> clubService.findMyClubs(abstractMemberId))
                 .isInstanceOf(NoSuchElementException.class);
     }
-    
+
+
+    /**
+     * updateClubInfo
+     */
     @Test
     @DisplayName("관리자는 자신의 클럽 정보를 수정할 수 있다.")
     public void updateClubInfoByAdmin() throws Exception {
@@ -284,6 +299,10 @@ public class ClubServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * setManagerAuthority
+     */
     @Test
     @DisplayName("일반 회원이 매니저의 권한을 설정하려 하면 IllegalStateException")
     public void setManagerAuthorityByUserThenException() throws Exception {
@@ -443,7 +462,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("관리자는 매니저의 권한을 변경할 수 있다.")
-    public void updateManagerAuthorityByAdmin() throws Exception {
+    public void setManagerAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
@@ -503,7 +522,11 @@ public class ClubServiceTests {
         assertThatThrownBy(() -> clubService.setManagerAuthority(clubMemberId, updateDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
-    
+
+
+    /**
+     * findClubManagerAuthorities
+     */
     @Test
     @DisplayName("관리자는 자신이 속한 클럽의 매니저 권한을 확인할 수 있다.")
     public void findManagerAuthoritiesByAdmin() throws Exception {
@@ -601,6 +624,10 @@ public class ClubServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * inviteClub
+     */
     @Test
     @DisplayName("관리자는 다른 회원을 초대하기 위한 초대코드를 만들 수 있다.")
     public void inviteClubByAdmin() throws Exception {
@@ -692,6 +719,10 @@ public class ClubServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * joinClub
+     */
     @Test
     @DisplayName("초대코드가 있는 회원은 클럽에 가입할 수 있다.")
     public void joinClub() throws Exception {
@@ -769,6 +800,8 @@ public class ClubServiceTests {
         assertThatThrownBy(() -> clubService.joinClub(memberId, inviteDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
+
+
 
 
     /**
