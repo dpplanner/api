@@ -1,12 +1,16 @@
 package com.dp.dplanner.domain;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 @Entity
 @Getter
-public class Attachment extends BaseEntity{
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Attachment extends BaseEntity {
 
 
     @Id
@@ -19,4 +23,17 @@ public class Attachment extends BaseEntity{
 
     String url;
     FileType type;
+
+    @Builder
+    public Attachment(Post post, String url, FileType type) {
+        setPost(post);
+        this.url = url;
+        this.type = type;
+    }
+
+    private void setPost(Post post) {
+        this.post = post;
+        post.getAttachments().add(this);
+    }
+
 }
