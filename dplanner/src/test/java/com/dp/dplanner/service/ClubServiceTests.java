@@ -5,10 +5,13 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
+import com.dp.dplanner.dto.ClubMemberDto;
+import com.dp.dplanner.dto.InviteDto;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.util.InviteCodeGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,7 +57,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("사용자는 클럽을 생성할 수 있음")
-    public void createClubSuccess() throws Exception {
+    public void createClub() throws Exception {
         //given
         given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(member));
         given(clubRepository.save(any(Club.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -598,10 +601,174 @@ public class ClubServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+    @Test
+    @DisplayName("관리자는 다른 회원을 초대하기 위한 초대코드를 만들 수 있다.")
+    public void inviteClubByAdmin() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
 
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin(club);
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
 
+        //when
+        InviteDto inviteDto = clubService.inviteClub(adminId);
 
+        //then
+        assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(inviteDto.getClubId()).as("초대하는 클럽의 id가 일치해야 한다").isEqualTo(clubId);
+        assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
+    }
 
+    @Test
+    @DisplayName("회원 관리 권한을 가진 매니저는 다른 회원을 초대하기 위한 초대코드를 만들 수 있다.")
+    public void inviteClubByMangerHasMEMBER_ALL() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMember(club, member);
+        manager.setManager();
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        //when
+        InviteDto inviteDto = clubService.inviteClub(managerId);
+
+        //then
+        assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(inviteDto.getClubId()).as("초대하는 클럽의 id가 일치해야 한다").isEqualTo(clubId);
+        assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한이 없는 매니저가 초대코드를 만드려고 하면 IllegalStateException")
+    public void inviteClubByMangerNotHasMEMBER_ALLThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMember(club, member);
+        manager.setManager();
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        assert !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
+        //when
+        //then
+        assertThatThrownBy(() -> clubService.inviteClub(managerId))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("일반 회원이 초대코드를 만드려고 하면 IllegalStateException")
+    public void inviteClubByMangerUserThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createClubMember(club, member);
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubService.inviteClub(clubMemberId))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("초대코드 생성 시 본인의 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void inviteClubByNotClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubService.inviteClub(adminId))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("초대코드가 있는 회원은 클럽에 가입할 수 있다.")
+    public void joinClub() throws Exception {
+        //given
+        given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(member));
+
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
+
+        given(clubMemberRepository.save(any(ClubMember.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        String inviteCode = InviteCodeGenerator.generateInviteCode("club"); // seed = clubName
+
+        //when
+        InviteDto inviteDto = new InviteDto(clubId, inviteCode);
+        ClubMemberDto.Response responseDto = clubService.joinClub(memberId, inviteDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+
+        ClubMember clubMember = captureClubMemberFromMockRepository();
+        assertThat(clubMember).as("클럽 회원으로 등록되어야 한다").isNotNull();
+        assertThat(clubMember.getMember()).as("클럽 회원은 member와 매핑되어야 한다").isEqualTo(member);
+        assertThat(clubMember.getClub()).as("클럽 회원은 club과 매핑되어야 한다").isEqualTo(club);
+        assertThat(clubMember.getRole()).as("클럽 회원은 최초에 USER 역할을 가진다").isEqualTo(ClubRole.USER);
+        assertThat(clubMember.isConfirmed()).as("클럽 회원은 승인 대기 상태여야 한다").isFalse();
+    }
+
+    @Test
+    @DisplayName("초대코드가 일치하지 않으면 IllegalStateException")
+    public void joinClubWithInvalidInviteCodeThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
+
+        String inviteCode = InviteCodeGenerator.generateInviteCode("invalidSeed");
+
+        //when
+        InviteDto inviteDto = new InviteDto(clubId, inviteCode);
+        assertThatThrownBy(() -> clubService.joinClub(memberId, inviteDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("가입하려는 클럽이 없으면 NoSuchElementException")
+    public void joinNotClubThenException() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        InviteDto inviteDto = new InviteDto(clubId, "inviteCode");
+        assertThatThrownBy(() -> clubService.joinClub(memberId, inviteDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("클럽 가입시 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    public void joinClubWithNotMemberThenException() throws Exception {
+        //given
+        given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(null));
+
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
+
+        String inviteCode = InviteCodeGenerator.generateInviteCode("club"); // seed = clubName
+
+        //when
+        //then
+        InviteDto inviteDto = new InviteDto(clubId, inviteCode);
+        assertThatThrownBy(() -> clubService.joinClub(memberId, inviteDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
 
 
     /**
