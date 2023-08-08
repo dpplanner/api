@@ -4,6 +4,8 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
+import com.dp.dplanner.dto.ClubMemberDto;
+import com.dp.dplanner.dto.InviteDto;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -12,11 +14,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import static com.dp.dplanner.domain.club.ClubRole.*;
+import static com.dp.dplanner.util.InviteCodeGenerator.*;
 
 @Log4j2
 @Service
@@ -26,7 +29,6 @@ public class ClubService {
     private final MemberRepository memberRepository;
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
-
     private final ClubAuthorityRepository clubAuthorityRepository;
 
 
@@ -70,7 +72,7 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!isValidRequest(clubMember, updateDto.getClubId())) {
+        if (!isSameClub(clubMember, updateDto.getClubId())) {
             throw new IllegalStateException();
         }
 
@@ -85,13 +87,12 @@ public class ClubService {
     public void setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto)
             throws IllegalStateException, NoSuchElementException {
 
-        //TODO clubMemberId를 dto에 담아서 받을까?
         List<ClubAuthorityType> authorities = updateDto.toClubAuthorityTypeList();
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!isValidRequest(clubMember, updateDto.getClubId())) {
+        if (!isSameClub(clubMember, updateDto.getClubId())) {
             throw new IllegalStateException();
         }
 
@@ -111,7 +112,7 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!isValidRequest(clubMember, requestDto.getClubId())) {
+        if (!isSameClub(clubMember, requestDto.getClubId())) {
             throw new IllegalStateException();
         }
 
@@ -122,19 +123,69 @@ public class ClubService {
         return ClubAuthorityDto.Response.of(clubMember.getClub());
     }
 
+    public InviteDto inviteClub(Long managerId)
+            throws NoSuchAlgorithmException, IllegalStateException, NoSuchElementException {
+
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
+
+            Club club = manager.getClub();
+            String seed = club.getClubName();
+
+            String inviteCode = generateInviteCode(seed);
+
+            return new InviteDto(club.getId(), inviteCode);
+        } else {
+            throw new IllegalStateException();
+        }
+
+    }
+
+    public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto)
+            throws NoSuchAlgorithmException, IllegalStateException, NoSuchElementException {
+
+        Club club = clubRepository.findById(inviteDto.getClubId())
+                .orElseThrow(NoSuchElementException::new);
+        String seed = club.getClubName();
+
+        if (verify(seed, inviteDto.getInviteCode())) {
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(NoSuchElementException::new);
+
+            ClubMember clubMember = createClubMember(member, club);
+            clubMemberRepository.save(clubMember);
+
+            return ClubMemberDto.Response.of(clubMember);
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+
 
     /**
      * utility methods
      */
     private static ClubMember joinClubAsAdmin(Member member, Club club) {
-        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
+        ClubMember clubMember = createClubMember(member, club);
         clubMember.setAdmin();
         clubMember.confirm();
         return clubMember;
     }
 
-    private static boolean isValidRequest(ClubMember clubMember, Long requestClubId) {
+    private static ClubMember createClubMember(Member member, Club club) {
+        return ClubMember.builder().club(club).member(member).build();
+    }
+
+    private static boolean isSameClub(ClubMember clubMember, Long requestClubId) {
         return requestClubId.equals(clubMember.getClub().getId());
+    }
+
+    private static boolean isMemberManager(ClubMember manager) {
+        return manager.checkRoleIs(MANAGER)
+                && manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
     }
 
 }
