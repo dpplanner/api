@@ -1,4 +1,4 @@
-package com.dp.dplanner.service_repository;
+package com.dp.dplanner.integration;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
-public class ClubServiceRepositoryIntegrationTests {
+public class ClubServiceIntegrationTests {
 
     @Autowired
     ClubAuthorityRepository clubAuthorityRepository;
@@ -76,4 +76,6 @@ public class ClubServiceRepositoryIntegrationTests {
         assertThat(authorityTypes).as("회원 권한과 스케줄 권한이 포함되지 않아야 함")
                 .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.SCHEDULE_ALL);
     }
+
+
 }

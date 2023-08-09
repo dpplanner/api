@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubAuthorityDto;
@@ -14,10 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
 import static com.dp.dplanner.util.InviteCodeGenerator.*;
 
@@ -123,28 +124,24 @@ public class ClubService {
         return ClubAuthorityDto.Response.of(clubMember.getClub());
     }
 
+    @RequiredAuthority(MEMBER_ALL)
     public InviteDto inviteClub(Long managerId)
-            throws NoSuchAlgorithmException, IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
+        Club club = manager.getClub();
+        String seed = club.getClubName();
 
-            Club club = manager.getClub();
-            String seed = club.getClubName();
+        String inviteCode = generateInviteCode(seed);
 
-            String inviteCode = generateInviteCode(seed);
-
-            return new InviteDto(club.getId(), inviteCode);
-        } else {
-            throw new IllegalStateException();
-        }
-
+        return new InviteDto(club.getId(), inviteCode);
     }
 
+
     public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto)
-            throws NoSuchAlgorithmException, IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         Club club = clubRepository.findById(inviteDto.getClubId())
                 .orElseThrow(NoSuchElementException::new);
@@ -181,11 +178,6 @@ public class ClubService {
 
     private static boolean isSameClub(ClubMember clubMember, Long requestClubId) {
         return requestClubId.equals(clubMember.getClub().getId());
-    }
-
-    private static boolean isMemberManager(ClubMember manager) {
-        return manager.checkRoleIs(MANAGER)
-                && manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
     }
 
 }

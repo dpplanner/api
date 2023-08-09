@@ -13,6 +13,7 @@ import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.util.InviteCodeGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -672,6 +673,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("회원 관리 권한이 없는 매니저가 초대코드를 만드려고 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void inviteClubByMangerNotHasMEMBER_ALLThenException() throws Exception {
         //given
         Long clubId = 1L;
@@ -691,12 +693,13 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("일반 회원이 초대코드를 만드려고 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void inviteClubByMangerUserThenException() throws Exception {
         //given
         Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
 
         Long clubMemberId = 1L;
+        Club club = createClub(clubId, "club", null);
         ClubMember clubMember = createClubMember(club, member);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 

@@ -280,20 +280,6 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 회원을 조회하려 하면 NoSuchElementException")
-    @Disabled("clubMemberId 사용으로 전환하면서 이런 경우가 생기지 않음")
-    public void findOtherClubMemberThenException() throws Exception {
-//        //given
-//        Long otherClubId = 2L;
-//        given(clubMemberRepository.findByClubIdAndMemberId(otherClubId, memberId)).willReturn(Optional.ofNullable(null));
-//
-//        //when
-//        //then
-//        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(otherClubId, memberId))
-//                .isInstanceOf(NoSuchElementException.class);
-    }
-
-    @Test
     @DisplayName("승인되지 않은 회원이 클럽 회원을 조회하려 하면 IllegalStateException")
     public void findMyClubMembersByNotConfirmedMemberThenException() throws Exception {
         //given
@@ -384,6 +370,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("회원 관리 권한이 없는 매니저가 승인되지 않은 회원들을 조회하려 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void findUnconfirmedClubMembersByManagerNotHasMEMBER_ALLThenException() throws Exception {
         //given
         Long managerId = 1L;
@@ -399,6 +386,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("일반 회원이 승인되지 않은 회원들을 조회하려 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void findUnconfirmedClubMembersByUserThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -763,6 +751,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("회원 관리 권한이 없는 매니저가 승인 대기중인 회원을 승인하려 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void confirmAllByManagerNotHasMEMBER_ALLThenException() throws Exception {
         //given
         Long managerId = 1L;
@@ -782,6 +771,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("일반 회원이 승인 대기중인 회원을 승인하려 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void confirmAllByUserThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -974,6 +964,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("회원 관리 권한이 없는 매니저가 클럽 회원을 퇴출하려 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void kickOutByManagerNotHasMEMBER_ALLThenException() throws Exception {
         //given
         Long managerId = 1L;
@@ -995,6 +986,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("일반 회원이 다른 회원을 퇴출하려 하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void kickOutByUserThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -1140,6 +1132,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("회원 관리 권한이 없는 매니저가 다른 회원들을 퇴출하려하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void kickOutAllByMangerNotHasMEMBER_ALLThenException() throws Exception {
         //given
         Long managerId = 1L;
@@ -1159,10 +1152,11 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("일반 회원이 다른 회원들을 퇴출하려하면 IllegalStateException")
+    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
     public void kickOutAllByUserThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMemberAsManager("clubMembmer");
+        ClubMember clubMember = createClubMemberAsManager("clubMember");
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         List<Long> clubMemberIds = List.of(2L, 3L, 4L);
@@ -1237,6 +1231,68 @@ public class ClubMemberServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * hasAuthority
+     */
+    @Test
+    @DisplayName("관리자나 매니저가 해당 권한이 있으면 True")
+    public void hasAuthorityThenTrue() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long managerId = 2L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        //when
+        boolean authorizedAdmin = clubMemberService.hasAuthority(adminId, ClubAuthorityType.MEMBER_ALL);
+        boolean authorizedManager = clubMemberService.hasAuthority(managerId, ClubAuthorityType.MEMBER_ALL);
+
+        //then
+        assertThat(authorizedAdmin).as("관리자는 모든 권한이 있어야 한다").isTrue();
+        assertThat(authorizedManager).as("매니저는 클럽에 설정된 권한이 있어야 한다").isTrue();
+    }
+
+    @Test
+    @DisplayName("매니저가 해당 권한이 없거나 일반회원이면 False")
+    public void hasNotAuthorityThenFalse() throws Exception {
+        //given
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        assert !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
+
+        Long clubMemberId = 2L;
+        ClubMember clubMember = createConfirmedClubMember(club, "clubMember");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        boolean unauthorizedManager = clubMemberService.hasAuthority(managerId, ClubAuthorityType.MEMBER_ALL);
+        boolean unauthorizedClubMember = clubMemberService.hasAuthority(clubMemberId, ClubAuthorityType.MEMBER_ALL);
+
+        //then
+        assertThat(unauthorizedManager).as("권한이 부여되지 않은 매니저는 접근 권한이 없어야 한다").isFalse();
+        assertThat(unauthorizedClubMember).as("일반 회원은 접근 권한이 없어야 한다").isFalse();
+    }
+
+    @Test
+    @DisplayName("클럽 회원 데이터가 없는 경우 NoSuchElementException")
+    public void hasAuthorityWithNotClubMemberThenException() throws Exception {
+        //given
+        Long wrongClubMemberId = 1L;
+        given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        assertThatThrownBy(() -> clubMemberService.hasAuthority(wrongClubMemberId, ClubAuthorityType.MEMBER_ALL))
+                .isInstanceOf(NoSuchElementException.class);
+    }
 
 
 
