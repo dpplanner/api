@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
@@ -74,7 +75,7 @@ public class ClubMemberService {
         Club club = clubMember.getClub();
 
         List<ClubMember> clubMembers;
-        if (clubMember.checkRoleIs(ADMIN) || isMemberManager(clubMember)) {
+        if (clubMember.checkRoleIs(ADMIN) || isAuthorizedManager(clubMember, MEMBER_ALL)) {
             clubMembers = clubMemberRepository.findAllByClub(club);
         } else {
             clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
@@ -83,23 +84,17 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(clubMembers);
     }
 
+    @RequiredAuthority(MEMBER_ALL)
     public List<ClubMemberDto.Response> findUnconfirmedClubMembers(Long managerId)
             throws IllegalStateException, NoSuchElementException {
+
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
 
+        List<ClubMember> unconfirmedClubMember = clubMemberRepository
+                .findAllUnconfirmedClubMemberByClub(manager.getClub());
 
-        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
-
-            List<ClubMember> unconfirmedClubMember = clubMemberRepository
-                    .findAllUnconfirmedClubMemberByClub(manager.getClub());
-
-            return ClubMemberDto.Response.ofList(unconfirmedClubMember);
-
-        } else {
-            throw new IllegalStateException();
-        }
-
+        return ClubMemberDto.Response.ofList(unconfirmedClubMember);
     }
 
     public ClubMemberDto.Response update(Long clubMemberId, ClubMemberDto.Update updateDto)
@@ -146,20 +141,19 @@ public class ClubMemberService {
         }
     }
 
+    @RequiredAuthority(MEMBER_ALL)
     public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto)
             throws IllegalStateException, NoSuchElementException{
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
-            List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
-            List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
+        List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
+        List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
 
-            unconfirmedClubMembers.forEach(ClubMember::confirm);
-        } else {
-            throw new IllegalStateException();
-        }
+        //TODO 클럽 검증
+
+        unconfirmedClubMembers.forEach(ClubMember::confirm);
     }
 
     public void leaveClub(Long clubMemberId) throws IllegalStateException, NoSuchElementException {
@@ -173,51 +167,54 @@ public class ClubMemberService {
         clubMemberRepository.delete(clubMember);
     }
 
+    @RequiredAuthority(MEMBER_ALL)
     public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto)
             throws IllegalStateException, NoSuchElementException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
-            ClubMember clubMember = clubMemberRepository.findById(deleteDto.getId())
-                    .orElseThrow(NoSuchElementException::new);
+        ClubMember clubMember = clubMemberRepository.findById(deleteDto.getId())
+                .orElseThrow(NoSuchElementException::new);
 
-            if (invalidKickOutRequest(manager, clubMember)) {
-                throw new IllegalStateException();
-            }
-
-            clubMemberRepository.delete(clubMember);
-        } else {
+        if (invalidKickOutRequest(manager, clubMember)) {
             throw new IllegalStateException();
         }
 
+        clubMemberRepository.delete(clubMember);
+
     }
 
+    @RequiredAuthority(MEMBER_ALL)
     public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Delete> deleteDto)
             throws IllegalStateException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (manager.checkRoleIs(ADMIN) || isMemberManager(manager)) {
-            List<Long> requestIds = deleteDto.stream().map(ClubMemberDto.Delete::getId).toList();
-            List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
+        List<Long> requestIds = deleteDto.stream().map(ClubMemberDto.Delete::getId).toList();
+        List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
 
-            List<ClubMember> deletedClubMembers = clubMembers.stream()
-                    .filter(clubMember -> !invalidKickOutRequest(manager, clubMember))
-                    .toList();
+        List<ClubMember> deletedClubMembers = clubMembers.stream()
+                .filter(clubMember -> !invalidKickOutRequest(manager, clubMember))
+                .toList();
 
-            clubMemberRepository.deleteAll(deletedClubMembers);
+        clubMemberRepository.deleteAll(deletedClubMembers);
 
-            clubMembers.removeAll(deletedClubMembers);
+        clubMembers.removeAll(deletedClubMembers);
 
-            return ClubMemberDto.Response.ofList(clubMembers);
-
-        } else {
-            throw new IllegalStateException();
-        }
+        return ClubMemberDto.Response.ofList(clubMembers);
     }
+
+    public boolean hasAuthority(Long clubMemberId, ClubAuthorityType authority)
+            throws NoSuchElementException{
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(NoSuchElementException::new);
+
+        return clubMember.checkRoleIs(ADMIN) || isAuthorizedManager(clubMember, authority);
+    }
+
 
 
     /**
@@ -227,9 +224,9 @@ public class ClubMemberService {
         return clubMember.getClub().equals(memberManager.getClub());
     }
 
-    private static boolean isMemberManager(ClubMember clubMember) {
+    private static boolean isAuthorizedManager(ClubMember clubMember, ClubAuthorityType authority) {
         return clubMember.checkRoleIs(MANAGER) &&
-                clubMember.getClub().hasAuthority(MEMBER_ALL);
+                clubMember.getClub().hasAuthority(authority);
     }
 
     private static boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
@@ -242,11 +239,10 @@ public class ClubMemberService {
             return true;
         }
 
-        if ((isMemberManager(manager) && clubMember.checkRoleIs(ADMIN))) {
+        if ((isAuthorizedManager(manager, MEMBER_ALL) && clubMember.checkRoleIs(ADMIN))) {
             return true;
         }
 
         return false;
     }
-
 }
