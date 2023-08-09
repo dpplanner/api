@@ -5,7 +5,6 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.club.ClubRole;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,23 +48,6 @@ class ClubMemberRepositoryTest {
         assertThat(savedClubMember.getMember()).isEqualTo(member);
         assertThat(savedClubMember.getIsConfirmed()).as("관리자의 승인 전까지 isConfirmed는 false").isFalse();
         assertThat(savedClubMember.getRole()).as("clubMember는 기본적으로 USER 권한").isEqualTo(ClubRole.USER);
-    }
-
-    @Test
-    @DisplayName("club과 member로 clubMember조회")
-    @Disabled("아직 사용되지 않음")
-    public void findByClubAndMember() throws Exception {
-        //given
-        ClubMember clubMember = ClubMember.builder().member(member).club(club).build();
-        ClubMember savedClubMember = testEntityManager.persist(clubMember);
-
-        //when
-        ClubMember findClubMember = clubMemberRepository.findByClubAndMember(club, member).orElse(null);
-
-        //then
-        assertThat(findClubMember.getId()).isEqualTo(savedClubMember.getId());
-        assertThat(findClubMember.getClub()).isEqualTo(club);
-        assertThat(findClubMember.getMember()).isEqualTo(member);
     }
 
     @Test

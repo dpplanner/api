@@ -1,6 +1,5 @@
 package com.dp.dplanner.repository;
 
-import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
-    Optional<ClubMember> findByClubAndMember(Club club, Member member);
 
     Optional<ClubMember> findByClubIdAndMemberId(Long clubId, Long memberId);
 
