@@ -21,10 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PostRepositoryTest {
 
     @Autowired
-    private PostRepository postRepository;
+    PostRepository postRepository;
 
     @Autowired
-    private TestEntityManager testEntityManager;
+    TestEntityManager testEntityManager;
 
     private Club club;
     private Member member;

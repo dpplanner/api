@@ -21,10 +21,10 @@ public class ResourceRepositoryTest {
 
 
     @Autowired
-    private ResourceRepository resourceRepository;
+    ResourceRepository resourceRepository;
 
     @Autowired
-    private TestEntityManager testEntityManager;
+    TestEntityManager testEntityManager;
 
     Club club;
     private Resource createResource() {

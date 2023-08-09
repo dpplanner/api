@@ -22,9 +22,9 @@ public class CommentRepositoryTest {
 
 
     @Autowired
-    private CommentRepository commentRepository;
+    CommentRepository commentRepository;
     @Autowired
-    private TestEntityManager testEntityManager;
+    TestEntityManager testEntityManager;
 
 
     Club club;

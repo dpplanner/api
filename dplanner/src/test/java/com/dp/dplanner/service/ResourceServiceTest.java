@@ -29,13 +29,13 @@ import static org.mockito.Mockito.when;
 public class ResourceServiceTest {
 
     @Mock
-    private  ClubMemberRepository clubMemberRepository;
+    ClubMemberRepository clubMemberRepository;
     @Mock
-    private  ClubRepository clubRepository;
+    ClubRepository clubRepository;
     @Mock
-    private ResourceRepository resourceRepository;
+    ResourceRepository resourceRepository;
     @InjectMocks
-    private ResourceService resourceService;
+    ResourceService resourceService;
 
     Member member;
     Club club;

@@ -29,14 +29,14 @@ import static org.mockito.Mockito.when;
 public class AttachmentServiceTest {
 
     @Mock
-    private AttachmentRepository attachmentRepository;
+    AttachmentRepository attachmentRepository;
     @Mock
-    private PostRepository postRepository;
+    PostRepository postRepository;
     @Mock
-    private UploadService uploadService;
+    UploadService uploadService;
 
     @InjectMocks
-    private AttachmentService attachmentService;
+    AttachmentService attachmentService;
 
     Post post;
     Long postId;

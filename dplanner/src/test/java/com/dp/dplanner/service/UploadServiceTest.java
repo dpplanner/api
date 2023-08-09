@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 public class UploadServiceTest {
 
     @InjectMocks
-    private UploadService uploadService = new UploadServiceImpl();
+    UploadService uploadService = new UploadServiceImpl();
 
     @Test
     public void UploadService_init_ReturnVoid() {

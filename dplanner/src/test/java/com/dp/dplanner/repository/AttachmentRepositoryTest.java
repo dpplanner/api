@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AttachmentRepositoryTest {
 
     @Autowired
-    private AttachmentRepository attachmentRepository;
+    AttachmentRepository attachmentRepository;
     @Autowired
-    private TestEntityManager testEntityManager;
+    TestEntityManager testEntityManager;
 
     Member member;
     Club club;
