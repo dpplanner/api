@@ -3,6 +3,7 @@ package com.dp.dplanner.domain;
 import com.dp.dplanner.domain.club.Club;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -34,4 +35,15 @@ public class Resource extends BaseEntity{
     @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
     private List<Reservation> reservations = new ArrayList<>();
 
+    @Builder
+    public Resource(String name, String info, Club club) {
+        this.name = name;
+        this.info = info;
+        this.club = club; // 양방향 연관관계는 아니기 때문에 연관관계 메서드 사용 X
+    }
+
+    public void update(String name, String info) {
+        this.name = name;
+        this.info = info;
+    }
 }
