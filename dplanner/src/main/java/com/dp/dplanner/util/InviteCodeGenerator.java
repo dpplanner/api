@@ -4,16 +4,21 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class InviteCodeGenerator {
-    public static String generateInviteCode(String seed) throws NoSuchAlgorithmException {
+    public static String generateInviteCode(String seed) {
         return encrypt(seed);
     }
 
-    public static boolean verify(String seed, String inviteCode) throws NoSuchAlgorithmException {
+    public static boolean verify(String seed, String inviteCode) {
         return inviteCode.equals(encrypt(seed));
     }
 
-    private static String encrypt(String text) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
+    private static String encrypt(String text) {
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException();
+        }
         md.update(text.getBytes());
 
         return bytesToHex(md.digest());
