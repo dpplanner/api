@@ -32,14 +32,14 @@ import static org.mockito.Mockito.when;
 public class PostServiceTest {
 
     @Mock
-    private PostRepository postRepository;
+    PostRepository postRepository;
     @Mock
-    private ClubRepository clubRepository;
+    ClubRepository clubRepository;
     @Mock
-    private PostMemberLikeRepository postMemberLikeRepository;
+    PostMemberLikeRepository postMemberLikeRepository;
 
     @Mock
-    private ClubMemberRepository clubMemberRepository;
+    ClubMemberRepository clubMemberRepository;
 
     @InjectMocks
     private PostService postService;

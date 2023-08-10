@@ -2,6 +2,7 @@ package com.dp.dplanner.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -24,4 +25,18 @@ public class Lock extends BaseEntity{
     @Embedded
     private Period period;
 
+    @Builder
+    public Lock(Resource resource, Period period) {
+        setResource(resource);
+        this.period = period;
+    }
+
+    private void setResource(Resource resource) {
+        this.resource = resource;
+        resource.getLocks().add(this);
+    }
+
+    public void update(Period period) {
+        this.period = period;
+    }
 }

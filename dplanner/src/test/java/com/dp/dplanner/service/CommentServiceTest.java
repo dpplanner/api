@@ -32,16 +32,16 @@ import static org.mockito.Mockito.*;
 public class CommentServiceTest {
 
     @Mock
-    private CommentRepository commentRepository;
+    CommentRepository commentRepository;
     @Mock
-    private PostRepository postRepository;
+    PostRepository postRepository;
     @Mock
-    private ClubMemberRepository clubMemberRepository;
+    ClubMemberRepository clubMemberRepository;
 
     @Mock
-    private CommentMemberLikeRepository commentMemberLikeRepository;
+    CommentMemberLikeRepository commentMemberLikeRepository;
     @InjectMocks
-    private CommentService commentService;
+    CommentService commentService;
 
     Member member;
     Post post;
