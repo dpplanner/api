@@ -17,7 +17,15 @@ public class Period{
     }
 
     public Period(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+
+        check(startDateTime, endDateTime);
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
+    }
+
+    private void check(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        if (startDateTime.isAfter(endDateTime) || startDateTime.equals(endDateTime)) {
+            throw new RuntimeException();
+        }
     }
 }
