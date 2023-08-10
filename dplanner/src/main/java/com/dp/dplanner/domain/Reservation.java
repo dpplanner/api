@@ -1,7 +1,9 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,7 +25,7 @@ public class Reservation extends BaseEntity{
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "member_id")
-    private Member member;
+    private ClubMember clubMember;
 
     @Embedded
     private Period period;
@@ -34,4 +36,21 @@ public class Reservation extends BaseEntity{
 
     private boolean isConfirmed;
 
+    @Builder
+    public Reservation(Resource resource, ClubMember clubMember, Period period, boolean sharing, String title, String usage) {
+        setResource(resource);
+        this.clubMember = clubMember;
+        this.period = period;
+        this.sharing = sharing;
+        this.title = title;
+        this.usage = usage;
+    }
+
+    private void setResource(Resource resource) {
+        this.resource = resource;
+        resource.getReservations().add(this);
+    }
+    public void confirm() {
+        this.isConfirmed = true;
+    }
 }
