@@ -17,4 +17,6 @@ public interface LockRepository extends JpaRepository<Lock, Long> {
             "order by l.period.startDateTime asc , l.period.endDateTime asc")
     List<Lock> findLocksBetween(@Param(value = "start") LocalDateTime start, @Param(value = "end") LocalDateTime end,@Param(value = "resourceId") Long resourceId);
 
+
+    boolean existsBetween(@Param(value = "start") LocalDateTime start, @Param(value = "end") LocalDateTime end,@Param(value = "resourceId") Long resourceId);
 }

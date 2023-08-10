@@ -75,7 +75,7 @@ public class ClubMemberService {
         Club club = clubMember.getClub();
 
         List<ClubMember> clubMembers;
-        if (clubMember.checkRoleIs(ADMIN) || isAuthorizedManager(clubMember, MEMBER_ALL)) {
+        if (clubMember.hasAuthority(MEMBER_ALL)) {
             clubMembers = clubMemberRepository.findAllByClub(club);
         } else {
             clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
@@ -131,7 +131,7 @@ public class ClubMemberService {
             ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                     .orElseThrow(NoSuchElementException::new);
 
-            if (!clubMember.isConfirmed() || !isSameClubMember(admin, clubMember)) {
+            if (!clubMember.isConfirmed() || !clubMember.isSameClub(admin)) {
                 throw new IllegalStateException();
             }
 
@@ -212,7 +212,7 @@ public class ClubMemberService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        return clubMember.checkRoleIs(ADMIN) || isAuthorizedManager(clubMember, authority);
+        return clubMember.hasAuthority(authority);
     }
 
 
@@ -220,29 +220,24 @@ public class ClubMemberService {
     /**
      * utility methods
      */
-    private static boolean isSameClubMember(ClubMember memberManager, ClubMember clubMember) {
-        return clubMember.getClub().equals(memberManager.getClub());
-    }
-
-    private static boolean isAuthorizedManager(ClubMember clubMember, ClubAuthorityType authority) {
-        return clubMember.checkRoleIs(MANAGER) &&
-                clubMember.getClub().hasAuthority(authority);
-    }
-
     private static boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
 
         if (clubMember.equals(manager)) {
             return true;
         }
 
-        if (!isSameClubMember(manager, clubMember)) {
+        if (!manager.isSameClub(clubMember)) {
             return true;
         }
 
-        if ((isAuthorizedManager(manager, MEMBER_ALL) && clubMember.checkRoleIs(ADMIN))) {
+        if ((isMemberManager(manager) && clubMember.checkRoleIs(ADMIN))) {
             return true;
         }
 
         return false;
+    }
+
+    private static boolean isMemberManager(ClubMember clubMember) {
+        return clubMember.checkRoleIs(MANAGER) && clubMember.hasAuthority(MEMBER_ALL);
     }
 }

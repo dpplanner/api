@@ -73,7 +73,7 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!isSameClub(clubMember, updateDto.getClubId())) {
+        if (!clubMember.isSameClub(updateDto.getClubId())) {
             throw new IllegalStateException();
         }
 
@@ -93,7 +93,7 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!isSameClub(clubMember, updateDto.getClubId())) {
+        if (!clubMember.isSameClub(updateDto.getClubId())) {
             throw new IllegalStateException();
         }
 
@@ -113,7 +113,7 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!isSameClub(clubMember, requestDto.getClubId())) {
+        if (!clubMember.isSameClub(requestDto.getClubId())) {
             throw new IllegalStateException();
         }
 
@@ -174,10 +174,6 @@ public class ClubService {
 
     private static ClubMember createClubMember(Member member, Club club) {
         return ClubMember.builder().club(club).member(member).build();
-    }
-
-    private static boolean isSameClub(ClubMember clubMember, Long requestClubId) {
-        return requestClubId.equals(clubMember.getClub().getId());
     }
 
 }
