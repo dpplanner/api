@@ -36,20 +36,13 @@ public class LockService {
         return Response.of(lock);
     }
 
-    private void checkLockDuringPeriod(LocalDateTime startDateTime,LocalDateTime endDateTime,Long resourceId,Lock target) {
-        List<Lock> locksBetween = lockRepository.findLocksBetween(startDateTime, endDateTime, resourceId);
-
-        if (!locksBetween.stream().filter(lock -> !lock.equals(target)).collect(Collectors.toList()).isEmpty()) {
-            throw new RuntimeException();
-        }
-    }
-
     @RequiredAuthority(SCHEDULE_ALL)
     public void deleteLock(Long clubMemberId, Long lockId) {
 
         Lock lock = lockRepository.findById(lockId).orElseThrow(RuntimeException::new);
         lockRepository.delete(lock);
     }
+
     @RequiredAuthority(SCHEDULE_ALL)
     public Response updateLock(Long clubMemberId, Update updateDto) {
 
@@ -59,11 +52,24 @@ public class LockService {
 
         return Response.of(lock);
     }
-
     public List<Response> getLocks(Long resourceId, Period period) {
-        //findLocksBetween 이 등호가 없기 때문에. +- 1 sec
-        List<Lock> locks = lockRepository.findLocksBetween(period.getStartDateTime().minusSeconds(1), period.getEndDateTime().plusSeconds(1), resourceId);
+        List<Lock> locks = lockRepository.findLocksBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
 
         return Response.ofList(locks);
+    }
+
+    /**
+     *
+     * @param startDateTime
+     * @param endDateTime
+     * @param resourceId
+     * @param target : 제외시킬 Lock
+     */
+    private void checkLockDuringPeriod(LocalDateTime startDateTime,LocalDateTime endDateTime,Long resourceId,Lock target) {
+        List<Lock> locksBetween = lockRepository.findLocksBetween(startDateTime, endDateTime, resourceId);
+
+        if (!locksBetween.stream().filter(lock -> !lock.equals(target)).collect(Collectors.toList()).isEmpty()) {
+            throw new RuntimeException();
+        }
     }
 }
