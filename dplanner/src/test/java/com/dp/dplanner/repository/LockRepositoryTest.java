@@ -66,18 +66,26 @@ public class LockRepositoryTest {
     @Test
     public void LockRepository_findLocksBetweenByResourceId_ReturnLockList() {
 
-        createLock(new Period(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(1))); // Not Included
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
+//        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime end = start.plusDays(7);
+        createLock(new Period(start.minusDays(2), start.minusDays(1))); // Not Included
 
-        createLock(new Period(LocalDateTime.now(), LocalDateTime.now().plusDays(7))); // Exactly Same
-        createLock(new Period(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(6))); // Start , End Included
-        createLock(new Period(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(8))); // Start Included
-        createLock(new Period(LocalDateTime.now().minusDays(7), LocalDateTime.now().plusDays(5))); // End Included
+        createLock(new Period(start,end)); // Exactly Same
+        createLock(new Period(start.plusDays(1), end.minusDays(1))); // Start , End Included
+        createLock(new Period(start.plusDays(1), end.plusDays(1))); // Start Included
+        createLock(new Period(start.minusDays(1), end.minusDays(5))); // End Included
+        createLock(new Period(start.minusDays(1), end.plusDays(1))); // Start , End Outer Included
 
 
-        List<Lock> locks = lockRepository.findLocksBetween(LocalDateTime.now(), LocalDateTime.now().plusDays(7), resource.getId());
+        List<Lock> locks = lockRepository.findLocksBetween(start, end, resource.getId());
 
+        System.out.println(start + " " + end);
+        for (Lock lock : locks) {
+            System.out.println(lock.getPeriod().getStartDateTime() + " " + lock.getPeriod().getEndDateTime());
+        }
 
-        assertThat(locks.size()).isEqualTo(4);
+        assertThat(locks.size()).isEqualTo(5);
 
     }
 

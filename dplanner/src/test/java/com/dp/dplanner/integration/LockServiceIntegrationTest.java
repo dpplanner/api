@@ -68,7 +68,7 @@ public class LockServiceIntegrationTest {
 
         clubMember.setAdmin();
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Create createDto = Create.builder()
@@ -92,7 +92,7 @@ public class LockServiceIntegrationTest {
         clubMember.setManager();
         ClubAuthority.createAuthorities(club, Arrays.asList(SCHEDULE_ALL));
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Create createDto = Create.builder()
@@ -113,7 +113,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_CreateLock_ThrowException_NotAdmin_NoAuthority() {
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Create createDto = Create.builder()
@@ -129,7 +129,7 @@ public class LockServiceIntegrationTest {
     public void LockService_CreateLock_ThrowException_ManagerHasNoAuthority() {
         clubMember.setManager();
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Create createDto = Create.builder()
@@ -145,9 +145,9 @@ public class LockServiceIntegrationTest {
     public void LockService_DeleteLock_ReturnVoid_Admin() {
 
         clubMember.setAdmin();
-
+        LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
-                .period(new Period(LocalDateTime.now(), LocalDateTime.now().plusDays(7)))
+                .period(new Period(start, start.plusDays(7)))
                 .build();
         entityManager.persist(lock);
 
@@ -161,8 +161,9 @@ public class LockServiceIntegrationTest {
         clubMember.setManager();
         ClubAuthority.createAuthorities(club, Arrays.asList(SCHEDULE_ALL));
 
+        LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
-                .period(new Period(LocalDateTime.now(), LocalDateTime.now().plusDays(7)))
+                .period(new Period(start, start.plusDays(7)))
                 .build();
         entityManager.persist(lock);
 
@@ -172,8 +173,9 @@ public class LockServiceIntegrationTest {
     @Test
     public void LockService_DeleteLock_ThrowException_NotAdmin_NoAuthority() {
 
+        LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
-                .period(new Period(LocalDateTime.now(), LocalDateTime.now().plusDays(7)))
+                .period(new Period(start, start.plusDays(7)))
                 .build();
         entityManager.persist(lock);
 
@@ -186,8 +188,9 @@ public class LockServiceIntegrationTest {
 
         clubMember.setManager();
 
+        LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
-                .period(new Period(LocalDateTime.now(), LocalDateTime.now().plusDays(7)))
+                .period(new Period(start, start.plusDays(7)))
                 .build();
         entityManager.persist(lock);
 
@@ -199,7 +202,7 @@ public class LockServiceIntegrationTest {
     public void LockService_UpdateLock_ReturnResponse_Admin() {
         clubMember.setAdmin();
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
         Lock lock = Lock.builder()
                 .resource(resource)
@@ -229,7 +232,7 @@ public class LockServiceIntegrationTest {
         clubMember.setManager();
         ClubAuthority.createAuthorities(club, Arrays.asList(SCHEDULE_ALL));
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
         Lock lock = Lock.builder()
                 .resource(resource)
@@ -257,7 +260,7 @@ public class LockServiceIntegrationTest {
     public void LockService_UpdateLock_ThrowException_ManagerHasNoAuthority() {
         clubMember.setManager();
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
         Lock lock = Lock.builder()
                 .resource(resource)
@@ -279,7 +282,7 @@ public class LockServiceIntegrationTest {
     @Test
     public void LockService_UpdateLock_ThrowException_NotAdmin_NoAuthority() {
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
         Lock lock = Lock.builder()
                 .resource(resource)
@@ -303,7 +306,7 @@ public class LockServiceIntegrationTest {
 
         clubMember.setAdmin();
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
         Lock lock = Lock.builder()
                 .resource(resource)
@@ -332,8 +335,14 @@ public class LockServiceIntegrationTest {
     @Test
     public void LockService_findLocks_ReturnResponseList() {
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         Period period = new Period(start, start.plusDays(7));
+
+
+        Lock lock0 = Lock.builder()
+                .resource(resource)
+                .period(new Period(start.minusDays(1), start))
+                .build();
 
         Lock lock1 = Lock.builder()
                 .resource(resource)
@@ -355,14 +364,20 @@ public class LockServiceIntegrationTest {
                 .period(new Period(start.plusDays(1), start.plusDays(8)))
                 .build();
 
+        Lock lock5 = Lock.builder()
+                .resource(resource)
+                .period(new Period(start.plusDays(7), start.plusDays(8)))
+                .build();
+        entityManager.persist(lock0);
         entityManager.persist(lock1);
         entityManager.persist(lock2);
         entityManager.persist(lock3);
         entityManager.persist(lock4);
+        entityManager.persist(lock5);
 
         List<Response> responseList = lockService.getLocks(resource.getId(), period);
 
-        assertThat(responseList.size()).isEqualTo(4);
+        assertThat(responseList.size()).isEqualTo(6);
         assertThat(responseList).extracting(Response::getResourceId).containsOnly(resource.getId());
 
 

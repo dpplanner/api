@@ -75,7 +75,7 @@ public class LockServiceTest {
     @Test
     public void LockService_CreateLock_ReturnResponse() {
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Create createDto = Create.builder()
@@ -99,7 +99,7 @@ public class LockServiceTest {
     @Test
     public void LockService_CreateLock_ThrowException_PeriodOverlap(){
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,11,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Create createDto = Create.builder()
@@ -121,7 +121,7 @@ public class LockServiceTest {
     @Test
     public void LockService_DeleteLock_ReturnVoid(){
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Long lockId = 1L;
@@ -141,7 +141,7 @@ public class LockServiceTest {
     public void LockService_UpdateLock_ReturnResponse(){
 
         Long lockId = 1L;
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
 
         Lock lock = Lock.builder()
@@ -173,7 +173,7 @@ public class LockServiceTest {
     public void LockService_UpdateLock_ThrowException_PeriodOverlap(){
 
         Long lockId = 1L;
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
         Lock lock = Lock.builder()
                 .resource(resource)
@@ -210,7 +210,7 @@ public class LockServiceTest {
     public void LockService_getLocks_ReturnResponseList() {
 
 
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         Period period = new Period(start, start.plusDays(7));
 
         Lock lock1 = Lock.builder()
