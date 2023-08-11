@@ -22,4 +22,20 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     )
     boolean existsBetween(@Param("start") LocalDateTime startDateTime, @Param("end") LocalDateTime endDateTime, @Param("resourceId") Long resourceId);
 
+
+    @Query(
+            "select exists (" +
+                    "select r " +
+                    "from Reservation r " +
+                    "where r.resource.id = :resourceId " +
+                    "and r.id != :reservationId " +
+                    "and ((r.period.startDateTime <= :start and :start < r.period.endDateTime) " +
+                    "or (:start <= r.period.startDateTime and r.period.startDateTime < :end))" +
+                    ")"
+    )
+    boolean existsOthersBetween(@Param("start") LocalDateTime startDateTime,
+                                @Param("end") LocalDateTime endDateTime,
+                                @Param("resourceId") Long resourceId,
+                                @Param("reservationId") Long reservationId);
+
 }

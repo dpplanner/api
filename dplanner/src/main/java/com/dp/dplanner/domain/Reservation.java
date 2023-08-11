@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 import static jakarta.persistence.FetchType.*;
 
 @Entity
@@ -52,5 +54,16 @@ public class Reservation extends BaseEntity{
     }
     public void confirm() {
         this.isConfirmed = true;
+    }
+
+    public void request() {
+        this.isConfirmed = false;
+    }
+
+    public void update(String title, String usage, LocalDateTime startDateTime, LocalDateTime endDateTime, boolean sharing) {
+        this.title = title;
+        this.usage = usage;
+        this.sharing = sharing;
+        this.period = new Period(startDateTime, endDateTime);
     }
 }

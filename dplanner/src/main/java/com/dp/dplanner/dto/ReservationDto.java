@@ -24,8 +24,6 @@ public class ReservationDto {
         private String usage;
         private boolean sharing;
         private LocalDateTime startDateTime;
-
-
         private LocalDateTime endDateTime;
 
         public Reservation toEntity(ClubMember clubMember, Resource resource) {
@@ -38,6 +36,21 @@ public class ReservationDto {
                     .sharing(sharing)
                     .build();
         }
+
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class Update {
+        private Long reservationId;
+        private Long resourceId;
+        private String title;
+        private String usage;
+        private boolean sharing;
+        private LocalDateTime startDateTime;
+        private LocalDateTime endDateTime;
 
     }
 
