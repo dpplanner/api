@@ -240,11 +240,31 @@ public class ReservationRepositoryTests {
         assertThat(result).isTrue();
     }
 
+    @Test
+    @DisplayName("주어진 기간 내에 특정 예약을 제외한 다른 예약이 있는지 검사")
+    public void existsOthersBetween() throws Exception {
+        //given
+        Reservation reservation = persistReservation(17, 20);
+        Reservation OtherReservation = persistReservation(20, 22);
+
+        //when
+        boolean result1 = reservationRepository.existsOthersBetween(
+                getTime(17), getTime(22), resource.getId(), reservation.getId());
+
+        boolean result2 = reservationRepository.existsOthersBetween(
+                getTime(17), getTime(20), resource.getId(), reservation.getId());
+
+        //then
+        assertThat(result1).isTrue();
+        assertThat(result2).isFalse();
+    }
+
+
     private static LocalDateTime getTime(int hour) {
         return LocalDateTime.of(2023, 8, 10, hour, 0);
     }
 
-    private void persistReservation(int startHour, int endHour) {
+    private Reservation persistReservation(int startHour, int endHour) {
         Reservation reservation = Reservation.builder()
                 .clubMember(clubMember)
                 .resource(resource)
@@ -252,5 +272,6 @@ public class ReservationRepositoryTests {
                 .build();
 
         entityManager.persist(reservation);
+        return reservation;
     }
 }
