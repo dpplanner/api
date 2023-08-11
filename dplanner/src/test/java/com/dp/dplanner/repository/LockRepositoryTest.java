@@ -80,7 +80,7 @@ public class LockRepositoryTest {
         createLock(new Period(start.minusDays(1), end.plusDays(1))); // Start , End Outer Included
 
 
-        List<Lock> locks = lockRepository.findLocksBetween(start, end, resource.getId());
+        List<Lock> locks = lockRepository.findBetween(start, end, resource.getId());
 
         System.out.println(start + " " + end);
         for (Lock lock : locks) {
@@ -95,7 +95,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean1() {
 
         createLock(17,20);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -103,14 +103,14 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean2() {
 
         createLock(18,19);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
     @Test
     public void LockRepository_ExistLockBetween_ReturnBoolean3() {
 
         createLock(19,21);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -118,7 +118,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean4() {
 
         createLock(16,18);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -126,7 +126,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean5() {
 
         createLock(17,18);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -134,7 +134,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean6() {
 
         createLock(19,20);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -142,7 +142,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean7() {
 
         createLock(16,21);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -150,7 +150,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean8() {
 
         createLock(17,21);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -158,7 +158,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean9() {
 
         createLock(16,20);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isTrue();
     }
 
@@ -166,7 +166,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean10() {
 
         createLock(16,17);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isFalse();
     }
 
@@ -174,7 +174,7 @@ public class LockRepositoryTest {
     public void LockRepository_ExistLockBetween_ReturnBoolean11() {
 
         createLock(20,21);
-        boolean result = lockRepository.existsLocksBetween(start, end, resource.getId());
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
         assertThat(result).isFalse();
     }
 

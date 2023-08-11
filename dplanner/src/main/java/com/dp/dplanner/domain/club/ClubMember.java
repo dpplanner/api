@@ -1,12 +1,14 @@
 package com.dp.dplanner.domain.club;
 
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.Resource;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import static com.dp.dplanner.domain.club.ClubRole.*;
 import static jakarta.persistence.FetchType.*;
 
 @Entity
@@ -41,7 +43,7 @@ public class ClubMember {
         setClub(club);
         this.name = name;
         this.info = info;
-        this.role = ClubRole.USER;
+        this.role = USER;
         this.isConfirmed = false;
     }
 
@@ -56,11 +58,11 @@ public class ClubMember {
     }
 
     public void setAdmin() {
-        this.role = ClubRole.ADMIN;
+        this.role = ADMIN;
     }
 
     public void setManager() {
-        changeRole(ClubRole.MANAGER);
+        changeRole(MANAGER);
     }
 
     public void confirm() {
@@ -81,6 +83,23 @@ public class ClubMember {
 
     public boolean isConfirmed() {
         return this.isConfirmed;
+    }
+
+    public boolean hasAuthority(ClubAuthorityType authority) {
+        return this.checkRoleIs(ADMIN)
+                || (this.checkRoleIs(MANAGER) && this.club.hasAuthority(authority));
+    }
+
+    public boolean isSameClub(Long clubId) {
+        return this.club.getId().equals(clubId);
+    }
+
+    public boolean isSameClub(ClubMember clubMember) {
+        return this.club.equals(clubMember.getClub());
+    }
+
+    public boolean isSameClub(Resource resource) {
+        return this.club.equals(resource.getClub());
     }
 
     public void update(String name, String info) {

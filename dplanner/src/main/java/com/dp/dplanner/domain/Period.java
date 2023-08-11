@@ -1,20 +1,20 @@
 package com.dp.dplanner.domain;
 
 import jakarta.persistence.Embeddable;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Embeddable
 @Getter
+@Embeddable
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Period{
 
     private LocalDateTime startDateTime;
 
     private LocalDateTime endDateTime;
-
-    protected Period() {
-    }
 
     public Period(LocalDateTime startDateTime, LocalDateTime endDateTime) {
 
