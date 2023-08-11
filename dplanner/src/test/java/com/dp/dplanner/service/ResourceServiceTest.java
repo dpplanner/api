@@ -8,6 +8,7 @@ import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -97,6 +98,7 @@ public class ResourceServiceTest {
     }
 
     @Test
+    @Disabled("어노테이션 사용으로 통합 테스트로 변경")
     public void ResourceService_createResource_ThrowException_NotAdmin() {
 
         Create createDto = Create.builder()
@@ -107,7 +109,6 @@ public class ResourceServiceTest {
         clubMember.setManager();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-
         assertThatThrownBy(() -> resourceService.createResource(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
     }
 
@@ -138,6 +139,7 @@ public class ResourceServiceTest {
     }
 
     @Test
+    @Disabled("어노테이션 사용으로 통합 테스트로 변경")
     public void ResourceService_deleteResource_ThrowException_NotAdmin(){
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
@@ -179,6 +181,7 @@ public class ResourceServiceTest {
     }
 
     @Test
+    @Disabled("어노테이션 사용으로 통합 테스트로 변경")
     public void ResourceService_updateResource_ThrowException_NotAdmin() {
 
         Update updateDto = Update.builder()

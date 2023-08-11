@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.dp.dplanner.domain.club.ClubAuthorityType.POST_ALL;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.*;
@@ -37,7 +38,8 @@ public class CommentServiceTest {
     PostRepository postRepository;
     @Mock
     ClubMemberRepository clubMemberRepository;
-
+    @Mock
+    ClubMemberService clubMemberService;
     @Mock
     CommentMemberLikeRepository commentMemberLikeRepository;
     @InjectMocks
@@ -270,6 +272,7 @@ public class CommentServiceTest {
 
         Comment comment = createComment(clubMember, post, null, "test");
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         assertAll(() -> commentService.deleteComment(clubMemberId, commentId));
     }
 
@@ -287,6 +290,7 @@ public class CommentServiceTest {
         Comment comment = createComment(clubMember, post, null, "test");
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
         when(clubMemberRepository.findById(adminMemberId)).thenReturn(Optional.ofNullable(adminClubMember));
+        when(clubMemberService.hasAuthority(adminClubMember.getId(), POST_ALL)).thenReturn(true);
 
         assertAll(() -> commentService.deleteComment(adminMemberId, commentId));
 
@@ -305,6 +309,7 @@ public class CommentServiceTest {
         Comment comment = createComment(clubMember, post, null, "test");
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
         when(clubMemberRepository.findById(usualClubMemberId)).thenReturn(Optional.ofNullable(usualClubMember));
+        when(clubMemberService.hasAuthority(usualClubMemberId, POST_ALL)).thenReturn(false);
 
         assertThatThrownBy(() -> commentService.deleteComment(usualClubMemberId, commentId))
                 .isInstanceOf(RuntimeException.class);
