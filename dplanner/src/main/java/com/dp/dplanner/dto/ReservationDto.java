@@ -36,7 +36,6 @@ public class ReservationDto {
                     .sharing(sharing)
                     .build();
         }
-
     }
 
     @Getter
@@ -54,6 +53,15 @@ public class ReservationDto {
 
     }
 
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class Delete {
+        private Long reservationId;
+
+    }
+
 
     @Getter
     @Setter
@@ -67,7 +75,7 @@ public class ReservationDto {
         private String title;
         private String usage;
         private boolean sharing;
-        private boolean isConfirmed;
+        private String  status;
         private LocalDateTime startDateTime;
         private LocalDateTime endDateTime;
         private LocalDateTime createDate;
@@ -81,7 +89,7 @@ public class ReservationDto {
                     .title(reservation.getTitle())
                     .usage(reservation.getUsage())
                     .sharing(reservation.isSharing())
-                    .isConfirmed(reservation.isConfirmed())
+                    .status(reservation.getStatus().name())
                     .startDateTime(reservation.getPeriod().getStartDateTime())
                     .endDateTime(reservation.getPeriod().getEndDateTime())
                     .createDate(reservation.getCreatedDate())

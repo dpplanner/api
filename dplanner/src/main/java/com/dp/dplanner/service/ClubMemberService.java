@@ -151,7 +151,11 @@ public class ClubMemberService {
         List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
 
-        //TODO 클럽 검증
+        unconfirmedClubMembers.forEach(clubMember -> {
+            if (!clubMember.isSameClub(manager)) {
+                throw new IllegalStateException();
+            }
+        });
 
         unconfirmedClubMembers.forEach(ClubMember::confirm);
     }

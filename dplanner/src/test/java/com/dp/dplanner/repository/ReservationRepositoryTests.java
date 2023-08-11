@@ -71,7 +71,7 @@ public class ReservationRepositoryTests {
         assertThat(findReservation.getTitle()).as("예약 제목이 일치해야 한다").isEqualTo(reservation.getTitle());
         assertThat(findReservation.getUsage()).as("예약 용도가 일치해야 한다").isEqualTo(reservation.getUsage());
         assertThat(findReservation.isSharing()).as("공유 정보가 일치해야 한다").isEqualTo(reservation.isSharing());
-        assertThat(findReservation.isConfirmed()).as("승인 상태가 일치해야 한다").isEqualTo(reservation.isConfirmed());
+        assertThat(findReservation.getStatus()).as("승인 상태가 일치해야 한다").isEqualTo(reservation.getStatus());
         assertThat(findReservation.getPeriod()).as("예약 시간이 일치해야 한다").isEqualTo(reservation.getPeriod());
     }
 

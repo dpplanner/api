@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import static com.dp.dplanner.domain.ReservationStatus.*;
 import static jakarta.persistence.FetchType.*;
 
 @Entity
@@ -31,12 +32,11 @@ public class Reservation extends BaseEntity{
 
     @Embedded
     private Period period;
-
     private boolean sharing;
     private String title;
     private String usage;
-
-    private boolean isConfirmed;
+    @Enumerated(EnumType.STRING)
+    private ReservationStatus status;
 
     @Builder
     public Reservation(Resource resource, ClubMember clubMember, Period period, boolean sharing, String title, String usage) {
@@ -46,18 +46,16 @@ public class Reservation extends BaseEntity{
         this.sharing = sharing;
         this.title = title;
         this.usage = usage;
+        this.status = CREATE;
     }
 
     private void setResource(Resource resource) {
         this.resource = resource;
         resource.getReservations().add(this);
     }
-    public void confirm() {
-        this.isConfirmed = true;
-    }
 
-    public void request() {
-        this.isConfirmed = false;
+    public void confirm() {
+        this.status = CONFIRMED;
     }
 
     public void update(String title, String usage, LocalDateTime startDateTime, LocalDateTime endDateTime, boolean sharing) {
@@ -65,5 +63,14 @@ public class Reservation extends BaseEntity{
         this.usage = usage;
         this.sharing = sharing;
         this.period = new Period(startDateTime, endDateTime);
+        this.status = UPDATE;
+    }
+
+    public void cancel() {
+        this.status = CANCEL;
+    }
+
+    public boolean isConfirmed() {
+        return this.status.equals(CONFIRMED);
     }
 }

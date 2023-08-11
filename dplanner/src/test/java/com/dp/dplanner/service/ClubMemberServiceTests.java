@@ -788,6 +788,25 @@ public class ClubMemberServiceTests {
     }
 
     @Test
+    @DisplayName("다른 클럽의 회원을 승인하려하면 IllegalStateException -- 정상적으로는 불가능한 케이스")
+    public void confirmAllByOtherClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(createClub("otherClub"), 3, "unconfirmed");
+        given(clubMemberRepository.findAllById(unconfirmedClubMemberIds)).willReturn(unconfirmedClubMembers);
+
+        //when
+        //then
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.confirmAll(adminId, requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     @DisplayName("회원 승인시 본인의 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
     public void confirmAllByNotMemberThenException() throws Exception {
         //given
