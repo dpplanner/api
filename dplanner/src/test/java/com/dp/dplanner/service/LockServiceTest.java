@@ -113,7 +113,7 @@ public class LockServiceTest {
                 .period(new Period(start, end))
                 .build();
 
-        when(lockRepository.findLocksBetween(start, end, resourceId)).thenReturn(Arrays.asList(lock));
+        when(lockRepository.findBetween(start, end, resourceId)).thenReturn(Arrays.asList(lock));
 
         assertThatThrownBy(()->lockService.createLock(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
     }
@@ -198,7 +198,7 @@ public class LockServiceTest {
                 .endDateTime(updateEnd)
                 .build();
 
-        when(lockRepository.findLocksBetween(updateStart, updateEnd, resourceId)).thenReturn(Arrays.asList(lock,overlappedLock));
+        when(lockRepository.findBetween(updateStart, updateEnd, resourceId)).thenReturn(Arrays.asList(lock,overlappedLock));
         when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
 
         assertThatThrownBy(() -> lockService.updateLock(clubMemberId, updateDto));
@@ -234,7 +234,7 @@ public class LockServiceTest {
                 .build();
 
 
-        when(lockRepository.findLocksBetween(any(LocalDateTime.class), any(LocalDateTime.class), anyLong())).thenReturn(Arrays.asList(lock1, lock2, lock3, lock4));
+        when(lockRepository.findBetween(any(LocalDateTime.class), any(LocalDateTime.class), anyLong())).thenReturn(Arrays.asList(lock1, lock2, lock3, lock4));
         List<Response> responseList = lockService.getLocks(resourceId, period);
 
         assertThat(responseList.size()).isEqualTo(4);

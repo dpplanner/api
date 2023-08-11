@@ -1,9 +1,9 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.domain.club.ClubRole;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.dp.dplanner.domain.club.ClubAuthorityType.SCHEDULE_ALL;
 import static com.dp.dplanner.dto.ResourceDto.*;
 
 @Service
@@ -22,12 +23,12 @@ public class ResourceService {
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
 
+    @RequiredAuthority(SCHEDULE_ALL)
     public Response createResource(long clubMemberId, Create createDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
 
         checkIfSameClub(clubMember, createDto.getClubId());
-        checkIfClubMemberIsAdmin(clubMember);
 
         Club club = clubRepository.findById(createDto.getClubId()).orElseThrow(RuntimeException::new);
 
@@ -36,23 +37,21 @@ public class ResourceService {
 
         return Response.of(resource);
     }
-
+    @RequiredAuthority(SCHEDULE_ALL)
     public Response updateResource(Long clubMemberId, Update updateDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-        checkIfClubMemberIsAdmin(clubMember);
 
         Resource resource = resourceRepository.findById(updateDto.getId()).orElseThrow(RuntimeException::new);
         resource.update(updateDto.getName(), updateDto.getInfo());
 
         return Response.of(resource);
     }
-
+    @RequiredAuthority(SCHEDULE_ALL)
     public void deleteResource(Long clubMemberId, Long resourceId) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
 
-        checkIfClubMemberIsAdmin(clubMember);
 
         Resource resource = resourceRepository.findById(resourceId).orElseThrow(RuntimeException::new);
 
@@ -92,11 +91,6 @@ public class ResourceService {
         }
     }
 
-    private void checkIfClubMemberIsAdmin(ClubMember clubMember) {
-        if (!clubMember.getRole().equals(ClubRole.ADMIN)) {
-            throw new RuntimeException();
-        }
-    }
 
     private void checkIfResourceBelongToClub(ClubMember clubMember, Resource resource) {
         if (!resource.getClub().getId().equals(clubMember.getClub().getId())) {

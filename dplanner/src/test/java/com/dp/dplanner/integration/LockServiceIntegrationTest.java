@@ -377,7 +377,7 @@ public class LockServiceIntegrationTest {
 
         List<Response> responseList = lockService.getLocks(resource.getId(), period);
 
-        assertThat(responseList.size()).isEqualTo(6);
+        assertThat(responseList.size()).isEqualTo(4);
         assertThat(responseList).extracting(Response::getResourceId).containsOnly(resource.getId());
 
 

@@ -53,7 +53,7 @@ public class LockService {
         return Response.of(lock);
     }
     public List<Response> getLocks(Long resourceId, Period period) {
-        List<Lock> locks = lockRepository.findLocksBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
+        List<Lock> locks = lockRepository.findBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
 
         return Response.ofList(locks);
     }
@@ -66,7 +66,7 @@ public class LockService {
      * @param target : 제외시킬 Lock
      */
     private void checkLockDuringPeriod(LocalDateTime startDateTime,LocalDateTime endDateTime,Long resourceId,Lock target) {
-        List<Lock> locksBetween = lockRepository.findLocksBetween(startDateTime, endDateTime, resourceId);
+        List<Lock> locksBetween = lockRepository.findBetween(startDateTime, endDateTime, resourceId);
 
         if (!locksBetween.stream().filter(lock -> !lock.equals(target)).collect(Collectors.toList()).isEmpty()) {
             throw new RuntimeException();

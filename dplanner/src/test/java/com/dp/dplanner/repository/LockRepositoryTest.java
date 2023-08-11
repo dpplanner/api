@@ -30,6 +30,9 @@ public class LockRepositoryTest {
     Club club;
     Resource resource;
 
+    LocalDateTime start = LocalDateTime.of(2023, 8, 11, 17, 0, 0);
+    LocalDateTime end = LocalDateTime.of(2023, 8, 11, 20, 0, 0);
+
     @BeforeEach
     public void setUp() {
         club = Club.builder().build();
@@ -67,7 +70,6 @@ public class LockRepositoryTest {
     public void LockRepository_findLocksBetweenByResourceId_ReturnLockList() {
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
-//        LocalDateTime start = LocalDateTime.now();
         LocalDateTime end = start.plusDays(7);
         createLock(new Period(start.minusDays(2), start.minusDays(1))); // Not Included
 
@@ -78,7 +80,7 @@ public class LockRepositoryTest {
         createLock(new Period(start.minusDays(1), end.plusDays(1))); // Start , End Outer Included
 
 
-        List<Lock> locks = lockRepository.findLocksBetween(start, end, resource.getId());
+        List<Lock> locks = lockRepository.findBetween(start, end, resource.getId());
 
         System.out.println(start + " " + end);
         for (Lock lock : locks) {
@@ -88,6 +90,106 @@ public class LockRepositoryTest {
         assertThat(locks.size()).isEqualTo(5);
 
     }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean1() {
+
+        createLock(17,20);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean2() {
+
+        createLock(18,19);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean3() {
+
+        createLock(19,21);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean4() {
+
+        createLock(16,18);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean5() {
+
+        createLock(17,18);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean6() {
+
+        createLock(19,20);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean7() {
+
+        createLock(16,21);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean8() {
+
+        createLock(17,21);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean9() {
+
+        createLock(16,20);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean10() {
+
+        createLock(16,17);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    public void LockRepository_ExistLockBetween_ReturnBoolean11() {
+
+        createLock(20,21);
+        boolean result = lockRepository.existsBetween(start, end, resource.getId());
+        assertThat(result).isFalse();
+    }
+
+
+
+
+
+
+
+    private void createLock(int startHour,int endHour) {
+        LocalDateTime s = LocalDateTime.of(2023, 8, 11, startHour, 0, 0);
+        LocalDateTime e = LocalDateTime.of(2023, 8, 11, endHour, 0, 0);
+        createLock(new Period(s,e));
+    }
+
 
     private Lock createLock(Period period) {
         Lock lock = Lock.builder()

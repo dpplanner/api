@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
@@ -37,9 +38,10 @@ public class PostServiceTest {
     ClubRepository clubRepository;
     @Mock
     PostMemberLikeRepository postMemberLikeRepository;
-
     @Mock
     ClubMemberRepository clubMemberRepository;
+    @Mock
+    ClubMemberService clubMemberService;
 
     @InjectMocks
     private PostService postService;
@@ -212,8 +214,26 @@ public class PostServiceTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(adminMember));
-
+        when(clubMemberService.hasAuthority(adminMember.getId(), ClubAuthorityType.POST_ALL)).thenReturn(true);
         assertAll(() -> postService.deletePostById(clubMemberId,postId));
+
+    }
+
+    @Test
+    public void PostService_DeletePostByAdmin_ThrowException() {
+
+        Member newMember = Member.builder().build();
+        ClubMember newClubMember = ClubMember.builder()
+                .member(newMember)
+                .club(club)
+                .build();
+        ReflectionTestUtils.setField(newClubMember, "id", clubMemberId + 1);
+        ReflectionTestUtils.setField(post,"clubMember",newClubMember);
+
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(clubMemberService.hasAuthority(clubMember.getId(), ClubAuthorityType.POST_ALL)).thenReturn(false);
+        assertThatThrownBy(()-> postService.deletePostById(clubMemberId, postId)).isInstanceOf(RuntimeException.class);
 
     }
 

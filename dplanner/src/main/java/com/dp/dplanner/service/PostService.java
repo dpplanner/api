@@ -1,10 +1,10 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.domain.club.ClubRole;
 import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
 import com.dp.dplanner.repository.*;
@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
+
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class PostService {
     private final PostMemberLikeRepository postMemberLikeRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
+    private final ClubMemberService clubMemberService;
 
     @Transactional(readOnly = true)
     public PostDto.Response getPostById(long postId) {
@@ -81,13 +84,12 @@ public class PostService {
 
     }
 
-    /**
-     *  추후에 검사 기능 추가
-     */
     private void checkDeletable(long clubMemberId, ClubMember clubMember) {
 
-        if (! (clubMember.getId().equals(clubMemberId) || clubMember.getRole().equals(ClubRole.ADMIN))){
-            throw new RuntimeException(); // 권한 X
+        if (!clubMember.getId().equals(clubMemberId)) {
+            if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
+                throw new RuntimeException();
+            }
         }
 
     }
@@ -121,24 +123,16 @@ public class PostService {
 
     }
 
+
     @Transactional
+    @RequiredAuthority(POST_ALL)
     public PostDto.Response toggleIsFixed(long clubMemberId, long postId) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-        checkFixable(clubMember);
         Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
         post.toggleIsFixed();
         return PostDto.Response.of(post);
     }
 
-
-    /**
-     *  추후에 검사 기능 추가
-     */
-    private void checkFixable(ClubMember clubMember) {
-        if (!clubMember.getRole().equals(ClubRole.ADMIN)) {
-            throw new RuntimeException(); // 권한 x
-        }
-    }
 }
 
