@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
@@ -69,7 +70,7 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(NoSuchElementException::new);
 
-        if (!reservation.getClubMember().getId().equals(clubMemberId)) {
+        if (!isReservationOwner(clubMemberId, reservation)) {
             throw new IllegalStateException();
         }
 
@@ -86,13 +87,48 @@ public class ReservationService {
         return ReservationDto.Response.of(reservation);
     }
 
+    public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto)
+        throws IllegalStateException, NoSuchElementException {
 
+        Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
+                .orElseThrow(NoSuchElementException::new);
 
-    private static void confirmIfAuthorized(ClubMember clubMember, Reservation savedReservation) {
-        if (clubMember.hasAuthority(SCHEDULE_ALL)) {
-            savedReservation.confirm();
+        if (!isReservationOwner(clubMemberId, reservation)) {
+            throw new IllegalStateException();
+        }
+
+        if (reservation.isConfirmed()) {
+            reservation.cancel();
         } else {
-            savedReservation.request();
+            reservationRepository.delete(reservation);
+        }
+    }
+
+    @RequiredAuthority(SCHEDULE_ALL)
+    public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto)
+        throws IllegalStateException, NoSuchElementException {
+
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+
+        Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
+                .orElseThrow(NoSuchElementException::new);
+
+        if (!manager.isSameClub(reservation.getResource())) {
+            throw new IllegalStateException();
+        }
+
+        reservationRepository.delete(reservation);
+    }
+
+
+    private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
+        return reservation.getClubMember().getId().equals(clubMemberId);
+    }
+
+    private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
+        if (clubMember.hasAuthority(SCHEDULE_ALL)) {
+            reservation.confirm();
         }
     }
 
@@ -109,5 +145,4 @@ public class ReservationService {
     private boolean isLocked(Long resourceId, LocalDateTime start, LocalDateTime end) {
         return lockRepository.existsBetween(start, end, resourceId);
     }
-
 }
