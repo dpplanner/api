@@ -47,18 +47,67 @@ public class ReservationService {
             throw new IllegalStateException();
         }
 
-        Reservation reservation = createDto.toEntity(clubMember, resource);
-        Reservation savedReservation = reservationRepository.save(reservation);
+        Reservation reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
 
-        if (clubMember.hasAuthority(SCHEDULE_ALL)) {
-            savedReservation.confirm();
+        confirmIfAuthorized(clubMember, reservation);
+
+        return ReservationDto.Response.of(reservation);
+    }
+
+    public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto)
+        throws IllegalStateException, NoSuchElementException {
+
+        Long reservationId = updateDto.getReservationId();
+        Long resourceId = updateDto.getResourceId();
+        LocalDateTime start = updateDto.getStartDateTime();
+        LocalDateTime end = updateDto.getEndDateTime();
+
+        if (!isUpdatable(reservationId, resourceId, start, end)) {
+            throw new IllegalStateException();
         }
 
-        return ReservationDto.Response.of(savedReservation);
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(NoSuchElementException::new);
+
+        if (!reservation.getClubMember().getId().equals(clubMemberId)) {
+            throw new IllegalStateException();
+        }
+
+        reservation.update(
+                updateDto.getTitle(),
+                updateDto.getUsage(),
+                updateDto.getStartDateTime(),
+                updateDto.getEndDateTime(),
+                updateDto.isSharing()
+        );
+
+        confirmIfAuthorized(reservation.getClubMember(), reservation);
+
+        return ReservationDto.Response.of(reservation);
+    }
+
+
+
+    private static void confirmIfAuthorized(ClubMember clubMember, Reservation savedReservation) {
+        if (clubMember.hasAuthority(SCHEDULE_ALL)) {
+            savedReservation.confirm();
+        } else {
+            savedReservation.request();
+        }
     }
 
     private boolean isReservable(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return !(reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)
-                || lockRepository.existsBetween(startDateTime, endDateTime, resourceId));
+                || isLocked(resourceId, startDateTime, endDateTime));
     }
+
+    private boolean isUpdatable(Long reservationId, Long resourceId, LocalDateTime start, LocalDateTime end) {
+        return !(reservationRepository.existsOthersBetween(start, end, resourceId, reservationId)
+        || isLocked(resourceId, start, end));
+    }
+
+    private boolean isLocked(Long resourceId, LocalDateTime start, LocalDateTime end) {
+        return lockRepository.existsBetween(start, end, resourceId);
+    }
+
 }
