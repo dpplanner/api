@@ -1,9 +1,6 @@
 package com.dp.dplanner.repository;
 
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.Period;
-import com.dp.dplanner.domain.Reservation;
-import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
@@ -274,6 +271,55 @@ public class ReservationRepositoryTests {
         //then
         assertThat(findReservations).containsExactlyInAnyOrder(reservation1, reservation2);
     }
+
+    @Test
+    @DisplayName("기간 내의 모든 예약을 조회")
+    public void findAllBetween() throws Exception {
+        //given
+        Reservation reservation1 = persistReservation(12, 14);
+        Reservation reservation2 = persistReservation(14, 16);
+        Reservation reservation3 = persistReservation(16, 18);
+        Reservation reservation4 = persistReservation(18, 20);
+        Reservation reservation5 = persistReservation(20, 22);
+
+        //when
+        List<Reservation> findReservations =
+                reservationRepository.findAllBetween(getTime(15), getTime(19) , resource.getId());
+
+        //then
+        assertThat(findReservations).as("기간 안에 있거나 걸치는 예약을 모두 포함해야 한다.")
+                .contains(reservation2, reservation3, reservation4);
+        assertThat(findReservations).as("기간 안에 없는 예약은 포함하지 않아야 한다.")
+                .doesNotContain(reservation1, reservation5);
+    }
+
+    @Test
+    @DisplayName("해당 리소스의 승인되지 않은 예약 전체 조회")
+    public void findAllNotConfirmed() throws Exception {
+        //given
+        Reservation reservation1 = persistReservation(12, 14);
+        assert reservation1.getStatus() == ReservationStatus.CREATE;
+
+        Reservation reservation2 = persistReservation(14, 16);
+        reservation2.update("title", "usage", getTime(14), getTime(16), true);
+        assert reservation2.getStatus() == ReservationStatus.UPDATE;
+
+        Reservation reservation3 = persistReservation(16, 18);
+        reservation3.cancel();
+        assert reservation3.getStatus() == ReservationStatus.CANCEL;
+
+        Reservation reservation4 = persistReservation(18, 20);
+        reservation4.confirm();
+        assert reservation4.getStatus() == ReservationStatus.CONFIRMED;
+
+        //when
+        List<Reservation> findReservations = reservationRepository.findAllNotConfirmed(resource.getId());
+
+        //then
+        assertThat(findReservations).as("승인되지 않은 예약을 모두 포함해야 한다.").contains(reservation1, reservation2, reservation3);
+        assertThat(findReservations).as("승인된 예약은 포함하지 않아야 한다.").doesNotContain(reservation4);
+    }
+
 
 
     private static LocalDateTime getTime(int hour) {
