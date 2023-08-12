@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ReservationDto {
 
@@ -62,6 +63,18 @@ public class ReservationDto {
 
     }
 
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class Request {
+        private Long reservationId;
+
+        public static List<Request> ofList(List<Long> reservationIds) {
+            return reservationIds.stream().map(Request::new).toList();
+        }
+    }
+
 
     @Getter
     @Setter
@@ -98,5 +111,5 @@ public class ReservationDto {
         }
 
     }
-
 }
+
