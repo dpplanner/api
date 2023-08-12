@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.dto.LockDto.*;
@@ -91,7 +90,7 @@ public class LockService {
     private void checkIfThereExistsLocksDuringPeriod(LocalDateTime startDateTime, LocalDateTime endDateTime, Long resourceId, Lock target) {
         List<Lock> locksBetween = lockRepository.findBetween(startDateTime, endDateTime, resourceId);
 
-        if (!locksBetween.stream().filter(lock -> !lock.equals(target)).collect(Collectors.toList()).isEmpty()) {
+        if (locksBetween.stream().filter(lock -> !lock.equals(target)).count() != 0) {
             throw new RuntimeException();
         }
     }
