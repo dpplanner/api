@@ -12,6 +12,8 @@ import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 
@@ -27,9 +29,11 @@ public class PostRepositoryTest {
     @Autowired
     TestEntityManager testEntityManager;
 
-    private Club club;
-    private Member member;
-    private ClubMember clubMember;
+    Club club;
+    Member member;
+    ClubMember clubMember;
+
+    PageRequest pageRequest;
 
     @BeforeEach
     public void setUp() {
@@ -104,13 +108,13 @@ public class PostRepositoryTest {
         postRepository.save(post2);
         postRepository.save(post3);
 
-        List<Post> postList = postRepository.findByClubId(club.getId());
+        pageRequest = PageRequest.of(0, 2);
+        Slice<Post> postList = postRepository.findByClubId(club.getId(),pageRequest);
 
         assertThat(postList).isNotNull();
         assertThat(postList).extracting(Post::getId).isNotNull();
-        assertThat(postList.size()).isEqualTo(2);
+        assertThat(postList.getSize()).isEqualTo(2);
         assertThat(postList).containsExactly(post2, post);
-
 
     }
 
@@ -133,8 +137,18 @@ public class PostRepositoryTest {
         Thread.sleep(100);
         postRepository.save(post4);
 
-        List<Post> postList = postRepository.findByClubId(club.getId());
-        assertThat(postList).containsExactly(post2, post1, post4, post3); //
+        Slice<Post> postList = postRepository.findByClubId(club.getId(),PageRequest.of(0, 2));
+        Slice<Post> postList2 = postRepository.findByClubId(club.getId(),PageRequest.of(1, 2));
+        Slice<Post> postList3 = postRepository.findByClubId(club.getId(),PageRequest.of(0, 10));
+
+        assertThat(postList.getContent()).containsExactly(post2, post1);
+        assertThat(postList.hasNext()).isTrue();
+
+        assertThat(postList2.getContent()).containsExactly(post4, post3);
+        assertThat(postList2.hasNext()).isFalse();
+
+        assertThat(postList3.getContent()).containsExactly(post2, post1, post4, post3);
+        assertThat(postList3.hasNext()).isFalse();
     }
     @Test
     public void PostRepository_FindById_ReturnPost() {
