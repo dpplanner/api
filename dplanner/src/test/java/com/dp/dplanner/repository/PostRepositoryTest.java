@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
@@ -56,6 +57,7 @@ public class PostRepositoryTest {
         return Post.builder()
                 .club(club)
                 .clubMember(clubMember)
+                .isFixed(false)
                 .build();
     }
 
@@ -107,11 +109,33 @@ public class PostRepositoryTest {
         assertThat(postList).isNotNull();
         assertThat(postList).extracting(Post::getId).isNotNull();
         assertThat(postList.size()).isEqualTo(2);
-        assertThat(postList).containsExactly(post, post2);
+        assertThat(postList).containsExactly(post2, post);
 
 
     }
 
+    @Test
+    @DisplayName("post order by isFixed desc, createDate desc")
+    public void PostRepository_GetAllByClubIdOrderBy_ReturnMoreThanOnePost() throws Exception {
+        Post post1 = createPost(club, clubMember);
+        Post post2 = createPost(club, clubMember);
+        Post post3 = createPost(club, clubMember);
+        Post post4 = createPost(club, clubMember);
+
+        post1.toggleIsFixed();
+        post2.toggleIsFixed();
+
+        postRepository.save(post1);
+        Thread.sleep(100);
+        postRepository.save(post2);
+        Thread.sleep(100);
+        postRepository.save(post3);
+        Thread.sleep(100);
+        postRepository.save(post4);
+
+        List<Post> postList = postRepository.findByClubId(club.getId());
+        assertThat(postList).containsExactly(post2, post1, post4, post3); //
+    }
     @Test
     public void PostRepository_FindById_ReturnPost() {
 
