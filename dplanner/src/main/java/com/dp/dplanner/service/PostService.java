@@ -5,14 +5,14 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
@@ -39,10 +39,11 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public List<Response> getPostsByClubId(long clubId) {
+    public SliceResponse getPostsByClubId(long clubId, Pageable pageable) {
 
-        List<Post> posts = postRepository.findByClubId(clubId);
-        return Response.ofList(posts);
+        Slice<Post> postSlice = postRepository.findByClubId(clubId, pageable);
+
+        return new SliceResponse(Response.ofList(postSlice.getContent()), pageable, postSlice.hasNext());
 
     }
 
