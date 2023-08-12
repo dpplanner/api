@@ -803,6 +803,253 @@ public class ReservationServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+    @Test
+    @DisplayName("사용자는 예약 id로 예약 정보를 조회할 수 있다.")
+    public void findReservationById() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long reservationId = 1L;
+        Reservation reservation = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        reservation.confirm();
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        ReservationDto.Response responseDto = reservationService.findReservationById(clubMember.getId(), requestDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getClubMemberId()).as("예약자 정보가 일치해야 한다").isEqualTo(reservation.getClubMember().getId());
+        assertThat(responseDto.getResourceId()).as("예약한 리소스 정보가 일치해야 한다").isEqualTo(reservation.getResource().getId());
+        assertThat(responseDto.getTitle()).as("예약 제목이 일치해야 한다").isEqualTo(reservation.getTitle());
+        assertThat(responseDto.getUsage()).as("예약 용도가 일치해야 한다").isEqualTo(reservation.getUsage());
+        assertThat(responseDto.isSharing()).as("공유 여부가 일치해야 한다").isEqualTo(reservation.isSharing());
+        assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(reservation.getPeriod().getStartDateTime());
+        assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(reservation.getPeriod().getEndDateTime());
+        assertThat(responseDto.getStatus()).as("예약의 상태가 일치해야 한다").isEqualTo(reservation.getStatus().name());
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 예약을 조회하려면 IllegalStateException")
+    public void findOtherClubReservationByIdThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long reservationId = 1L;
+        Reservation reservation = createReservation(
+                otherClubResource, otherClubMember, getPeriod(20, 21), "title", "usage", false);
+        reservation.confirm();
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("예약 조회시 예약 데이터가 없으면 NoSuchElementException")
+    public void findNoReservationByIdThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long reservationId = 1L;
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("예약 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    public void findReservationByIdByNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+        Long reservationId = 1L;
+
+        //when
+        //then
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("사용자는 주어진 기간 안에 있는 모든 예약을 조회할 수 있다.")
+    public void findAllReservationsByPeriod() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation confirmed = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title1", "usage1", false);
+        confirmed.confirm();
+
+        Reservation unconfirmed = createReservation(
+                resource, sameClubMember, getPeriod(21, 22), "title2", "usage2", false);
+
+        List<Reservation> reservations = List.of(confirmed, unconfirmed);
+
+        given(reservationRepository.findAllBetween(any(), any(), eq(resource.getId()))).willReturn(reservations);
+
+        //when
+        ReservationDto.Request requestDto = ReservationDto.Request.builder()
+                .resourceId(resource.getId())
+                .startDateTime(getTime(20))
+                .endDateTime(getTime(22))
+                .build();
+
+        List<ReservationDto.Response> responseDto = reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto);
+
+        //then
+        List<String> reservationNames = responseDto.stream().map(ReservationDto.Response::getTitle).toList();
+        assertThat(reservationNames).as("기간 내의 예약을 모두 포함해야 한다.")
+                .containsAll(reservations.stream().map(Reservation::getTitle).toList());
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 예약을 조회하려 하면 IllegalStateException")
+    public void findAllOtherClubReservationsByPeriodThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation confirmed = createReservation(
+                otherClubResource, otherClubMember, getPeriod(20, 21), "title1", "usage1", false);
+        confirmed.confirm();
+
+        Reservation unconfirmed = createReservation(
+                otherClubResource, otherClubMember, getPeriod(21, 22), "title2", "usage2", false);
+
+        List<Reservation> reservations = List.of(confirmed, unconfirmed);
+
+        given(reservationRepository.findAllBetween(any(), any(), eq(otherClubResource.getId()))).willReturn(reservations);
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder()
+                .resourceId(otherClubResource.getId())
+                .startDateTime(getTime(20))
+                .endDateTime(getTime(22))
+                .build();
+        assertThatThrownBy(() -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("기간으로 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    public void findAllReservationByPeriodWhenNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder()
+                .resourceId(resource.getId())
+                .startDateTime(getTime(20))
+                .endDateTime(getTime(22))
+                .build();
+        assertThatThrownBy(() -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("관리자는 승인 대기중인 예약들을 조회할 수 있다.")
+    public void findAllNotConfirmedReservationsByAdmin() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation unconfirmed1 = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title1", "usage1", false);
+
+        Reservation unconfirmed2 = createReservation(
+                resource, sameClubMember, getPeriod(21, 22), "title2", "usage2", false);
+
+        List<Reservation> reservations = List.of(unconfirmed1, unconfirmed2);
+
+        given(reservationRepository.findAllNotConfirmed(resource.getId())).willReturn(reservations);
+
+        //when
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
+        List<ReservationDto.Response> responseDto =
+                reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<String> reservationNames = responseDto.stream().map(ReservationDto.Response::getTitle).toList();
+        assertThat(reservationNames).as("해당 리소스의 승인되지 않은 예약들을 모두 포함해야 한다.")
+                .containsAll(reservations.stream().map(Reservation::getTitle).toList());
+    }
+
+    @Test
+    @DisplayName("권한이 있는 매니저는 승인 대기중인 예약들을 조회할 수 있다.")
+    public void findAllNotConfirmedReservationsByManagerHasSCHEDULE_ALL() throws Exception {
+        //given
+        clubMember.setManager();
+        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation unconfirmed1 = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title1", "usage1", false);
+
+        Reservation unconfirmed2 = createReservation(
+                resource, sameClubMember, getPeriod(21, 22), "title2", "usage2", false);
+
+        List<Reservation> reservations = List.of(unconfirmed1, unconfirmed2);
+
+        given(reservationRepository.findAllNotConfirmed(resource.getId())).willReturn(reservations);
+
+        //when
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
+        List<ReservationDto.Response> responseDto =
+                reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<String> reservationNames = responseDto.stream().map(ReservationDto.Response::getTitle).toList();
+        assertThat(reservationNames).as("해당 리소스의 승인되지 않은 예약들을 모두 포함해야 한다.")
+                .containsAll(reservations.stream().map(Reservation::getTitle).toList());
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 승인 대기중인 예약을 조회하려 하면 IllegalStateException")
+    public void findAllNotConfirmedReservationWhenOtherClubThenException() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation unconfirmed1 = createReservation(
+                otherClubResource, otherClubMember, getPeriod(20, 21), "title1", "usage1", false);
+
+        Reservation unconfirmed2 = createReservation(
+                otherClubResource, otherClubMember, getPeriod(21, 22), "title2", "usage2", false);
+
+        List<Reservation> reservations = List.of(unconfirmed1, unconfirmed2);
+
+        given(reservationRepository.findAllNotConfirmed(otherClubResource.getId())).willReturn(reservations);
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(otherClubResource.getId()).build();
+        assertThatThrownBy(() -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("승인 대기중인 예약 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    public void findAllNotConfirmedReservationsWhenNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
+        assertThatThrownBy(() -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
 
 
     private Reservation captureFromMockRepositoryWhenDelete() {
