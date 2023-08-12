@@ -5,12 +5,15 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 
@@ -26,9 +29,11 @@ public class PostRepositoryTest {
     @Autowired
     TestEntityManager testEntityManager;
 
-    private Club club;
-    private Member member;
-    private ClubMember clubMember;
+    Club club;
+    Member member;
+    ClubMember clubMember;
+
+    PageRequest pageRequest;
 
     @BeforeEach
     public void setUp() {
@@ -56,6 +61,7 @@ public class PostRepositoryTest {
         return Post.builder()
                 .club(club)
                 .clubMember(clubMember)
+                .isFixed(false)
                 .build();
     }
 
@@ -102,16 +108,48 @@ public class PostRepositoryTest {
         postRepository.save(post2);
         postRepository.save(post3);
 
-        List<Post> postList = postRepository.findByClubId(club.getId());
+        pageRequest = PageRequest.of(0, 2);
+        Slice<Post> postList = postRepository.findByClubId(club.getId(),pageRequest);
 
         assertThat(postList).isNotNull();
         assertThat(postList).extracting(Post::getId).isNotNull();
-        assertThat(postList.size()).isEqualTo(2);
-        assertThat(postList).containsExactly(post, post2);
-
+        assertThat(postList.getSize()).isEqualTo(2);
+        assertThat(postList).containsExactly(post2, post);
 
     }
 
+    @Test
+    @DisplayName("post order by isFixed desc, createDate desc")
+    public void PostRepository_GetAllByClubIdOrderBy_ReturnMoreThanOnePost() throws Exception {
+        Post post1 = createPost(club, clubMember);
+        Post post2 = createPost(club, clubMember);
+        Post post3 = createPost(club, clubMember);
+        Post post4 = createPost(club, clubMember);
+
+        post1.toggleIsFixed();
+        post2.toggleIsFixed();
+
+        postRepository.save(post1);
+        Thread.sleep(100);
+        postRepository.save(post2);
+        Thread.sleep(100);
+        postRepository.save(post3);
+        Thread.sleep(100);
+        postRepository.save(post4);
+
+        Slice<Post> postList = postRepository.findByClubId(club.getId(),PageRequest.of(0, 2));
+        Slice<Post> postList2 = postRepository.findByClubId(club.getId(),PageRequest.of(1, 2));
+        Slice<Post> postList3 = postRepository.findByClubId(club.getId(),PageRequest.of(0, 10));
+
+        assertThat(postList.getContent()).containsExactly(post2, post1);
+        assertThat(postList.hasNext()).isTrue();
+
+        assertThat(postList2.getContent()).containsExactly(post4, post3);
+        assertThat(postList2.hasNext()).isFalse();
+
+        assertThat(postList3.getContent()).containsExactly(post2, post1, post4, post3);
+        assertThat(postList3.hasNext()).isFalse();
+    }
     @Test
     public void PostRepository_FindById_ReturnPost() {
 

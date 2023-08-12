@@ -5,17 +5,18 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.PostDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
+import static com.dp.dplanner.dto.PostDto.*;
 
 
 @Service
@@ -29,24 +30,25 @@ public class PostService {
     private final ClubMemberService clubMemberService;
 
     @Transactional(readOnly = true)
-    public PostDto.Response getPostById(long postId) {
+    public Response getPostById(long postId) {
 
         Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
 
-        return PostDto.Response.of(post);
+        return Response.of(post);
 
     }
 
     @Transactional(readOnly = true)
-    public List<PostDto.Response> getPostsByClubId(long clubId) {
+    public SliceResponse getPostsByClubId(long clubId, Pageable pageable) {
 
-        List<Post> posts = postRepository.findByClubId(clubId);
-        return PostDto.Response.ofList(posts);
+        Slice<Post> postSlice = postRepository.findByClubId(clubId, pageable);
+
+        return new SliceResponse(Response.ofList(postSlice.getContent()), pageable, postSlice.hasNext());
 
     }
 
     @Transactional
-    public PostDto.Response createPost(long clubMemberId, PostDto.Create create) {
+    public Response createPost(long clubMemberId, Create create) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
         Club club = clubRepository.findById(create.getClubId()).orElseThrow(RuntimeException::new);
 
@@ -56,12 +58,12 @@ public class PostService {
 
         Post post = postRepository.save(create.toEntity(clubMember,club));
 
-        return PostDto.Response.of(post);
+        return Response.of(post);
     }
 
 
     @Transactional
-    public PostDto.Response updatePost(long clubMemberId, PostDto.Update update) {
+    public Response updatePost(long clubMemberId, Update update) {
 
         Post post = postRepository.findById(update.getId()).orElseThrow(RuntimeException::new);
 
@@ -70,7 +72,7 @@ public class PostService {
         }
 
         post.update(update);
-        return PostDto.Response.of(post);
+        return Response.of(post);
     }
 
 
@@ -126,12 +128,12 @@ public class PostService {
 
     @Transactional
     @RequiredAuthority(POST_ALL)
-    public PostDto.Response toggleIsFixed(long clubMemberId, long postId) {
+    public Response toggleIsFixed(long clubMemberId, long postId) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
         Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
         post.toggleIsFixed();
-        return PostDto.Response.of(post);
+        return Response.of(post);
     }
 
 }

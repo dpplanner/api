@@ -4,6 +4,8 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import lombok.*;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.SliceImpl;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,7 +49,7 @@ public class PostDto {
         private Long clubId;
 
         // Entity -> DTO
-        public static PostDto.Response of(Post post) {
+        public static Response of(Post post) {
 
             return Response.builder()
                     .id(post.getId())
@@ -57,9 +59,17 @@ public class PostDto {
                     .build();
         }
 
-        public static List<PostDto.Response> ofList(List<Post> posts) {
-            return posts.stream().map(PostDto.Response::of)
+        public static List<Response> ofList(List<Post> posts) {
+            return posts.stream().map(Response::of)
                     .collect(Collectors.toList());
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class SliceResponse extends SliceImpl<Response> {
+        public SliceResponse(List content, Pageable pageable, boolean hasNext) {
+            super(content, pageable, hasNext);
         }
     }
 
