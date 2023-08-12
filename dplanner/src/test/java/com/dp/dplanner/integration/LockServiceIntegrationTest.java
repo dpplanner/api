@@ -375,7 +375,7 @@ public class LockServiceIntegrationTest {
         entityManager.persist(lock4);
         entityManager.persist(lock5);
 
-        List<Response> responseList = lockService.getLocks(resource.getId(), period);
+        List<Response> responseList = lockService.getLocks(clubMember.getId(), resource.getId(), period);
 
         assertThat(responseList.size()).isEqualTo(4);
         assertThat(responseList).extracting(Response::getResourceId).containsOnly(resource.getId());

@@ -6,6 +6,7 @@ import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,8 @@ public class LockServiceTest {
     LockRepository lockRepository;
     @Mock
     ResourceRepository resourceRepository;
+    @Mock
+    ClubMemberRepository clubMemberRepository;
     @InjectMocks
     LockService lockService;
 
@@ -83,7 +86,7 @@ public class LockServiceTest {
                 .endDateTime(end)
                 .resourceId(resourceId)
                 .build();
-
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
         when(lockRepository.save(any(Lock.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -119,6 +122,33 @@ public class LockServiceTest {
     }
 
     @Test
+    public void LockService_createLock_checkIfClubMemberAndResourceOfLockIsSameClub_ThrowException() {
+
+
+        Club otherClub = Club.builder().build();
+        ReflectionTestUtils.setField(otherClub, "id", clubId + 1);
+        Resource otherClubResource = Resource.builder()
+                .club(otherClub)
+                .build();
+        ReflectionTestUtils.setField(otherClubResource, "id", resourceId+1);
+
+
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
+        LocalDateTime end = start.plusDays(7);
+
+        Create createDto = Create.builder()
+                .startDateTime(start)
+                .endDateTime(end)
+                .resourceId(otherClubResource.getId())
+                .build();
+
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(resourceRepository.findById(createDto.getResourceId())).thenReturn(Optional.ofNullable(otherClubResource));
+
+        assertThatThrownBy(() -> lockService.createLock(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
+
+    }
+    @Test
     public void LockService_DeleteLock_ReturnVoid(){
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
@@ -131,9 +161,38 @@ public class LockServiceTest {
                 .build();
         ReflectionTestUtils.setField(lock, "id", lockId);
 
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
 
         assertAll(()->lockService.deleteLock(clubMemberId,lockId));
+    }
+
+    @Test
+    public void LockService_deleteLock_checkIfClubMemberAndResourceOfLockIsSameClub_ThrowException() {
+
+
+        Club otherClub = Club.builder().build();
+        ReflectionTestUtils.setField(otherClub, "id", clubId + 1);
+        Resource otherClubResource = Resource.builder()
+                .club(otherClub)
+                .build();
+        ReflectionTestUtils.setField(otherClubResource, "id", resourceId+1);
+
+        Long lockId = 1L;
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
+        LocalDateTime end = start.plusDays(7);
+
+        Lock lock = Lock.builder()
+                .resource(otherClubResource)
+                .period(new Period(start, end))
+                .build();
+        ReflectionTestUtils.setField(lock, "id", lockId);
+
+
+        when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        assertThatThrownBy(() -> lockService.deleteLock(clubMemberId, lockId)).isInstanceOf(RuntimeException.class);
+
     }
 
 
@@ -157,7 +216,7 @@ public class LockServiceTest {
                 .startDateTime(start.plusDays(1))
                 .endDateTime(end.plusDays(1))
                 .build();
-
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
 
         Response response = lockService.updateLock(clubMemberId, updateDto);
@@ -168,6 +227,43 @@ public class LockServiceTest {
         assertThat(response.getResourceId()).isEqualTo(resourceId);
 
     }
+
+    @Test
+    public void LockService_updateLock_checkIfClubMemberAndResourceOfLockIsSameClub_ThrowException() {
+
+
+        Club otherClub = Club.builder().build();
+        ReflectionTestUtils.setField(otherClub, "id", clubId + 1);
+        Resource otherClubResource = Resource.builder()
+                .club(otherClub)
+                .build();
+        ReflectionTestUtils.setField(otherClubResource, "id", resourceId+1);
+
+        Long lockId = 1L;
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
+        LocalDateTime end = start.plusDays(7);
+
+        Lock lock = Lock.builder()
+                .resource(otherClubResource)
+                .period(new Period(start, end))
+                .build();
+        ReflectionTestUtils.setField(lock, "id", lockId);
+
+
+        Update updateDto = Update.builder()
+                .id(lockId)
+                .resourceId(otherClubResource.getId())
+                .startDateTime(start.plusDays(1))
+                .endDateTime(end.plusDays(1))
+                .build();
+
+        when(lockRepository.findById(updateDto.getId())).thenReturn(Optional.ofNullable(lock));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+
+        assertThatThrownBy(() -> lockService.updateLock(clubMemberId, updateDto)).isInstanceOf(RuntimeException.class);
+
+    }
+
 
     @Test
     public void LockService_UpdateLock_ThrowException_PeriodOverlap(){
@@ -232,14 +328,34 @@ public class LockServiceTest {
                 .resource(resource)
                 .period(new Period(start.plusDays(1), start.plusDays(8)))
                 .build();
-
-
+        when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(lockRepository.findBetween(any(LocalDateTime.class), any(LocalDateTime.class), anyLong())).thenReturn(Arrays.asList(lock1, lock2, lock3, lock4));
-        List<Response> responseList = lockService.getLocks(resourceId, period);
+        List<Response> responseList = lockService.getLocks(clubMemberId,resourceId, period);
 
         assertThat(responseList.size()).isEqualTo(4);
         assertThat(responseList).extracting(Response::getResourceId).containsOnly(resourceId);
 
+
+    }
+
+    @Test
+    public void LockService_getLocks_checkIfClubMemberAndResourceOfLockIsSameClub_ThrowException() {
+
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
+        Period period = new Period(start, start.plusDays(7));
+
+        Club otherClub = Club.builder().build();
+        ReflectionTestUtils.setField(otherClub, "id", clubId + 1);
+        Resource otherClubResource = Resource.builder()
+                .club(otherClub)
+                .build();
+        ReflectionTestUtils.setField(otherClubResource, "id", resourceId+1);
+
+        when(resourceRepository.findById(resourceId+1)).thenReturn(Optional.ofNullable(otherClubResource));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+
+        assertThatThrownBy(()->lockService.getLocks(clubMemberId, resourceId+1, period)).isInstanceOf(RuntimeException.class);
 
     }
 
