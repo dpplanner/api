@@ -32,12 +32,12 @@ public class ReservationService {
 
 
     public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto)
-        throws IllegalStateException, NoSuchElementException{
+            throws IllegalStateException, NoSuchElementException {
 
         Long resourceId = createDto.getResourceId();
         LocalDateTime startDateTime = createDto.getStartDateTime();
         LocalDateTime endDateTime = createDto.getEndDateTime();
-        
+
         if (!isReservable(resourceId, startDateTime, endDateTime)) {
             throw new IllegalStateException();
         }
@@ -60,7 +60,7 @@ public class ReservationService {
     }
 
     public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto)
-        throws IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         Long reservationId = updateDto.getReservationId();
         Long resourceId = updateDto.getResourceId();
@@ -92,7 +92,7 @@ public class ReservationService {
     }
 
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto)
-        throws IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
                 .orElseThrow(NoSuchElementException::new);
@@ -110,7 +110,7 @@ public class ReservationService {
 
     @RequiredAuthority(SCHEDULE_ALL)
     public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto)
-        throws IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
@@ -125,7 +125,7 @@ public class ReservationService {
 
     @RequiredAuthority(SCHEDULE_ALL)
     public void confirmAllReservations(Long managerId, List<ReservationDto.Request> requestDto)
-        throws IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
@@ -137,14 +137,15 @@ public class ReservationService {
         List<Reservation> reservations = reservationRepository.findAllById(reservationIds);
 
         reservations.forEach(reservation ->
-                throwIfOtherClubReservation(manager, reservation, new IllegalStateException()));
+                throwIfOtherClubReservation(manager, reservation, new IllegalStateException())
+        );
 
         confirmReservations(reservations, true);
     }
 
     @RequiredAuthority(SCHEDULE_ALL)
     public void rejectAllReservations(Long managerId, List<ReservationDto.Request> requestDto)
-        throws IllegalStateException, NoSuchElementException {
+            throws IllegalStateException, NoSuchElementException {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(NoSuchElementException::new);
@@ -156,12 +157,56 @@ public class ReservationService {
         List<Reservation> reservations = reservationRepository.findAllById(reservationIds);
 
         reservations.forEach(
-                reservation -> throwIfOtherClubReservation(manager, reservation, new IllegalStateException()));
+                reservation -> throwIfOtherClubReservation(manager, reservation, new IllegalStateException())
+        );
 
         confirmReservations(reservations, false);
     }
 
+    public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto)
+            throws IllegalStateException, NoSuchElementException {
 
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(NoSuchElementException::new);
+        Reservation reservation = reservationRepository.findById(requestDto.getReservationId())
+                .orElseThrow(NoSuchElementException::new);
+
+        throwIfOtherClubReservation(clubMember, reservation, new IllegalStateException());
+
+        return ReservationDto.Response.of(reservation);
+    }
+
+    public List<ReservationDto.Response> findAllReservationsByPeriod(Long clubMemberId, ReservationDto.Request requestDto)
+            throws IllegalStateException, NoSuchElementException {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(NoSuchElementException::new);
+
+        LocalDateTime start = requestDto.getStartDateTime();
+        LocalDateTime end = requestDto.getEndDateTime();
+        List<Reservation> reservations = reservationRepository.findAllBetween(start, end, requestDto.getResourceId());
+
+        reservations.forEach(
+                reservation -> throwIfOtherClubReservation(clubMember, reservation, new IllegalStateException())
+        );
+
+        return ReservationDto.Response.ofList(reservations);
+    }
+
+    @RequiredAuthority(SCHEDULE_ALL)
+    public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto)
+            throws IllegalStateException, NoSuchElementException {
+
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(NoSuchElementException::new);
+        List<Reservation> reservations = reservationRepository.findAllNotConfirmed(requestDto.getResourceId());
+
+        reservations.forEach(
+                reservation -> throwIfOtherClubReservation(manager, reservation, new IllegalStateException())
+        );
+
+        return ReservationDto.Response.ofList(reservations);
+    }
 
 
 
@@ -201,8 +246,8 @@ public class ReservationService {
         }
     }
 
-    private static void throwIfOtherClubReservation(ClubMember manager, Reservation reservation, IllegalStateException e) {
-        if (!manager.isSameClub(reservation.getResource())) {
+    private static void throwIfOtherClubReservation(ClubMember clubMember, Reservation reservation, IllegalStateException e) {
+        if (!clubMember.isSameClub(reservation.getResource())) {
             throw e;
         }
     }

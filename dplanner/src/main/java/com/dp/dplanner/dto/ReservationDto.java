@@ -69,6 +69,19 @@ public class ReservationDto {
     @AllArgsConstructor
     public static class Request {
         private Long reservationId;
+        private Long resourceId;
+        private LocalDateTime startDateTime;
+        private LocalDateTime endDateTime;
+
+        public Request(Long reservationId) {
+            this.reservationId = reservationId;
+        }
+
+        public Request(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+            this.resourceId = resourceId;
+            this.startDateTime = startDateTime;
+            this.endDateTime = endDateTime;
+        }
 
         public static List<Request> ofList(List<Long> reservationIds) {
             return reservationIds.stream().map(Request::new).toList();
@@ -108,6 +121,10 @@ public class ReservationDto {
                     .createDate(reservation.getCreatedDate())
                     .lastModifiedDate(reservation.getLastModifiedDate())
                     .build();
+        }
+
+        public static List<Response> ofList(List<Reservation> reservations) {
+            return reservations.stream().map(Response::of).toList();
         }
 
     }
