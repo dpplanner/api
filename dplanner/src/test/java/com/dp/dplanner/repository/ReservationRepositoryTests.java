@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -257,6 +258,21 @@ public class ReservationRepositoryTests {
         //then
         assertThat(result1).isTrue();
         assertThat(result2).isFalse();
+    }
+
+    @Test
+    @DisplayName("id로 예약 전체 조회")
+    public void findAllById() throws Exception {
+        //given
+        Reservation reservation1 = persistReservation(12, 14);
+        Reservation reservation2 = persistReservation(14, 16);
+
+        //when
+        List<Reservation> findReservations =
+                reservationRepository.findAllById(List.of(reservation1.getId(), reservation2.getId()));
+
+        //then
+        assertThat(findReservations).containsExactlyInAnyOrder(reservation1, reservation2);
     }
 
 
