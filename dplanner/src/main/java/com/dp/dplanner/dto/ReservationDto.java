@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ReservationDto {
 
@@ -62,6 +63,31 @@ public class ReservationDto {
 
     }
 
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class Request {
+        private Long reservationId;
+        private Long resourceId;
+        private LocalDateTime startDateTime;
+        private LocalDateTime endDateTime;
+
+        public Request(Long reservationId) {
+            this.reservationId = reservationId;
+        }
+
+        public Request(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+            this.resourceId = resourceId;
+            this.startDateTime = startDateTime;
+            this.endDateTime = endDateTime;
+        }
+
+        public static List<Request> ofList(List<Long> reservationIds) {
+            return reservationIds.stream().map(Request::new).toList();
+        }
+    }
+
 
     @Getter
     @Setter
@@ -97,6 +123,10 @@ public class ReservationDto {
                     .build();
         }
 
-    }
+        public static List<Response> ofList(List<Reservation> reservations) {
+            return reservations.stream().map(Response::of).toList();
+        }
 
+    }
 }
+

@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -64,6 +65,10 @@ public class ReservationServiceTests {
         otherClubMember = createClubMember(otherClub, 3L);
     }
 
+
+    /**
+     * createReservation
+     */
     @Test
     @DisplayName("일반 회원은 승인 대기 상태의 예약을 생성할 수 있다.")
     public void createReservationRequestByUser() throws Exception {
@@ -130,7 +135,7 @@ public class ReservationServiceTests {
     
     @Test
     @DisplayName("요청한 시간에 다른 예약이 있으면 IllegalStateException")
-    public void requestReservationWhenPeriodOverlappedThenException() throws Exception {
+    public void createReservationWhenPeriodOverlappedThenException() throws Exception {
         //given
         given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
 
@@ -145,7 +150,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("요청한 시간에 락이 걸려 있으면 IllegalStateException")
-    public void requestReservationWhenLockedThenException() throws Exception {
+    public void createReservationWhenLockedThenException() throws Exception {
         //given
         given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
 
@@ -160,7 +165,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("다른 클럽의 회원이 요청하면 IllegalStateException")
-    public void requestReservationByOtherClubMemberThenException() throws Exception {
+    public void createReservationByOtherClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(otherClubMember.getId())).willReturn(Optional.ofNullable(otherClubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
@@ -176,7 +181,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("예약 요청시 회원 정보가 없으면 NoSuchElementException")
-    public void requestReservationByNoClubMemberThenException() throws Exception {
+    public void createReservationByNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
 
@@ -191,7 +196,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("예약 요청시 리소스 정보가 없으면 NoSuchElementException")
-    public void requestReservationByNoResourceThenException() throws Exception {
+    public void createReservationByNoResourceThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(null));
@@ -204,14 +209,17 @@ public class ReservationServiceTests {
         assertThatThrownBy(() -> reservationService.createReservation(clubMember.getId(), createDto))
                 .isInstanceOf(NoSuchElementException.class);
     }
-    
+
+
+    /**
+     * updateReservation
+     */
     @Test
     @DisplayName("사용자는 본인의 예약을 수정할 수 있다.")
     public void updateReservationByUser() throws Exception {
         //given
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
         //when
@@ -239,8 +247,7 @@ public class ReservationServiceTests {
     public void updateConfirmedReservationByUserThenNotConfirmed() throws Exception {
         //given
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -263,8 +270,7 @@ public class ReservationServiceTests {
         clubMember.setAdmin();
 
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -288,8 +294,7 @@ public class ReservationServiceTests {
         clubMember.setManager();
 
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -347,8 +352,7 @@ public class ReservationServiceTests {
     public void updateReservationByOtherClubMemberThenException() throws Exception {
         //given
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
         //when
@@ -380,13 +384,16 @@ public class ReservationServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * cancelReservation
+     */
     @Test
     @DisplayName("일반 회원은 승인되지 않은 예약을 즉시 삭제할 수 있다.")
     public void cancelNotConfirmedReservationByUser() throws Exception {
         //given
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
         //when
@@ -403,8 +410,7 @@ public class ReservationServiceTests {
     public void cancelConfirmedReservationByUserThenCANCEL() throws Exception {
         //given
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -421,8 +427,7 @@ public class ReservationServiceTests {
     public void cancelOtherClubMemberReservationThenException() throws Exception {
         //given
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, otherClubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, otherClubMember);
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
         //when
@@ -446,6 +451,10 @@ public class ReservationServiceTests {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+
+    /**
+     * deleteReservation
+     */
     @Test
     @DisplayName("관리자는 예약을 삭제할 수 있다.")
     public void deleteReservationByAdmin() throws Exception {
@@ -454,8 +463,7 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         reservation.confirm();
 
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
@@ -478,8 +486,7 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, clubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -500,8 +507,7 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                resource, sameClubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(resource, sameClubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -522,8 +528,7 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
-        Reservation reservation = createReservation(
-                otherClubResource, otherClubMember, getPeriod(20, 21), "title", "usage", false);
+        Reservation reservation = createDefaultReservation(otherClubResource, otherClubMember);
         reservation.confirm();
         given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
 
@@ -566,20 +571,544 @@ public class ReservationServiceTests {
     }
 
 
+    /**
+     * confirmAllReservations
+     */
+    @Test
+    @DisplayName("관리자는 승인대기 상태의 예약을 승인할 수 있다.")
+    public void confirmAllReservationsByAdmin() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
+
+        Reservation createReservation = createDefaultReservation(resource, sameClubMember);
+        assert createReservation.getStatus() == CREATE;
+
+        Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
+        updateDefaultReservation(updateReservation);
+        assert updateReservation.getStatus() == UPDATE;
+
+        given(reservationRepository.findAllById(reservationIds))
+                .willReturn(List.of(createReservation, updateReservation));
+
+        //when
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(reservationIds);
+        reservationService.confirmAllReservations(clubMember.getId(), requestDto);
+
+        //then
+        assertThat(createReservation.getStatus()).as("예약은 승인완료 상태여야 한다").isEqualTo(CONFIRMED);
+        assertThat(updateReservation.getStatus()).as("예약은 승인완료 상태여야 한다").isEqualTo(CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("권한이 있는 매니저는 승인대기 상태의 예약을 승인할 수 있다.")
+    public void confirmAllReservationsByManagerHasSCHEDULE_ALL() throws Exception {
+        //given
+        clubMember.setManager();
+        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
+
+        Reservation createReservation = createDefaultReservation(resource, sameClubMember);
+        assert createReservation.getStatus() == CREATE;
+
+        Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
+        updateDefaultReservation(updateReservation);
+        assert updateReservation.getStatus() == UPDATE;
+
+        given(reservationRepository.findAllById(reservationIds))
+                .willReturn(List.of(createReservation, updateReservation));
+
+        //when
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(reservationIds);
+        reservationService.confirmAllReservations(clubMember.getId(), requestDto);
+
+        //then
+        assertThat(createReservation.getStatus()).as("예약은 승인완료 상태여야 한다").isEqualTo(CONFIRMED);
+        assertThat(updateReservation.getStatus()).as("예약은 승인완료 상태여야 한다").isEqualTo(CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("예약 취소 요청을 승인하는 경우 예약이 삭제된다")
+    public void confirmAllCanceledReservationThenDelete() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long canceledReservationId = 1L;
+        Reservation canceledReservation = createDefaultReservation(resource, sameClubMember);
+        canceledReservation.cancel();
+
+        given(reservationRepository.findAllById(List.of(canceledReservationId)))
+                .willReturn(List.of(canceledReservation));
+
+        assert canceledReservation.getStatus() == CANCEL;
+
+        //when
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(canceledReservationId));
+        reservationService.confirmAllReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedReservations).as("취소상태의 예약이 삭제되어야 한다").contains(canceledReservation);
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 예약을 승인하려 하면 IllegalStateException")
+    public void confirmAllOtherClubReservationThenException() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long otherClubReservationId = 1L;
+        Reservation otherClubReservation = createReservation(
+                otherClubResource, otherClubMember, getPeriod(17, 20), "title", "usage", false
+        );
+
+        given(reservationRepository.findAllById(List.of(otherClubReservationId)))
+                .willReturn(List.of(otherClubReservation));
+
+        //when
+        //then
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(otherClubReservationId));
+        assertThatThrownBy(() -> reservationService.confirmAllReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("예약 요청 승인시 본인의 데이터가 없으면 NoSuchElementException")
+    public void confirmAllByNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+        Long reservationId = 1L;
+
+        //when
+        //then
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(reservationId));
+        assertThatThrownBy(() -> reservationService.confirmAllReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
 
 
+    /**
+     * rejectAllReservations
+     */
+    @Test
+    @DisplayName("관리자는 승인 대기중인 예약을 거절할 수 있다.")
+    public void rejectAllByAdmin() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
+
+        Reservation createReservation = createDefaultReservation(resource, sameClubMember);
+        assert createReservation.getStatus() == CREATE;
+
+        Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
+        updateDefaultReservation(updateReservation);
+        assert updateReservation.getStatus() == UPDATE;
+
+        given(reservationRepository.findAllById(reservationIds))
+                .willReturn(List.of(createReservation, updateReservation));
+
+        //when
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(reservationIds);
+        reservationService.rejectAllReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedReservations).as("거절된 예약 요청은 삭제되어야 한다")
+                .containsExactlyInAnyOrder(createReservation, updateReservation);
+    }
+
+    @Test
+    @DisplayName("권한이 있는 매니저는 승인 대기중인 예약을 거절할 수 있다.")
+    public void rejectAllByManagerHasSCHEDULE_ALL() throws Exception {
+        //given
+        clubMember.setManager();
+        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
+
+        Reservation createReservation = createDefaultReservation(resource, sameClubMember);
+        assert createReservation.getStatus() == CREATE;
+
+        Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
+        updateDefaultReservation(updateReservation);
+        assert updateReservation.getStatus() == UPDATE;
+
+        given(reservationRepository.findAllById(reservationIds))
+                .willReturn(List.of(createReservation, updateReservation));
+
+        //when
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(reservationIds);
+        reservationService.rejectAllReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
+        assertThat(deletedReservations).as("거절된 예약 요청은 삭제되어야 한다")
+                .containsExactlyInAnyOrder(createReservation, updateReservation);
+    }
+
+    @Test
+    @DisplayName("예약 취소 요청을 거절하는 경우 예약이 CONFIRMED 상태로 남는다")
+    public void rejectAllCanceledReservationThenRemain() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long canceledReservationId = 1L;
+        Reservation canceledReservation = createDefaultReservation(resource, sameClubMember);
+        canceledReservation.cancel();
+
+        given(reservationRepository.findAllById(List.of(canceledReservationId)))
+                .willReturn(List.of(canceledReservation));
+
+        assert canceledReservation.getStatus() == CANCEL;
+
+        //when
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(canceledReservationId));
+        reservationService.rejectAllReservations(clubMember.getId(), requestDto);
+
+        //then
+        assertThat(canceledReservation.getStatus()).as("취소요청을 거절하면 예약은 CONFIRM 상태로 남아야 한다")
+                .isEqualTo(CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 예약을 거절하려 하면 IllegalStateException")
+    public void rejectAllOtherClubReservationThenException() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long otherClubReservationId = 1L;
+        Reservation otherClubReservation = createReservation(
+                otherClubResource, otherClubMember, getPeriod(17, 20), "title", "usage", false
+        );
+
+        given(reservationRepository.findAllById(List.of(otherClubReservationId)))
+                .willReturn(List.of(otherClubReservation));
+
+        //when
+        //then
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(otherClubReservationId));
+        assertThatThrownBy(() -> reservationService.rejectAllReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("예약 요청 거절시 본인의 데이터가 없으면 NoSuchElementException")
+    public void rejectAllByNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+        Long reservationId = 1L;
+
+        //when
+        //then
+        List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(reservationId));
+        assertThatThrownBy(() -> reservationService.rejectAllReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    /**
+     * findReservationById
+     */
+    @Test
+    @DisplayName("사용자는 예약 id로 예약 정보를 조회할 수 있다.")
+    public void findReservationById() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long reservationId = 1L;
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        reservation.confirm();
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        ReservationDto.Response responseDto = reservationService.findReservationById(clubMember.getId(), requestDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getClubMemberId()).as("예약자 정보가 일치해야 한다").isEqualTo(reservation.getClubMember().getId());
+        assertThat(responseDto.getResourceId()).as("예약한 리소스 정보가 일치해야 한다").isEqualTo(reservation.getResource().getId());
+        assertThat(responseDto.getTitle()).as("예약 제목이 일치해야 한다").isEqualTo(reservation.getTitle());
+        assertThat(responseDto.getUsage()).as("예약 용도가 일치해야 한다").isEqualTo(reservation.getUsage());
+        assertThat(responseDto.isSharing()).as("공유 여부가 일치해야 한다").isEqualTo(reservation.isSharing());
+        assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(reservation.getPeriod().getStartDateTime());
+        assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(reservation.getPeriod().getEndDateTime());
+        assertThat(responseDto.getStatus()).as("예약의 상태가 일치해야 한다").isEqualTo(reservation.getStatus().name());
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 예약을 조회하려면 IllegalStateException")
+    public void findOtherClubReservationByIdThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long reservationId = 1L;
+        Reservation reservation = createDefaultReservation(otherClubResource, otherClubMember);
+        reservation.confirm();
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("예약 조회시 예약 데이터가 없으면 NoSuchElementException")
+    public void findNoReservationByIdThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Long reservationId = 1L;
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("예약 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    public void findReservationByIdByNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+        Long reservationId = 1L;
+
+        //when
+        //then
+        ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
+        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    /**
+     * findAllReservationsByPeriod
+     */
+    @Test
+    @DisplayName("사용자는 주어진 기간 안에 있는 모든 예약을 조회할 수 있다.")
+    public void findAllReservationsByPeriod() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation confirmed = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title1", "usage1", false);
+        confirmed.confirm();
+        Reservation unconfirmed = createReservation(
+                resource, sameClubMember, getPeriod(21, 22), "title2", "usage2", false);
+        List<Reservation> reservations = List.of(confirmed, unconfirmed);
+
+        given(reservationRepository.findAllBetween(any(), any(), eq(resource.getId()))).willReturn(reservations);
+
+        //when
+        ReservationDto.Request requestDto = ReservationDto.Request.builder()
+                .resourceId(resource.getId())
+                .startDateTime(getTime(20))
+                .endDateTime(getTime(22))
+                .build();
+
+        List<ReservationDto.Response> responseDto = reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto);
+
+        //then
+        List<String> reservationNames = responseDto.stream().map(ReservationDto.Response::getTitle).toList();
+        assertThat(reservationNames).as("기간 내의 예약을 모두 포함해야 한다.")
+                .containsAll(reservations.stream().map(Reservation::getTitle).toList());
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 예약을 조회하려 하면 IllegalStateException")
+    public void findAllOtherClubReservationsByPeriodThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation confirmed = createReservation(
+                otherClubResource, otherClubMember, getPeriod(20, 21), "title1", "usage1", false);
+        confirmed.confirm();
+        Reservation unconfirmed = createReservation(
+                otherClubResource, otherClubMember, getPeriod(21, 22), "title2", "usage2", false);
+        List<Reservation> reservations = List.of(confirmed, unconfirmed);
+
+        given(reservationRepository.findAllBetween(any(), any(), eq(otherClubResource.getId()))).willReturn(reservations);
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder()
+                .resourceId(otherClubResource.getId())
+                .startDateTime(getTime(20))
+                .endDateTime(getTime(22))
+                .build();
+        assertThatThrownBy(() -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("기간으로 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    public void findAllReservationByPeriodWhenNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder()
+                .resourceId(resource.getId())
+                .startDateTime(getTime(20))
+                .endDateTime(getTime(22))
+                .build();
+        assertThatThrownBy(() -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    /**
+     * findAllNotConfirmedReservations
+     */
+    @Test
+    @DisplayName("관리자는 승인 대기중인 예약들을 조회할 수 있다.")
+    public void findAllNotConfirmedReservationsByAdmin() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation unconfirmed1 = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title1", "usage1", false);
+        Reservation unconfirmed2 = createReservation(
+                resource, sameClubMember, getPeriod(21, 22), "title2", "usage2", false);
+        List<Reservation> reservations = List.of(unconfirmed1, unconfirmed2);
+
+        given(reservationRepository.findAllNotConfirmed(resource.getId())).willReturn(reservations);
+
+        //when
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
+        List<ReservationDto.Response> responseDto =
+                reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<String> reservationNames = responseDto.stream().map(ReservationDto.Response::getTitle).toList();
+        assertThat(reservationNames).as("해당 리소스의 승인되지 않은 예약들을 모두 포함해야 한다.")
+                .containsAll(reservations.stream().map(Reservation::getTitle).toList());
+    }
+
+    @Test
+    @DisplayName("권한이 있는 매니저는 승인 대기중인 예약들을 조회할 수 있다.")
+    public void findAllNotConfirmedReservationsByManagerHasSCHEDULE_ALL() throws Exception {
+        //given
+        clubMember.setManager();
+        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation unconfirmed1 = createReservation(
+                resource, clubMember, getPeriod(20, 21), "title1", "usage1", false);
+        Reservation unconfirmed2 = createReservation(
+                resource, sameClubMember, getPeriod(21, 22), "title2", "usage2", false);
+        List<Reservation> reservations = List.of(unconfirmed1, unconfirmed2);
+
+        given(reservationRepository.findAllNotConfirmed(resource.getId())).willReturn(reservations);
+
+        //when
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
+        List<ReservationDto.Response> responseDto =
+                reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto);
+
+        //then
+        List<String> reservationNames = responseDto.stream().map(ReservationDto.Response::getTitle).toList();
+        assertThat(reservationNames).as("해당 리소스의 승인되지 않은 예약들을 모두 포함해야 한다.")
+                .containsAll(reservations.stream().map(Reservation::getTitle).toList());
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 승인 대기중인 예약을 조회하려 하면 IllegalStateException")
+    public void findAllNotConfirmedReservationWhenOtherClubThenException() throws Exception {
+        //given
+        clubMember.setAdmin();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+
+        Reservation unconfirmed1 = createReservation(
+                otherClubResource, otherClubMember, getPeriod(20, 21), "title1", "usage1", false);
+        Reservation unconfirmed2 = createReservation(
+                otherClubResource, otherClubMember, getPeriod(21, 22), "title2", "usage2", false);
+        List<Reservation> reservations = List.of(unconfirmed1, unconfirmed2);
+
+        given(reservationRepository.findAllNotConfirmed(otherClubResource.getId())).willReturn(reservations);
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(otherClubResource.getId()).build();
+        assertThatThrownBy(() -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("승인 대기중인 예약 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    public void findAllNotConfirmedReservationsWhenNoClubMemberThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
+        assertThatThrownBy(() -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+
+
+
+
+    /**
+     * Argument capture method
+     */
     private Reservation captureFromMockRepositoryWhenDelete() {
         ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
         then(reservationRepository).should(atLeastOnce()).delete(captor.capture());
         return captor.getValue();
     }
-    private static LocalDateTime getTime(int hour) {
-        return LocalDateTime.of(2023, 8, 10, hour, 0);
+
+    private List<Reservation> captureFromMockRepositoryWhenDeleteAll() {
+        ArgumentCaptor<List<Reservation>> captor = ArgumentCaptor.forClass(List.class);
+        then(reservationRepository).should(atLeastOnce()).deleteAll(captor.capture());
+        return captor.getValue();
     }
-    private static Period getPeriod(int start, int end) {
-        return new Period(getTime(start), getTime(end));
+
+
+    /**
+     * ClubMember util method
+     */
+    private static ClubMember createClubMember(Club club, long value) {
+        Member member = Member.builder().build();
+        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
+        ReflectionTestUtils.setField(clubMember, "id", value);
+        return clubMember;
     }
-    private Reservation createReservation(Resource resource, ClubMember clubMember, Period period, String title, String usage, boolean sharing) {
+
+    /**
+     * Resource util method
+     */
+    private static Resource createResource(Club club, long value) {
+        Resource resource = Resource.builder().club(club).build();
+        ReflectionTestUtils.setField(resource, "id", value);
+        return resource;
+    }
+
+    /**
+     * Reservation util method
+     */
+
+    private Reservation createReservation(Resource resource, ClubMember clubMember, Period period,
+                                          String title, String usage, boolean sharing) {
         return Reservation.builder()
                 .resource(resource)
                 .clubMember(clubMember)
@@ -589,17 +1118,33 @@ public class ReservationServiceTests {
                 .sharing(sharing)
                 .build();
     }
-    private static ClubMember createClubMember(Club club, long value) {
-        Member member = Member.builder().build();
-        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
-        ReflectionTestUtils.setField(clubMember, "id", value);
-        return clubMember;
+
+    private static void updateDefaultReservation(Reservation updateReservation) {
+        updateReservation.update("title", "usage",
+                LocalDateTime.now(), LocalDateTime.now().plusHours(1), false);
     }
-    private static Resource createResource(Club club, long value) {
-        Resource resource = Resource.builder().club(club).build();
-        ReflectionTestUtils.setField(resource, "id", value);
-        return resource;
+
+    private Reservation createDefaultReservation(Resource resource, ClubMember clubMember) {
+        return createReservation(
+                resource, clubMember, getPeriod(20, 21), "title", "usage", false);
     }
+
+
+    /**
+     * Time util method
+     */
+    private static LocalDateTime getTime(int hour) {
+        return LocalDateTime.of(2023, 8, 10, hour, 0);
+    }
+
+    private static Period getPeriod(int start, int end) {
+        return new Period(getTime(start), getTime(end));
+    }
+
+
+    /**
+     * Dto util method
+     */
     private ReservationDto.Create getCreateDto(
             Long resourceId, String title, String usage, boolean sharing, LocalDateTime start, LocalDateTime end) {
 
@@ -612,6 +1157,7 @@ public class ReservationServiceTests {
                 .endDateTime(end)
                 .build();
     }
+
     private static ReservationDto.Update getUpdateDto(
             Long reservationId, Long resourceId, String title, String usage,
             boolean sharing, LocalDateTime start, LocalDateTime end) {
