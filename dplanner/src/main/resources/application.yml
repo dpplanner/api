@@ -10,7 +10,11 @@ spring:
       ddl-auto: create #create update none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        show-sql: true
+        default_batch_fetch_size: 500
 
 logging.level:
   org.hibernate.SQL: debug

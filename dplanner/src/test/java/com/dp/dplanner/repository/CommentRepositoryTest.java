@@ -153,4 +153,20 @@ public class CommentRepositoryTest {
         assertThat(commentRepository.findById(comment2.getId())).isEmpty();
 
     }
+
+    @Test
+    public void CommentRepository_countDistinctByPostId_ReturnInt() {
+
+
+        Comment comment = commentRepository.save(createComment(clubMember, post, null));
+        Comment comment2 = commentRepository.save(createComment(clubMember, post, comment));
+
+        Post post2 = Post.builder().build();
+        testEntityManager.persist(post2);
+        Comment comment3 = commentRepository.save(createComment(clubMember, post2, null));
+
+        int commentCount = commentRepository.countDistinctByPostId(post.getId());
+        assertThat(commentCount).isEqualTo(2);
+
+    }
 }
