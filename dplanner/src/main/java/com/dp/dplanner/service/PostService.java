@@ -7,6 +7,9 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
+import com.dp.dplanner.exception.club.ClubException;
+import com.dp.dplanner.exception.clubMember.ClubMemberException;
+import com.dp.dplanner.exception.post.PostException;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +22,7 @@ import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.dto.PostDto.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 
 @Service
@@ -37,8 +41,8 @@ public class PostService {
 
     @Transactional
     public Response createPost(long clubMemberId, Create create) {
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-        Club club = clubRepository.findById(create.getClubId()).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Club club = getClub(create.getClubId());
         checkIsSameClub(clubMember,club.getId());
 
         Post post = postRepository.save(create.toEntity(clubMember,club));
@@ -54,9 +58,10 @@ public class PostService {
 
     public Response getPostById(long clubMemberId, long postId) {
 
-        Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Post post = getPost(postId);
         checkIsSameClub(clubMember, post.getClub().getId());
+
 
         int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         int commentCount = commentRepository.countDistinctByPostId(post.getId());
@@ -64,7 +69,8 @@ public class PostService {
     }
 
     public SliceResponse getPostsByClubId(long clubMemberId, long clubId, Pageable pageable) {
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+
+        ClubMember clubMember = getClubMember(clubMemberId);
         checkIsSameClub(clubMember, clubId);
         Slice<Post> postSlice = postRepository.findByClubId(clubId, pageable);
 
@@ -78,11 +84,10 @@ public class PostService {
     @Transactional
     public Response updatePost(long clubMemberId, Update update) {
 
-        Post post = postRepository.findById(update.getId()).orElseThrow(RuntimeException::new);
-
+        Post post = getPost(update.getId());
         checkUpdatable(post.getClubMember(), clubMemberId);
-
         post.update(update);
+
         int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         int commentCount = commentRepository.countDistinctByPostId(post.getId());
 
@@ -92,9 +97,10 @@ public class PostService {
     @Transactional
     public void deletePostById(long clubMemberId, long postId) {
 
-        Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Post post = getPost(postId);
         checkDeletable(clubMember, post.getClubMember().getId());
+
         postRepository.delete(post);
 
     }
@@ -131,7 +137,7 @@ public class PostService {
     @RequiredAuthority(POST_ALL)
     public Response toggleIsFixed(long clubMemberId, long postId) {
 
-        Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
+        Post post = getPost(postId);
         post.toggleIsFixed();
 
         int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
@@ -144,20 +150,32 @@ public class PostService {
             throw new RuntimeException();
         }
     }
+
     private void checkDeletable(ClubMember clubMember, long clubMemberId) {
 
         if (!clubMember.getId().equals(clubMemberId)) {
             if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
-                throw new RuntimeException();
+                throw new PostException(DELETE_AUTHORIZATION_DENIED);
             }
         }
 
     }
+
     private void checkUpdatable(ClubMember clubMember, long clubMemberId) {
 
         if (!clubMember.getId().equals(clubMemberId)){
-            throw new RuntimeException();
+            throw new PostException(UPDATE_AUTHORIZATION_DENIED);
         }
+    }
+    private Post getPost(long postId) {
+        return postRepository.findById(postId).orElseThrow(() -> new PostException(POST_NOT_FOUND));
+    }
+    private Club getClub(long clubId) {
+        return clubRepository.findById(clubId).orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+    }
+
+    private ClubMember getClubMember(long clubMemberId) {
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
 }
 
