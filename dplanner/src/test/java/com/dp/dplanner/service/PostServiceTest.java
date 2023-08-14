@@ -7,22 +7,23 @@ import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
 import com.dp.dplanner.dto.Status;
 import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -30,13 +31,16 @@ import static com.dp.dplanner.dto.PostDto.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PostServiceTest {
 
     @Mock
     PostRepository postRepository;
+    @Mock
+    CommentRepository commentRepository;
     @Mock
     ClubRepository clubRepository;
     @Mock
@@ -45,6 +49,8 @@ public class PostServiceTest {
     ClubMemberRepository clubMemberRepository;
     @Mock
     ClubMemberService clubMemberService;
+    @Mock
+    AttachmentService attachmentService;
 
     @InjectMocks
     private PostService postService;
@@ -69,7 +75,7 @@ public class PostServiceTest {
         ReflectionTestUtils.setField(member, "id", memberId);
 
         club = Club.builder()
-                .clubName("test")
+                .clubName("testName")
                 .info("test")
                 .build();
         clubId = 20L;
@@ -113,62 +119,82 @@ public class PostServiceTest {
     }
 
     private Post createPost() {
-
-        return Post.builder()
+        Post post = Post.builder()
                 .club(club)
                 .clubMember(clubMember)
                 .content("test")
                 .build();
+        ReflectionTestUtils.setField(post, "id", postId);
+
+        return post;
+    }
+
+    private void assertResponse(Response response,String content) {
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(postId);
+        assertThat(response.getContent()).isEqualTo(content);
+        assertThat(response.getClubId()).isEqualTo(clubId);
+        assertThat(response.getIsFixed()).isEqualTo(false);
+        assertThat(response.getLikeCount()).isEqualTo(0);
+        assertThat(response.getCommentCount()).isEqualTo(0);
+        assertThat(response.getClubMemberName()).isEqualTo(clubMember.getName());
     }
 
     @Test
-    public void PostService_CreatePost_ReturnPostResponseDto() {
+    public void PostService_CreatePost_ReturnPostResponseDto() throws Exception{
 
+        String fileName = "testUpload";
+        String contentType = "jpg";
+        String filePath = "src/test/resources/test/testUpload.jpg";
+        FileInputStream fileInputStream = new FileInputStream(filePath);
+        MockMultipartFile multipartFile = new MockMultipartFile(fileName, fileName + "." + contentType, contentType, fileInputStream);
 
-        Create createDto = Create.builder().clubId(clubId).content("test").build();
+        Create createDto = Create.builder()
+                .clubId(clubId)
+                .content("test")
+                .files(Arrays.asList(multipartFile))
+                .build();
 
-        when(postRepository.save(Mockito.any(Post.class))).thenReturn(post);
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(clubRepository.findById(clubId)).thenReturn(Optional.ofNullable(club));
+        when(postRepository.save(any(Post.class))).thenReturn(post);
+        when(attachmentService.createAttachment(any(AttachmentDto.Create.class))).thenReturn(Arrays.asList(AttachmentDto.Response.builder().build()));
 
-        Response createdPost = postService.createPost(clubMemberId,createDto);
+        Response response = postService.createPost(clubMemberId,createDto);
 
-        assertThat(createdPost).isNotNull();
-        assertThat(createdPost.getId()).isEqualTo(postId);
-        assertThat(createdPost.getContent()).isEqualTo("test");
-        assertThat(createdPost.getClubId()).isEqualTo(clubId);
-        assertThat(createdPost.getIsFixed()).isEqualTo(false);
+        assertResponse(response,"test");
 
     }
 
 
     @Test
     public void PostService_GetPostById_ReturnPostResponseDto() {
-
-
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(commentRepository.countDistinctByPostId(postId)).thenReturn(0);
+        when(postMemberLikeRepository.countDistinctByPostId(postId)).thenReturn(0);
 
-        Response foundPost = postService.getPostById(postId);
+        Response response = postService.getPostById(clubMemberId, postId);
 
-        assertThat(foundPost).isNotNull();
-        assertThat(foundPost.getId()).isEqualTo(postId);
-        assertThat(foundPost.getContent()).isEqualTo("test");
-        assertThat(foundPost.getClubId()).isEqualTo(clubId);
-        assertThat(foundPost.getIsFixed()).isEqualTo(false);
+        assertResponse(response,"test");
+
+        verify(postRepository, times(1)).findById(postId);
+        verify(commentRepository, times(1)).countDistinctByPostId(postId);
+        verify(postMemberLikeRepository, times(1)).countDistinctByPostId(postId);
+
     }
 
     @Test
     public void PostService_GetPostById_ThrowError(){
+        when(postRepository.findById(postId)).thenReturn(Optional.empty());
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
-        when(postRepository.findById(clubId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> postService.getPostById(clubId))
+        assertThatThrownBy(() -> postService.getPostById(clubMemberId,clubId))
                 .isInstanceOf(RuntimeException.class);
 
     }
 
     @Test
-    @Disabled
     public void PostService_GetPostByClubId_ReturnSliceResponseDto() {
 
         Post post1 = createPost();
@@ -177,11 +203,15 @@ public class PostServiceTest {
         Post post4 = createPost();
         Post post5 = createPost();
 
+
         Slice<Post> postSlice = new SliceImpl<>(Arrays.asList(post5, post4, post3, post2, post1), PageRequest.of(0, 10), false);
 
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(postRepository.findByClubId(clubId, PageRequest.of(0,10))).thenReturn(postSlice);
+        when(postMemberLikeRepository.countDistinctByPostId(anyLong())).thenReturn(0);
+        when(commentRepository.countDistinctByPostId(anyLong())).thenReturn(0);
 
-        SliceResponse responseSlice = postService.getPostsByClubId(clubId, PageRequest.of(0,10));
+        SliceResponse responseSlice = postService.getPostsByClubId(clubMemberId, clubId, PageRequest.of(0, 10));
 
 
         assertThat(responseSlice).isNotNull();
@@ -190,6 +220,10 @@ public class PostServiceTest {
         assertThat(responseSlice.getSize()).isEqualTo(10); // size
         assertThat(responseSlice.getContent()).extracting(Response::getClubId).containsOnly(clubId);
         assertThat(responseSlice.hasNext()).isFalse();
+        responseSlice.getContent().forEach(response -> assertResponse(response, "test"));
+
+        verify(postMemberLikeRepository, times(5)).countDistinctByPostId(anyLong());
+        verify(commentRepository, times(5)).countDistinctByPostId(anyLong());
     }
 
     @Test
@@ -203,11 +237,9 @@ public class PostServiceTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
-        Response updatedPost = postService.updatePost(clubMemberId, updateDto);
+        Response response = postService.updatePost(clubMemberId, updateDto);
 
-        assertThat(updatedPost).isNotNull();
-        assertThat(updatedPost.getId()).isEqualTo(postId);
-        assertThat(updatedPost.getContent()).isEqualTo("update");
+        assertResponse(response, "update");
 
     }
 
@@ -251,8 +283,8 @@ public class PostServiceTest {
     @Test
     public void PostService_LikePost_ReturnPostMemberLikeResponseDto(){
 
-        when(postMemberLikeRepository.findPostMemberLikeByClubMemberIdAndPostId(clubMemberId,postId)).thenReturn(Optional.empty());
-        when(postMemberLikeRepository.save(Mockito.any(PostMemberLike.class))).thenReturn(postMemberLike);
+        when(postMemberLikeRepository.findByClubMemberIdAndPostId(clubMemberId,postId)).thenReturn(Optional.empty());
+        when(postMemberLikeRepository.save(any(PostMemberLike.class))).thenReturn(postMemberLike);
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
@@ -266,7 +298,7 @@ public class PostServiceTest {
     public void PostService_DisLikePost_ReturnPostMemberLikeResponseDto(){
 
 
-        when(postMemberLikeRepository.findPostMemberLikeByClubMemberIdAndPostId(clubMemberId,postId)).thenReturn(Optional.ofNullable(postMemberLike));
+        when(postMemberLikeRepository.findByClubMemberIdAndPostId(clubMemberId,postId)).thenReturn(Optional.ofNullable(postMemberLike));
 
         PostMemberLikeDto.Response response = postService.likePost(clubMemberId,postId);
 
@@ -277,7 +309,7 @@ public class PostServiceTest {
 
     @Test
     public void PostService_FixPost_ReturnPostResponseDto() {
-        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(adminMember));
+//        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(adminMember));
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
         Response fixedPost = postService.toggleIsFixed(clubMemberId,postId);
@@ -288,7 +320,7 @@ public class PostServiceTest {
 
     @Test
     public void PostService_UnFixPost_ReturnPostResponseDto(){
-        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(adminMember));
+//        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(adminMember));
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         ReflectionTestUtils.setField(post,"isFixed",true);
 

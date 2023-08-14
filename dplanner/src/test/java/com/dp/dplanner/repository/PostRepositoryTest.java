@@ -47,7 +47,7 @@ public class PostRepositoryTest {
         clubMember = ClubMember.builder()
                 .member(member)
                 .club(club)
-                .name("test")
+                .name("testName")
                 .info("test")
                 .build();
 
@@ -75,6 +75,9 @@ public class PostRepositoryTest {
         assertThat(savedPost).isNotNull();
         assertThat(savedPost.getId()).isGreaterThan(0);
         assertThat(savedPost.getClubMember()).isEqualTo(clubMember);
+        assertThat(savedPost.getClubMember().getName()).isEqualTo("testName");
+        assertThat(savedPost.getCreatedDate()).isNotNull();
+        assertThat(savedPost.getLastModifiedDate()).isNotNull();
     }
 
     @Test
