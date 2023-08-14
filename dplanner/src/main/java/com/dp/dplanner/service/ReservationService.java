@@ -2,7 +2,6 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Reservation;
-import com.dp.dplanner.domain.ReservationStatus;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
@@ -10,7 +9,6 @@ import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.repository.ResourceRepository;
-import jakarta.persistence.Tuple;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -212,8 +210,10 @@ public class ReservationService {
 
 
     private void confirmReservations(List<Reservation> reservations, boolean isConfirm) {
-        List<Reservation> canceled = extractCanceledReservations(reservations);
-        List<Reservation> notCanceled = extractNotCanceledReservations(reservations);
+
+        Map<Boolean, List<Reservation>> partitioned = partitionCanceledReservations(reservations);
+        List<Reservation> canceled = partitioned.get(true);
+        List<Reservation> notCanceled = partitioned.get(false);
 
         if (isConfirm) {
             reservationRepository.deleteAll(canceled);
@@ -224,21 +224,14 @@ public class ReservationService {
         }
     }
 
-    private static List<Reservation> extractNotCanceledReservations(List<Reservation> reservations) {
+    private Map<Boolean, List<Reservation>> partitionCanceledReservations(List<Reservation> reservations) {
+
         return reservations.stream()
-                .filter(reservation -> !reservation.getStatus().equals(CANCEL))
-                .toList();
+                .collect(Collectors.partitioningBy(
+                        reservation -> reservation.getStatus().equals(CANCEL)
+                ));
     }
 
-    private static List<Reservation> extractCanceledReservations(List<Reservation> reservations) {
-        return reservations.stream()
-                .filter(reservation -> reservation.getStatus().equals(CANCEL))
-                .toList();
-    }
-
-    private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
-        return reservation.getClubMember().getId().equals(clubMemberId);
-    }
 
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
         if (clubMember.hasAuthority(SCHEDULE_ALL)) {
@@ -246,15 +239,23 @@ public class ReservationService {
         }
     }
 
+    //TODO refactor
+    private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
+        return reservation.getClubMember().getId().equals(clubMemberId);
+    }
+
+    //TODO refactor
     private static void throwIfOtherClubReservation(ClubMember clubMember, Reservation reservation, IllegalStateException e) {
         if (!clubMember.isSameClub(reservation.getResource())) {
             throw e;
         }
     }
 
-    private boolean isReservable(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        return !(reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)
-                || isLocked(resourceId, startDateTime, endDateTime));
+
+
+    private boolean isReservable(Long resourceId, LocalDateTime start, LocalDateTime end) {
+        return !(reservationRepository.existsBetween(start, end, resourceId)
+                || isLocked(resourceId, start, end));
     }
 
     private boolean isUpdatable(Long reservationId, Long resourceId, LocalDateTime start, LocalDateTime end) {
