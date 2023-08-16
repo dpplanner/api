@@ -6,6 +6,9 @@ import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.exception.BaseException;
+import com.dp.dplanner.exception.clubMember.ClubMemberException;
+import com.dp.dplanner.exception.lock.LockException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -23,8 +26,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.dto.LockDto.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
@@ -118,7 +123,8 @@ public class LockServiceTest {
 
         when(lockRepository.findBetween(start, end, resourceId)).thenReturn(Arrays.asList(lock));
 
-        assertThatThrownBy(()->lockService.createLock(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
+        BaseException lockException = assertThrows(LockException.class, () -> lockService.createLock(clubMemberId, createDto));
+        assertThat(lockException.getErrorResult()).isEqualTo(PERIOD_OVERLAPPED_EXCEPTION);
     }
 
     @Test
@@ -147,6 +153,34 @@ public class LockServiceTest {
 
         assertThatThrownBy(() -> lockService.createLock(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
 
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> lockService.createLock(clubMemberId, createDto));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
+
+    }
+
+    @Test
+    public void LockService_getLock_ReturnResponse() {
+
+        LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
+        LocalDateTime end = start.plusDays(7);
+
+        Long lockId = 1L;
+        Lock lock = Lock.builder()
+                .resource(resource)
+                .period(new Period(start, end))
+                .build();
+        ReflectionTestUtils.setField(lock, "id", lockId);
+
+        when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+
+        Response response = lockService.getLock(clubMemberId, lockId);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(lockId);
+        assertThat(response.getResourceId()).isEqualTo(resourceId);
+        assertThat(response.getStartDateTime()).isEqualTo(start);
+        assertThat(response.getEndDateTime()).isEqualTo(end);
     }
     @Test
     public void LockService_DeleteLock_ReturnVoid(){
@@ -191,7 +225,9 @@ public class LockServiceTest {
 
         when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-        assertThatThrownBy(() -> lockService.deleteLock(clubMemberId, lockId)).isInstanceOf(RuntimeException.class);
+
+        BaseException clubMemberException = assertThrows(ClubMemberException.class,() -> lockService.deleteLock(clubMemberId, lockId));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
 
@@ -260,7 +296,10 @@ public class LockServiceTest {
         when(lockRepository.findById(updateDto.getId())).thenReturn(Optional.ofNullable(lock));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
-        assertThatThrownBy(() -> lockService.updateLock(clubMemberId, updateDto)).isInstanceOf(RuntimeException.class);
+
+        BaseException clubMemberException = assertThrows(ClubMemberException.class,() -> lockService.updateLock(clubMemberId, updateDto));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
+
 
     }
 
@@ -297,8 +336,9 @@ public class LockServiceTest {
         when(lockRepository.findBetween(updateStart, updateEnd, resourceId)).thenReturn(Arrays.asList(lock,overlappedLock));
         when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
 
-        assertThatThrownBy(() -> lockService.updateLock(clubMemberId, updateDto));
 
+        BaseException lockException = assertThrows(LockException.class, () -> lockService.updateLock(clubMemberId, updateDto));
+        assertThat(lockException.getErrorResult()).isEqualTo(PERIOD_OVERLAPPED_EXCEPTION);
     }
 
 
@@ -355,7 +395,8 @@ public class LockServiceTest {
         when(resourceRepository.findById(resourceId+1)).thenReturn(Optional.ofNullable(otherClubResource));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
-        assertThatThrownBy(()->lockService.getLocks(clubMemberId, resourceId+1, period)).isInstanceOf(RuntimeException.class);
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> lockService.getLocks(clubMemberId, resourceId + 1, period));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
 
