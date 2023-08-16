@@ -37,7 +37,6 @@ public class ResourceDto {
         private Long id;
         private String name;
         private String info;
-        private Long clubId;
 
     }
 

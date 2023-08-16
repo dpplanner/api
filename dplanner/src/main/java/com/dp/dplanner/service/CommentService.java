@@ -5,8 +5,10 @@ import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.CommentDto;
 import com.dp.dplanner.dto.CommentMemberLikeDto;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.CommentException;
+import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
@@ -19,9 +21,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.POST_ALL;
+import static com.dp.dplanner.dto.CommentDto.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CommentService {
 
 
@@ -32,72 +37,47 @@ public class CommentService {
     private final ClubMemberService clubMemberService;
 
     @Transactional
-    public CommentDto.Response createComment(Long clubMemberId,CommentDto.Create createDto) {
+    public Response createComment(Long clubMemberId, Create createDto) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-        Post post = postRepository.findById(createDto.getPostId()).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Post post = getPost(createDto.getPostId());
         Comment parent = null;
 
         if (createDto.getParentId() != null) {
-            parent = commentRepository.findById(createDto.getParentId()).orElseThrow(RuntimeException::new);
+            parent = getComment(createDto.getParentId());
             checkIsParent(parent, post.getId());
         }
         Comment savedComment = commentRepository.save(createDto.toEntity(clubMember, post, parent));
 
-
-        return CommentDto.Response.of(savedComment);
+        return Response.of(savedComment);
     }
 
-    @Transactional(readOnly = true)
-    public List<CommentDto.Response> getCommentsByPostId(Long postId) {
+    public List<Response> getCommentsByPostId(Long postId) {
         List<Comment> comments = commentRepository.findCommentsUsingPostId(postId);
-        return CommentDto.Response.ofList(comments);
+        return Response.ofList(comments);
     }
-    @Transactional(readOnly = true)
-    public List<CommentDto.Response> getCommentsByClubMemberId(Long clubMemberId) {
+
+    public List<Response> getCommentsByClubMemberId(Long clubMemberId) {
         List<Comment> comments = commentRepository.findCommentsByClubMemberId(clubMemberId);
-        return CommentDto.Response.ofList(comments);
+        return Response.ofList(comments);
     }
-
-    private void checkIsParent(Comment parent,Long postId) {
-        if ((parent.getParent() != null) || !(postId.equals(parent.getPost().getId()))) {
-            throw new RuntimeException(); // 원본 댓글에만 대댓 가능 , 해당 댓글이 같은 post에서 작성된 것인지
-        }
-    }
-
     @Transactional
-    public CommentDto.Response updateComment(Long clubMemberId, CommentDto.Update updateDto) {
+    public Response updateComment(Long clubMemberId, Update updateDto) {
 
-        Comment comment = commentRepository.findById(updateDto.getId()).orElseThrow(RuntimeException::new);
-        checkAuthentication(clubMemberId, comment);
+        Comment comment = getComment(updateDto.getId());
+        checkUpdatable(clubMemberId, comment);
         comment.update(updateDto.getContent());
-        return CommentDto.Response.of(comment);
+        return Response.of(comment);
     }
 
     @Transactional
     public void deleteComment(Long clubMemberId, Long commentId) {
 
-        Comment comment = commentRepository.findById(commentId).orElseThrow(RuntimeException::new);
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+        Comment comment = getComment(commentId);
+        ClubMember clubMember = getClubMember(clubMemberId);
         checkDeletable(comment.getClubMember().getId(), clubMember);
         commentRepository.delete(comment);
 
-    }
-
-    private void checkDeletable(long clubMemberId, ClubMember clubMember) {
-
-        if (!clubMember.getId().equals(clubMemberId)) {
-            if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
-                throw new RuntimeException();
-            }
-        }
-
-    }
-
-    private void checkAuthentication(Long clubMemberId, Comment comment) {
-        if (!comment.getClubMember().getId().equals(clubMemberId)) {
-            throw new RuntimeException();
-        }
     }
 
 
@@ -109,7 +89,7 @@ public class CommentService {
         if (find.isEmpty()) {
 
             Comment comment = commentRepository.findById(commentId).orElseThrow(RuntimeException::new);
-            ClubMember clubMember =clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+            ClubMember clubMember = getClubMember(clubMemberId);
 
             CommentMemberLike commentMemberLike = commentMemberLikeRepository.save(
                     CommentMemberLike.builder()
@@ -129,4 +109,38 @@ public class CommentService {
 
     }
 
+
+    private void checkIsParent(Comment parent,Long postId) {
+        if ((parent.getParent() != null) || !(postId.equals(parent.getPost().getId()))) {
+            throw new CommentException(CREATE_COMMENT_DENIED); // 원본 댓글에만 대댓 가능 , 해당 댓글이 같은 post에서 작성된 것인지
+        }
+    }
+
+    private void checkDeletable(long clubMemberId, ClubMember clubMember) {
+
+        if (!clubMember.getId().equals(clubMemberId)) {
+            if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
+                throw new CommentException(DELETE_AUTHORIZATION_DENIED);
+            }
+        }
+
+    }
+
+    private void checkUpdatable(Long clubMemberId, Comment comment) {
+        if (!comment.getClubMember().getId().equals(clubMemberId)) {
+            throw new CommentException(UPDATE_AUTHORIZATION_DENIED);
+        }
+    }
+
+    private Comment getComment(long commentId) {
+        return commentRepository.findById(commentId).orElseThrow(() -> new CommentException(COMMENT_NOT_FOUND));
+    }
+
+    private Post getPost(long postId) {
+        return postRepository.findById(postId).orElseThrow(()->new PostException(POST_NOT_FOUND));
+    }
+
+    private ClubMember getClubMember(Long clubMemberId) {
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(()->new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+    }
 }

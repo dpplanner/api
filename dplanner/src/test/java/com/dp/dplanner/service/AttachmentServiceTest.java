@@ -92,7 +92,6 @@ public class AttachmentServiceTest {
                 .url("url2")
                 .build();
 
-        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(attachmentRepository.findAttachmentsByPostId(postId)).thenReturn(Arrays.asList(attachment, attachment2));
 
         List<Response> responseList = attachmentService.getAttachmentsByPostId(postId);

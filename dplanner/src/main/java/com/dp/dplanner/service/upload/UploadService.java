@@ -12,13 +12,18 @@ import static com.dp.dplanner.domain.FileType.*;
 public interface UploadService {
 
     void init();
-    String uploadFile(MultipartFile multipartFile) throws IOException;
+    String uploadFile(MultipartFile multipartFile);
 
     String getDir();
 
-    default FileType getFileType(String url) throws IOException {
+    default FileType getFileType(String url){
         FileType fileType;
-        String contentType = Files.probeContentType(Path.of(url));
+        String contentType;
+        try {
+            contentType = Files.probeContentType(Path.of(url));
+        } catch (IOException e) {
+            throw new RuntimeException("Could not get File type");
+        }
 
         if (contentType == null) {
             return NONE;

@@ -6,6 +6,8 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.CommentDto;
 import com.dp.dplanner.dto.CommentMemberLikeDto;
 import com.dp.dplanner.dto.Status;
+import com.dp.dplanner.exception.BaseException;
+import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
@@ -25,8 +27,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.POST_ALL;
+import static com.dp.dplanner.exception.ErrorResult.DELETE_AUTHORIZATION_DENIED;
+import static com.dp.dplanner.exception.ErrorResult.UPDATE_AUTHORIZATION_DENIED;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -243,7 +248,7 @@ public class CommentServiceTest {
     }
 
     @Test
-    public void CommentService_UpdateComment_ThrowException(){
+    public void CommentService_UpdateComment_Throw_UPDATE_AUTHORIZATION_DENIED(){
 
         Member newMember = Member.builder().build();
         ClubMember newClubMember = ClubMember.builder()
@@ -263,8 +268,8 @@ public class CommentServiceTest {
 
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
 
-        assertThatThrownBy(() -> commentService.updateComment(clubMemberId, updateDto))
-                .isInstanceOf(RuntimeException.class);
+        BaseException commentException = assertThrows(CommentException.class, () -> commentService.updateComment(clubMemberId, updateDto));
+        assertThat(commentException.getErrorResult()).isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
     @Test
@@ -297,7 +302,7 @@ public class CommentServiceTest {
     }
 
     @Test
-    public void CommentService_DeleteComment_ThrowException() {
+    public void CommentService_DeleteComment_Throw_DELETE_AUTHORIZATION_DENIED() {
         Long usualClubMemberId = clubMemberId + 1;
         Member usualMember = Member.builder().build();
         ClubMember usualClubMember = ClubMember.builder()
@@ -311,9 +316,8 @@ public class CommentServiceTest {
         when(clubMemberRepository.findById(usualClubMemberId)).thenReturn(Optional.ofNullable(usualClubMember));
         when(clubMemberService.hasAuthority(usualClubMemberId, POST_ALL)).thenReturn(false);
 
-        assertThatThrownBy(() -> commentService.deleteComment(usualClubMemberId, commentId))
-                .isInstanceOf(RuntimeException.class);
-
+        BaseException commentException = assertThrows(CommentException.class, () -> commentService.deleteComment(usualClubMemberId, commentId));
+        assertThat(commentException.getErrorResult()).isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
     @Test
