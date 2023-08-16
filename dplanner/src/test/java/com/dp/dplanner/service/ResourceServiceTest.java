@@ -5,7 +5,7 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.clubMember.ClubMemberException;
+import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;

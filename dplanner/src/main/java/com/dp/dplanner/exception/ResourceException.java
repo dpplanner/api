@@ -1,7 +1,5 @@
-package com.dp.dplanner.exception.resource;
+package com.dp.dplanner.exception;
 
-import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.ErrorResult;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

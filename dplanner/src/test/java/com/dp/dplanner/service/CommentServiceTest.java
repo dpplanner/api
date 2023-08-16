@@ -7,7 +7,7 @@ import com.dp.dplanner.dto.CommentDto;
 import com.dp.dplanner.dto.CommentMemberLikeDto;
 import com.dp.dplanner.dto.Status;
 import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.comment.CommentException;
+import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
