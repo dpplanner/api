@@ -3,17 +3,19 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.exception.FileException;
+import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.repository.AttachmentRepository;
 import com.dp.dplanner.repository.PostRepository;
 import com.dp.dplanner.service.upload.UploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.dp.dplanner.dto.AttachmentDto.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,15 +26,15 @@ public class AttachmentService {
 
     public List<Response> createAttachment(Create createDto) {
 
-        Post post = postRepository.findById(createDto.getPostId()).orElseThrow(RuntimeException::new);
+        Post post = postRepository.findById(createDto.getPostId()).orElseThrow(() -> new PostException(POST_NOT_FOUND));
         List<Attachment> attachments = new ArrayList<>();
         createDto.getFiles().stream().forEach(file -> {
             try {
                 String url = uploadService.uploadFile(file);
                 FileType fileType = uploadService.getFileType(url);
                 attachments.add(attachmentRepository.save(createDto.toEntity(post, url, fileType)));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (RuntimeException e) {
+                throw new FileException(FILE_EXCEPTION);
             }
         });
 
@@ -41,8 +43,6 @@ public class AttachmentService {
 
 
     public List<Response> getAttachmentsByPostId(Long postId) {
-
-        postRepository.findById(postId).orElseThrow(RuntimeException::new);
 
         List<Attachment> attachments = attachmentRepository.findAttachmentsByPostId(postId);
 

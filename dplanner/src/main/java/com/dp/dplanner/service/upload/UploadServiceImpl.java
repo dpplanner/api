@@ -27,9 +27,13 @@ public class UploadServiceImpl implements UploadService {
     }
 
     @Override
-    public String uploadFile(MultipartFile multipartFile) throws IOException {
+    public String uploadFile(MultipartFile multipartFile) {
         String pathName = DIR + multipartFile.getName() + "." + multipartFile.getContentType();
-        multipartFile.transferTo(new File(pathName));
+        try {
+            multipartFile.transferTo(new File(pathName));
+        } catch (IOException e) {
+            throw new RuntimeException("Could not upload file");
+        }
         return pathName;
     }
 
