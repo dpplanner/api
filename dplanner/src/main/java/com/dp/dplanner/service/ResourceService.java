@@ -30,9 +30,8 @@ public class ResourceService {
     @RequiredAuthority(SCHEDULE_ALL)
     public Response createResource(long clubMemberId, Create createDto) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
         Club club = getClub(createDto.getClubId());
-        checkIfSameClub(clubMember, club.getId());
+        checkIfSameClub(clubMemberId, club.getId());
 
         Resource resource = resourceRepository.save(createDto.toEntity(club));
 
@@ -42,9 +41,8 @@ public class ResourceService {
     @RequiredAuthority(SCHEDULE_ALL)
     public Response updateResource(Long clubMemberId, Update updateDto) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
         Resource resource = getResource(updateDto.getId());
-        checkIfSameClub(clubMember, resource.getClub().getId());
+        checkIfSameClub(clubMemberId, resource.getClub().getId());
 
         resource.update(updateDto.getName(), updateDto.getInfo());
 
@@ -54,32 +52,30 @@ public class ResourceService {
     @RequiredAuthority(SCHEDULE_ALL)
     public void deleteResource(Long clubMemberId, Long resourceId) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
         Resource resource = getResource(resourceId);
-        checkIfSameClub(clubMember, resource.getClub().getId());
+        checkIfSameClub(clubMemberId, resource.getClub().getId());
 
         resourceRepository.delete(resource);
     }
 
     public Response getResourceById(Long clubMemberId, Long resourceId) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
         Resource resource = getResource(resourceId);
-        checkIfSameClub(clubMember,resource.getClub().getId());
+        checkIfSameClub(clubMemberId,resource.getClub().getId());
 
         return Response.of(resource);
     }
 
     public List<Response> getResourceByClubId(Long clubMemberId, Long clubId) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
-        checkIfSameClub(clubMember, clubId);
+        checkIfSameClub(clubMemberId, clubId);
         List<Resource> resourceList = resourceRepository.findByClubId(clubId);
 
         return Response.ofList(resourceList);
     }
 
-    private  void checkIfSameClub(ClubMember clubMember, Long clubId) {
+    private  void checkIfSameClub(Long clubMemberId, Long clubId) {
+        ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(clubId)) {
             throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }

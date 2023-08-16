@@ -190,7 +190,6 @@ public class PostServiceTest {
 
     @Test
     public void PostService_GetPostById_Throw_POST_NOT_FOUND() {
-        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
         BaseException postException = assertThrows(PostException.class, () -> postService.getPostById(clubMemberId, postId));
@@ -199,10 +198,26 @@ public class PostServiceTest {
 
     @Test
     public void PostService_GetPostById_Throw_Error_CLUBMEMBER_NOT_FOUND(){
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.empty());
 
         BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> postService.getPostById(clubMemberId, postId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(CLUBMEMBER_NOT_FOUND);
+
+    }
+
+    @Test
+    public void PostService_GetPostById_Throw_Error_DIFFERENT_CLUB_EXCEPTION(){
+
+        Club newClub = Club.builder().build();
+        ReflectionTestUtils.setField(newClub, "id", clubId + 1);
+
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        ReflectionTestUtils.setField(post, "club", newClub);
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> postService.getPostById(clubMemberId, postId));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
 

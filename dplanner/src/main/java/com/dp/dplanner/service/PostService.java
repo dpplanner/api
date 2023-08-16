@@ -43,7 +43,7 @@ public class PostService {
     public Response createPost(long clubMemberId, Create create) {
         ClubMember clubMember = getClubMember(clubMemberId);
         Club club = getClub(create.getClubId());
-        checkIsSameClub(clubMember,club.getId());
+        checkIsSameClub(clubMemberId,club.getId());
 
         Post post = postRepository.save(create.toEntity(clubMember,club));
 
@@ -58,20 +58,19 @@ public class PostService {
 
     public Response getPostById(long clubMemberId, long postId) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
         Post post = getPost(postId);
-        checkIsSameClub(clubMember, post.getClub().getId());
+        checkIsSameClub(clubMemberId, post.getClub().getId());
 
 
         int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         int commentCount = commentRepository.countDistinctByPostId(post.getId());
+
         return Response.of(post, likeCount, commentCount);
     }
 
     public SliceResponse getPostsByClubId(long clubMemberId, long clubId, Pageable pageable) {
 
-        ClubMember clubMember = getClubMember(clubMemberId);
-        checkIsSameClub(clubMember, clubId);
+        checkIsSameClub(clubMemberId, clubId);
         Slice<Post> postSlice = postRepository.findByClubId(clubId, pageable);
 
         List<Integer> likeCounts = postSlice.getContent().stream().map(post -> postMemberLikeRepository.countDistinctByPostId(post.getId())).toList();
@@ -112,8 +111,8 @@ public class PostService {
 
         if (find.isEmpty()) {
 
-            Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
-            ClubMember clubMember =clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+            Post post = getPost(postId);
+            ClubMember clubMember = getClubMember(clubMemberId);
 
             PostMemberLike postMemberLike = postMemberLikeRepository.save(
                     PostMemberLike.builder()
@@ -142,12 +141,14 @@ public class PostService {
 
         int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         int commentCount = commentRepository.countDistinctByPostId(post.getId());
+
         return Response.of(post,likeCount,commentCount);
     }
 
-    private void checkIsSameClub(ClubMember clubMember, long clubId) {
+    private void checkIsSameClub(long clubMemberId, long clubId) {
+        ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(clubId)) {
-            throw new RuntimeException();
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 
