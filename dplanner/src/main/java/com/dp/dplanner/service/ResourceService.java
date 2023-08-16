@@ -4,6 +4,9 @@ import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.exception.club.ClubException;
+import com.dp.dplanner.exception.clubMember.ClubMemberException;
+import com.dp.dplanner.exception.resource.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -14,6 +17,7 @@ import java.util.List;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.SCHEDULE_ALL;
 import static com.dp.dplanner.dto.ResourceDto.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,75 +30,70 @@ public class ResourceService {
     @RequiredAuthority(SCHEDULE_ALL)
     public Response createResource(long clubMemberId, Create createDto) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-
-        checkIfSameClub(clubMember, createDto.getClubId());
-
-        Club club = clubRepository.findById(createDto.getClubId()).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Club club = getClub(createDto.getClubId());
+        checkIfSameClub(clubMember, club.getId());
 
         Resource resource = resourceRepository.save(createDto.toEntity(club));
 
-
         return Response.of(resource);
     }
+
     @RequiredAuthority(SCHEDULE_ALL)
     public Response updateResource(Long clubMemberId, Update updateDto) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Resource resource = getResource(updateDto.getId());
+        checkIfSameClub(clubMember, resource.getClub().getId());
 
-        Resource resource = resourceRepository.findById(updateDto.getId()).orElseThrow(RuntimeException::new);
         resource.update(updateDto.getName(), updateDto.getInfo());
 
         return Response.of(resource);
     }
+
     @RequiredAuthority(SCHEDULE_ALL)
     public void deleteResource(Long clubMemberId, Long resourceId) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-
-
-        Resource resource = resourceRepository.findById(resourceId).orElseThrow(RuntimeException::new);
-
-        checkIfResourceBelongToClub(clubMember, resource);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Resource resource = getResource(resourceId);
+        checkIfSameClub(clubMember, resource.getClub().getId());
 
         resourceRepository.delete(resource);
-
-
-
     }
 
     public Response getResourceById(Long clubMemberId, Long resourceId) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-        Resource resource = resourceRepository.findById(resourceId).orElseThrow(RuntimeException::new);
-
-        checkIfResourceBelongToClub(clubMember, resource);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        Resource resource = getResource(resourceId);
+        checkIfSameClub(clubMember,resource.getClub().getId());
 
         return Response.of(resource);
-
     }
 
     public List<Response> getResourceByClubId(Long clubMemberId, Long clubId) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(RuntimeException::new);
-
+        ClubMember clubMember = getClubMember(clubMemberId);
         checkIfSameClub(clubMember, clubId);
-
         List<Resource> resourceList = resourceRepository.findByClubId(clubId);
 
         return Response.ofList(resourceList);
     }
 
     private  void checkIfSameClub(ClubMember clubMember, Long clubId) {
-        if (!clubMember.getClub().getId().equals(clubId)) {
-            throw new RuntimeException();
+        if (!clubMember.isSameClub(clubId)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 
+    private ClubMember getClubMember(long clubMemberId) {
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+    }
 
-    private void checkIfResourceBelongToClub(ClubMember clubMember, Resource resource) {
-        if (!resource.getClub().getId().equals(clubMember.getClub().getId())) {
-            throw new RuntimeException();
-        }
+    private Club getClub(Long clubId) {
+        return clubRepository.findById(clubId).orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+    }
+
+    private Resource getResource(Long resourceId) {
+        return resourceRepository.findById(resourceId).orElseThrow(() -> new ResourceException(RESOURCE_NOT_FOUND));
     }
 }

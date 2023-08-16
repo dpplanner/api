@@ -4,6 +4,8 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.exception.BaseException;
+import com.dp.dplanner.exception.clubMember.ClubMemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -21,8 +23,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.dto.ResourceDto.*;
+import static com.dp.dplanner.exception.ErrorResult.DIFFERENT_CLUB_EXCEPTION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -84,7 +88,7 @@ public class ResourceServiceTest {
                 .build();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-        clubMember.setAdmin();
+//        clubMember.setAdmin();
 
         when(clubRepository.findById(clubId)).thenReturn(Optional.ofNullable(club));
         when(resourceRepository.save(any(Resource.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -115,6 +119,9 @@ public class ResourceServiceTest {
     @Test
     public void ResourceService_createResource_ThrowException_DifferentClub() {
 
+        Club newClub = Club.builder().build();
+        ReflectionTestUtils.setField(newClub, "id", clubId + 1);
+
         Create createDto = Create.builder()
                 .name("test")
                 .info("test")
@@ -122,15 +129,16 @@ public class ResourceServiceTest {
                 .build();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(clubRepository.findById(createDto.getClubId())).thenReturn(Optional.ofNullable(newClub));
 
-        assertThatThrownBy(() -> resourceService.createResource(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
-
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> resourceService.createResource(clubMemberId, createDto));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
     
     @Test
     public void ResourceService_deleteResource_ReturnVoid(){
 
-        clubMember.setAdmin();
+//        clubMember.setAdmin();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
@@ -150,13 +158,15 @@ public class ResourceServiceTest {
 
     @Test
     public void ResourceService_deleteResource_ThrowException_ResourceNotBelongToClub(){
-        clubMember.setAdmin();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
         Club newClub = Club.builder().build();
         ReflectionTestUtils.setField(resource,"club",newClub);
-        assertThatThrownBy(() -> resourceService.deleteResource(clubMemberId, resourceId)).isInstanceOf(RuntimeException.class);
+
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, ()->resourceService.deleteResource(clubMemberId, resourceId));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
+
     }
 
     @Test
@@ -166,12 +176,10 @@ public class ResourceServiceTest {
                 .id(resourceId)
                 .name("updateName")
                 .info("updateInfo")
-                .clubId(clubId)
                 .build();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-        clubMember.setAdmin();
-        when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
+        when(resourceRepository.findById(updateDto.getId())).thenReturn(Optional.ofNullable(resource));
 
         Response response = resourceService.updateResource(clubMemberId, updateDto);
 
@@ -181,19 +189,22 @@ public class ResourceServiceTest {
     }
 
     @Test
-    @Disabled("어노테이션 사용으로 통합 테스트로 변경")
-    public void ResourceService_updateResource_ThrowException_NotAdmin() {
+    public void ResourceService_updateResource_ThrowException_ResourceNotBelongToClub() {
 
+        Club newClub = Club.builder().build();
+        ReflectionTestUtils.setField(newClub, "id", clubId + 1);
         Update updateDto = Update.builder()
                 .id(resourceId)
                 .name("updateName")
                 .info("updateInfo")
-                .clubId(clubId)
                 .build();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(resourceRepository.findById(updateDto.getId())).thenReturn(Optional.ofNullable(resource));
+        ReflectionTestUtils.setField(resource,"club",newClub);
 
-        assertThatThrownBy(() -> resourceService.updateResource(clubMemberId, updateDto)).isInstanceOf(RuntimeException.class);
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> resourceService.updateResource(clubMemberId, updateDto));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
 
@@ -219,7 +230,8 @@ public class ResourceServiceTest {
         Club newClub = Club.builder().build();
         ReflectionTestUtils.setField(resource,"club",newClub);
 
-        assertThatThrownBy(() -> resourceService.getResourceById(clubMemberId, resourceId)).isInstanceOf(RuntimeException.class);
+        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> resourceService.getResourceById(clubMemberId, resourceId));
+        assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
 
