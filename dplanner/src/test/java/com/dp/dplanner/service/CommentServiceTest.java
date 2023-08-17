@@ -73,6 +73,15 @@ public class CommentServiceTest {
         return comment;
     }
 
+    private List<Comment> createComments() {
+        Comment comment = createComment(clubMember, post, null, "test1");
+        Comment comment2 = createComment(clubMember, post, comment, "test2");
+        Comment comment3 = createComment(clubMember, post, comment, "test3");
+        Comment comment4 = createComment(clubMember, post, null, "test4");
+
+        return Arrays.asList(comment, comment4, comment2, comment3);
+    }
+
     @BeforeEach
     public void setUp() {
 
@@ -110,11 +119,11 @@ public class CommentServiceTest {
 
 
     }
-
     @AfterEach
     public void clear() {
         commentId = 0L;
     }
+
     @Test
     public void CommentService_CreateComment_ReturnCommentResponseDto() {
 
@@ -138,7 +147,8 @@ public class CommentServiceTest {
         assertThat(createdComment.getClubMemberId()).isEqualTo(clubMember.getId());
         assertThat(createdComment.getContent()).isEqualTo("test");
         assertThat(createdComment.getChildren()).isEmpty();
-
+        assertThat(createdComment.getClubMemberName()).isEqualTo("test");
+        assertThat(createdComment.getLikeCount()).isEqualTo(0);
     }
 
 
@@ -183,15 +193,8 @@ public class CommentServiceTest {
         assertThat(commentsList.get(0).getChildren().size()).isEqualTo(2);
         assertThat(commentsList.get(1).getChildren().size()).isEqualTo(0);
 
-    }
+        verify(commentMemberLikeRepository, times(4)).countDistinctByCommentId(any(Long.class));
 
-    private List<Comment> createComments() {
-        Comment comment = createComment(clubMember, post, null, "test1");
-        Comment comment2 = createComment(clubMember, post, comment, "test2");
-        Comment comment3 = createComment(clubMember, post, comment, "test3");
-        Comment comment4 = createComment(clubMember, post, null, "test4");
-
-        return Arrays.asList(comment, comment4, comment2, comment3);
     }
     @Test
     public void CommentService_GetCommentsByClubMemberId_ReturnListCommentResponseDto() {
@@ -225,6 +228,9 @@ public class CommentServiceTest {
         assertThat(commentsList.get(1).getParentId()).isEqualTo(newCommentId);
         assertThat(commentsList).extracting(CommentDto.Response::getClubMemberId).containsOnly(clubMemberId);
         assertThat(commentsList).extracting(CommentDto.Response::getPostId).containsOnly(postId);
+
+        verify(commentMemberLikeRepository, times(3)).countDistinctByCommentId(any(Long.class));
+
     }
 
     @Test
