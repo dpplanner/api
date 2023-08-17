@@ -8,10 +8,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 public class CommentDto {
 
@@ -44,10 +46,14 @@ public class CommentDto {
         private Long parentId;
         private Long postId;
         private Long clubMemberId;
+        private String clubMemberName;
+        private int likeCount;
         private String content;
         private List<Response> children;
+        private LocalDateTime createdTime;
+        private LocalDateTime lastModifiedTime;
 
-        public static Response of(Comment comment) {
+        public static Response of(Comment comment,int likeCount) {
 
             Long parentId = null;
             List<Response> children = new ArrayList<>();
@@ -61,20 +67,25 @@ public class CommentDto {
                     .clubMemberId(comment.getClubMember().getId())
                     .postId(comment.getPost().getId())
                     .children(children)
+                    .createdTime(comment.getCreatedDate())
+                    .lastModifiedTime(comment.getLastModifiedDate())
+                    .clubMemberName(comment.getClubMember().getName())
+                    .likeCount(likeCount)
                     .build();
 
         }
 
-        public static List<Response> ofList(List<Comment> comments) {
+        public static List<Response> ofList(List<Comment> comments, List<Integer> likeCounts) {
 
             List<Response> commentResponseList = new ArrayList<>();
             Map<Long, Response> responseMap = new HashMap<>();
-            comments.forEach(comment -> {
-                        Response response = Response.of(comment);
+            IntStream.range(0,comments.size()).forEach(
+                    index -> {
+                        Response response = Response.of(comments.get(index),likeCounts.get(index));
                         responseMap.put(response.getId(), response);
-                        if (comment.getParent() != null) {
+                        if (comments.get(index).getParent() != null) {
                             try {
-                                responseMap.get(comment.getParent().getId()).getChildren().add(response);
+                                responseMap.get(comments.get(index).getParent().getId()).getChildren().add(response);
                             } catch (NullPointerException e) {
                                 commentResponseList.add(response); // CommentService :: getCommentsByClubMemberId 할 때 다른 사람이 작성한 원본 댓글에 대댓글 달았을 때 발생하는 오류
                             }

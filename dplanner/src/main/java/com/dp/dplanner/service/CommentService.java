@@ -49,27 +49,34 @@ public class CommentService {
         }
         Comment savedComment = commentRepository.save(createDto.toEntity(clubMember, post, parent));
 
-        return Response.of(savedComment);
+        return Response.of(savedComment,0);
     }
 
     public List<Response> getCommentsByPostId(Long postId) {
         List<Comment> comments = commentRepository.findCommentsUsingPostId(postId);
-        return Response.ofList(comments);
+        List<Integer> likeCounts = getLikeCounts(comments);
+
+        return Response.ofList(comments,likeCounts);
     }
 
     public List<Response> getCommentsByClubMemberId(Long clubMemberId) {
         List<Comment> comments = commentRepository.findCommentsByClubMemberId(clubMemberId);
-        return Response.ofList(comments);
+        List<Integer> likeCounts = getLikeCounts(comments);
+
+        return Response.ofList(comments, likeCounts);
     }
+
     @Transactional
     public Response updateComment(Long clubMemberId, Update updateDto) {
 
         Comment comment = getComment(updateDto.getId());
         checkUpdatable(clubMemberId, comment);
         comment.update(updateDto.getContent());
-        return Response.of(comment);
-    }
 
+        int likeCount = commentMemberLikeRepository.countDistinctByCommentId(comment.getId());
+
+        return Response.of(comment,likeCount);
+    }
     @Transactional
     public void deleteComment(Long clubMemberId, Long commentId) {
 
@@ -143,4 +150,10 @@ public class CommentService {
     private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(()->new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
+
+    private List<Integer> getLikeCounts(List<Comment> comments) {
+        return comments.stream().map(comment -> commentMemberLikeRepository.countDistinctByCommentId(comment.getId())).toList();
+    }
+
+
 }
