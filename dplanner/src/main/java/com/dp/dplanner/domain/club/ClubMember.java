@@ -1,6 +1,7 @@
 package com.dp.dplanner.domain.club;
 
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -111,6 +112,9 @@ public class ClubMember {
 
     public boolean isSameClub(Resource resource) {
         return this.club.equals(resource.getClub());
+    }
+    public boolean isSameClub(Reservation reservation) {
+        return this.club.equals(reservation.getResource().getClub());
     }
 
     public void update(String name, String info) {

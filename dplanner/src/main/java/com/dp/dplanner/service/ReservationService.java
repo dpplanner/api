@@ -5,6 +5,10 @@ import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.ReservationException;
+import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ReservationRepository;
@@ -18,6 +22,7 @@ import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.ReservationStatus.*;
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,25 +34,28 @@ public class ReservationService {
     private final LockRepository lockRepository;
 
 
-    public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto)
-            throws IllegalStateException, NoSuchElementException {
+    public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
 
         Long resourceId = createDto.getResourceId();
         LocalDateTime startDateTime = createDto.getStartDateTime();
         LocalDateTime endDateTime = createDto.getEndDateTime();
 
         if (!isReservable(resourceId, startDateTime, endDateTime)) {
-            throw new IllegalStateException();
+            throw new ReservationException(RESERVATION_UNAVAILABLE);
         }
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isConfirmed()) {
+            throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
+        }
 
         Resource resource = resourceRepository.findById(resourceId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ResourceException(RESOURCE_NOT_FOUND));
 
         if (!clubMember.isSameClub(resource)) {
-            throw new IllegalStateException();
+            throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
         }
 
         Reservation reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
@@ -57,8 +65,7 @@ public class ReservationService {
         return ReservationDto.Response.of(reservation);
     }
 
-    public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto)
-            throws IllegalStateException, NoSuchElementException {
+    public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto) {
 
         Long reservationId = updateDto.getReservationId();
         Long resourceId = updateDto.getResourceId();
@@ -66,14 +73,14 @@ public class ReservationService {
         LocalDateTime end = updateDto.getEndDateTime();
 
         if (!isUpdatable(reservationId, resourceId, start, end)) {
-            throw new IllegalStateException();
+            throw new ReservationException(RESERVATION_UNAVAILABLE);
         }
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
 
         if (!isReservationOwner(clubMemberId, reservation)) {
-            throw new IllegalStateException();
+            throw new ReservationException(UPDATE_AUTHORIZATION_DENIED);
         }
 
         reservation.update(
@@ -89,14 +96,13 @@ public class ReservationService {
         return ReservationDto.Response.of(reservation);
     }
 
-    public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto)
-            throws IllegalStateException, NoSuchElementException {
+    public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
 
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
 
         if (!isReservationOwner(clubMemberId, reservation)) {
-            throw new IllegalStateException();
+            throw new ReservationException(DELETE_AUTHORIZATION_DENIED);
         }
 
         if (reservation.isConfirmed()) {
@@ -107,26 +113,26 @@ public class ReservationService {
     }
 
     @RequiredAuthority(SCHEDULE_ALL)
-    public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto)
-            throws IllegalStateException, NoSuchElementException {
+    public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
 
-        throwIfOtherClubReservation(manager, reservation, new IllegalStateException());
+        if (!manager.isSameClub(reservation)) {
+            throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         reservationRepository.delete(reservation);
     }
 
     @RequiredAuthority(SCHEDULE_ALL)
-    public void confirmAllReservations(Long managerId, List<ReservationDto.Request> requestDto)
-            throws IllegalStateException, NoSuchElementException {
+    public void confirmAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         List<Long> reservationIds = requestDto.stream()
                 .map(ReservationDto.Request::getReservationId)
@@ -134,19 +140,20 @@ public class ReservationService {
 
         List<Reservation> reservations = reservationRepository.findAllById(reservationIds);
 
-        reservations.forEach(reservation ->
-                throwIfOtherClubReservation(manager, reservation, new IllegalStateException())
-        );
+        reservations.forEach(reservation -> {
+            if (!manager.isSameClub(reservation)) {
+                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            }
+        });
 
         confirmReservations(reservations, true);
     }
 
     @RequiredAuthority(SCHEDULE_ALL)
-    public void rejectAllReservations(Long managerId, List<ReservationDto.Request> requestDto)
-            throws IllegalStateException, NoSuchElementException {
+    public void rejectAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         List<Long> reservationIds = requestDto.stream()
                 .map(ReservationDto.Request::getReservationId)
@@ -154,54 +161,60 @@ public class ReservationService {
 
         List<Reservation> reservations = reservationRepository.findAllById(reservationIds);
 
-        reservations.forEach(
-                reservation -> throwIfOtherClubReservation(manager, reservation, new IllegalStateException())
-        );
+        reservations.forEach(reservation -> {
+            if (!manager.isSameClub(reservation)) {
+                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            }
+        });
 
         confirmReservations(reservations, false);
     }
 
-    public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto)
-            throws IllegalStateException, NoSuchElementException {
+    public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(NoSuchElementException::new);
-        Reservation reservation = reservationRepository.findById(requestDto.getReservationId())
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        throwIfOtherClubReservation(clubMember, reservation, new IllegalStateException());
+        Reservation reservation = reservationRepository.findById(requestDto.getReservationId())
+                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+
+        if (!clubMember.isSameClub(reservation)) {
+            throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         return ReservationDto.Response.of(reservation);
     }
 
-    public List<ReservationDto.Response> findAllReservationsByPeriod(Long clubMemberId, ReservationDto.Request requestDto)
-            throws IllegalStateException, NoSuchElementException {
+    public List<ReservationDto.Response> findAllReservationsByPeriod(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         LocalDateTime start = requestDto.getStartDateTime();
         LocalDateTime end = requestDto.getEndDateTime();
         List<Reservation> reservations = reservationRepository.findAllBetween(start, end, requestDto.getResourceId());
 
-        reservations.forEach(
-                reservation -> throwIfOtherClubReservation(clubMember, reservation, new IllegalStateException())
-        );
+        reservations.forEach(reservation -> {
+            if (!clubMember.isSameClub(reservation)) {
+                    throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                }
+        });
 
         return ReservationDto.Response.ofList(reservations);
     }
 
     @RequiredAuthority(SCHEDULE_ALL)
-    public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto)
-            throws IllegalStateException, NoSuchElementException {
+    public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
         List<Reservation> reservations = reservationRepository.findAllNotConfirmed(requestDto.getResourceId());
 
-        reservations.forEach(
-                reservation -> throwIfOtherClubReservation(manager, reservation, new IllegalStateException())
-        );
+        reservations.forEach(reservation -> {
+            if (!manager.isSameClub(reservation)) {
+                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            }
+        });
 
         return ReservationDto.Response.ofList(reservations);
     }
@@ -243,14 +256,6 @@ public class ReservationService {
     private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
         return reservation.getClubMember().getId().equals(clubMemberId);
     }
-
-    //TODO refactor
-    private static void throwIfOtherClubReservation(ClubMember clubMember, Reservation reservation, IllegalStateException e) {
-        if (!clubMember.isSameClub(reservation.getResource())) {
-            throw e;
-        }
-    }
-
 
 
     private boolean isReservable(Long resourceId, LocalDateTime start, LocalDateTime end) {

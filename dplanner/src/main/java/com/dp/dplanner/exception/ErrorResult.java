@@ -13,6 +13,7 @@ public enum ErrorResult {
      */
     CREATE_COMMENT_DENIED(HttpStatus.BAD_REQUEST, "comment creation is denied, request is invalid"),
     PERIOD_OVERLAPPED_EXCEPTION(HttpStatus.BAD_REQUEST,"요청하신 날짜가 겹칩니다."),
+    RESERVATION_UNAVAILABLE(HttpStatus.BAD_REQUEST,"예약할 수 없는 시간입니다."),
     WRONG_INVITE_CODE(HttpStatus.BAD_REQUEST, "초대코드가 일치하지 않습니다."),
     CLUBMEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "clubMember is already exists, request is invalid"),
 
@@ -38,6 +39,7 @@ public enum ErrorResult {
     CLUB_NOT_FOUND(HttpStatus.NOT_FOUND, "club is not found, request is invalid"),
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "comment is not found, request is invalid"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND,"resource is not found, request is invalid" ),
+    RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND,"reservation is not found, request is invalid" ),
     LOCK_NOT_FOUND(HttpStatus.NOT_FOUND,"lock is not found, request is invalid" ),
 
     /**
