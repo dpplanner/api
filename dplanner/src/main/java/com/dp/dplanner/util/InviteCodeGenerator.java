@@ -1,7 +1,11 @@
 package com.dp.dplanner.util;
 
+import com.dp.dplanner.exception.InviteCodeException;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 public class InviteCodeGenerator {
     public static String generateInviteCode(String seed) {
@@ -17,7 +21,7 @@ public class InviteCodeGenerator {
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException();
+            throw new InviteCodeException(INVITE_CODE_EXCEPTION);
         }
         md.update(text.getBytes());
 

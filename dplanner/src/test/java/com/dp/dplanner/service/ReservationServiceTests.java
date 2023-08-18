@@ -6,6 +6,7 @@ import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
+import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ReservationRepository;
@@ -27,7 +28,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.ReservationStatus.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -134,7 +137,7 @@ public class ReservationServiceTests {
     }
     
     @Test
-    @DisplayName("요청한 시간에 다른 예약이 있으면 IllegalStateException")
+    @DisplayName("요청한 시간에 다른 예약이 있으면 RESERVATION_UNAVAILABLE")
     public void createReservationWhenPeriodOverlappedThenException() throws Exception {
         //given
         given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
@@ -144,12 +147,14 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        assertThatThrownBy(() -> reservationService.createReservation(clubMember.getId(), createDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
+                .isEqualTo(RESERVATION_UNAVAILABLE);
     }
 
     @Test
-    @DisplayName("요청한 시간에 락이 걸려 있으면 IllegalStateException")
+    @DisplayName("요청한 시간에 락이 걸려 있으면 RESERVATION_UNAVAILABLE")
     public void createReservationWhenLockedThenException() throws Exception {
         //given
         given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
@@ -159,12 +164,14 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        assertThatThrownBy(() -> reservationService.createReservation(clubMember.getId(), createDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
+                .isEqualTo(RESERVATION_UNAVAILABLE);
     }
 
     @Test
-    @DisplayName("다른 클럽의 회원이 요청하면 IllegalStateException")
+    @DisplayName("다른 클럽의 회원이 요청하면 DIFFERENT_CLUB_EXCEPTION")
     public void createReservationByOtherClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(otherClubMember.getId())).willReturn(Optional.ofNullable(otherClubMember));
@@ -175,12 +182,14 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        assertThatThrownBy(() -> reservationService.createReservation(otherClubMember.getId(), createDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ResourceException.class,
+                () -> reservationService.createReservation(otherClubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 리소스를 조회하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다.")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("예약 요청시 회원 정보가 없으면 NoSuchElementException")
+    @DisplayName("예약 요청시 회원 정보가 없으면 CLUBMEMBER_NOT_FOUND")
     public void createReservationByNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -190,12 +199,33 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        assertThatThrownBy(() -> reservationService.createReservation(clubMember.getId(), createDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("예약 요청시 리소스 정보가 없으면 NoSuchElementException")
+    @DisplayName("승인되지 않은 회원이 예약 요청시 CLUBMEMBER_NOT_CONFIRMED")
+    public void createReservationByUnconfirmedClubMemberThenException() throws Exception {
+        //given
+        Long unconfirmedId = 3L;
+        ClubMember unconfirmed = ClubMember.createClubMember(Member.builder().build(), Club.builder().build());
+        given(clubMemberRepository.findById(unconfirmedId)).willReturn(Optional.ofNullable(unconfirmed));
+
+        //when
+        //then
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.createReservation(unconfirmedId, createDto));
+        assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원일 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("예약 요청시 리소스 정보가 없으면 RESOURCE_NOT_FOUND")
     public void createReservationByNoResourceThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
@@ -206,8 +236,10 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        assertThatThrownBy(() -> reservationService.createReservation(clubMember.getId(), createDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ResourceException.class,
+                () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).as("리소스가 없으면 RESOURCE_NOT_FOUND 에러를 던진다")
+                .isEqualTo(RESOURCE_NOT_FOUND);
     }
 
 
@@ -311,7 +343,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("예약 시간 수정시 다른 예약이 있으면 IllegalStateException")
+    @DisplayName("예약 시간 수정시 다른 예약이 있으면 RESERVATION_UNAVAILABLE")
     public void updateReservationWhenOverlappedWithOtherReservationThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -325,12 +357,14 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        assertThatThrownBy(() -> reservationService.updateReservation(clubMember.getId(), updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.updateReservation(clubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다")
+                .isEqualTo(RESERVATION_UNAVAILABLE);
     }
 
     @Test
-    @DisplayName("수정하려는 시간에 락이 걸려있으면 IllegalStateException")
+    @DisplayName("수정하려는 시간에 락이 걸려있으면 RESERVATION_UNAVAILABLE")
     public void updateReservationWhenLockedThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -343,12 +377,14 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        assertThatThrownBy(() -> reservationService.updateReservation(clubMember.getId(), updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.updateReservation(clubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다")
+                .isEqualTo(RESERVATION_UNAVAILABLE);
     }
 
     @Test
-    @DisplayName("다른 사람의 예약을 수정하려 하면 IllegalStateException")
+    @DisplayName("다른 사람의 예약을 수정하려 하면 UPDATE_AUTHORIZATION_DENIED")
     public void updateReservationByOtherClubMemberThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -362,12 +398,14 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        assertThatThrownBy(() -> reservationService.updateReservation(otherClubMember.getId(), updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.updateReservation(otherClubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("예약 수정시 예약 정보가 없으면 NoSuchElementException")
+    @DisplayName("예약 수정시 예약 정보가 없으면 RESERVATION_NOT_FOUND")
     public void updateReservationWhenNotExistsThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -380,8 +418,10 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        assertThatThrownBy(() -> reservationService.updateReservation(clubMember.getId(), updateDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.updateReservation(clubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).as("예야 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던져야 한다")
+                .isEqualTo(RESERVATION_NOT_FOUND);
     }
 
 
@@ -423,7 +463,7 @@ public class ReservationServiceTests {
     }
     
     @Test
-    @DisplayName("일반 회원이 다른 회원의 예약을 취소하는 경우 IllegalStateException")
+    @DisplayName("일반 회원이 다른 회원의 예약을 취소하는 경우 DELETE_AUTHORIZATION_DENIED")
     public void cancelOtherClubMemberReservationThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -433,12 +473,14 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        assertThatThrownBy(() -> reservationService.cancelReservation(clubMember.getId(), deleteDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.cancelReservation(clubMember.getId(), deleteDto));
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("예약 취소시 예약 정보가 없으면 NoSuchElementException")
+    @DisplayName("예약 취소시 예약 정보가 없으면 RESERVATION_NOT_FOUND")
     public void cancelNoReservationThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -447,8 +489,10 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        assertThatThrownBy(() -> reservationService.cancelReservation(clubMember.getId(), deleteDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.cancelReservation(clubMember.getId(), deleteDto));
+        assertThat(exception.getErrorResult()).as("예약 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던진다")
+                .isEqualTo(RESERVATION_NOT_FOUND);
     }
 
 
@@ -521,7 +565,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("관리자가 다른 클럽의 예약을 삭제하려 하면 IllegalStateException")
+    @DisplayName("관리자가 다른 클럽의 예약을 삭제하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void deleteOtherClubMemberReservationByAdminThenException() throws Exception {
         //given
         clubMember.setAdmin();
@@ -535,12 +579,14 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        assertThatThrownBy(() -> reservationService.deleteReservation(clubMember.getId(), deleteDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.deleteReservation(clubMember.getId(), deleteDto));
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("예약 삭제시 회원 데이터가 없으면 NoSuchElementException")
+    @DisplayName("예약 삭제시 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void deleteReservationByNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -550,12 +596,14 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        assertThatThrownBy(() -> reservationService.deleteReservation(clubMember.getId(), deleteDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.deleteReservation(clubMember.getId(), deleteDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다.")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("예약 삭제시 예약 데이터가 없으면 NoSuchElementException")
+    @DisplayName("예약 삭제시 예약 데이터가 없으면 RESERVATION_NOT_FOUND")
     public void deleteNoReservationThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
@@ -566,8 +614,10 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        assertThatThrownBy(() -> reservationService.deleteReservation(clubMember.getId(), deleteDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.deleteReservation(clubMember.getId(), deleteDto));
+        assertThat(exception.getErrorResult()).as("예약 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던진다.")
+                .isEqualTo(RESERVATION_NOT_FOUND);
     }
 
 
@@ -657,7 +707,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 예약을 승인하려 하면 IllegalStateException")
+    @DisplayName("다른 클럽의 예약을 승인하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void confirmAllOtherClubReservationThenException() throws Exception {
         //given
         clubMember.setAdmin();
@@ -674,12 +724,14 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(otherClubReservationId));
-        assertThatThrownBy(() -> reservationService.confirmAllReservations(clubMember.getId(), requestDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.confirmAllReservations(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("예약 요청 승인시 본인의 데이터가 없으면 NoSuchElementException")
+    @DisplayName("예약 요청 승인시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void confirmAllByNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -688,8 +740,10 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(reservationId));
-        assertThatThrownBy(() -> reservationService.confirmAllReservations(clubMember.getId(), requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.confirmAllReservations(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -781,7 +835,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 예약을 거절하려 하면 IllegalStateException")
+    @DisplayName("다른 클럽의 예약을 거절하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void rejectAllOtherClubReservationThenException() throws Exception {
         //given
         clubMember.setAdmin();
@@ -798,12 +852,14 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(otherClubReservationId));
-        assertThatThrownBy(() -> reservationService.rejectAllReservations(clubMember.getId(), requestDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.rejectAllReservations(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("예약 요청 거절시 본인의 데이터가 없으면 NoSuchElementException")
+    @DisplayName("예약 요청 거절시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void rejectAllByNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -812,8 +868,10 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(reservationId));
-        assertThatThrownBy(() -> reservationService.rejectAllReservations(clubMember.getId(), requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.rejectAllReservations(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -848,7 +906,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 예약을 조회하려면 IllegalStateException")
+    @DisplayName("다른 클럽의 예약을 조회하려면 DIFFERENT_CLUB_EXCEPTION")
     public void findOtherClubReservationByIdThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
@@ -861,12 +919,14 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
-        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.findReservationById(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("예약 조회시 예약 데이터가 없으면 NoSuchElementException")
+    @DisplayName("예약 조회시 예약 데이터가 없으면 RESERVATION_NOT_FOUND")
     public void findNoReservationByIdThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
@@ -877,12 +937,14 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
-        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.findReservationById(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("예약 데이터가 없으면 RESERVATION_NOT_FOUND 에외를 던진다")
+                .isEqualTo(RESERVATION_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("예약 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    @DisplayName("예약 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findReservationByIdByNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -891,8 +953,10 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
-        assertThatThrownBy(() -> reservationService.findReservationById(clubMember.getId(), requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.findReservationById(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -930,7 +994,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 예약을 조회하려 하면 IllegalStateException")
+    @DisplayName("다른 클럽의 예약을 조회하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void findAllOtherClubReservationsByPeriodThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
@@ -951,12 +1015,14 @@ public class ReservationServiceTests {
                 .startDateTime(getTime(20))
                 .endDateTime(getTime(22))
                 .build();
-        assertThatThrownBy(() -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("기간으로 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    @DisplayName("기간으로 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findAllReservationByPeriodWhenNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -968,8 +1034,10 @@ public class ReservationServiceTests {
                 .startDateTime(getTime(20))
                 .endDateTime(getTime(22))
                 .build();
-        assertThatThrownBy(() -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -1030,7 +1098,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 승인 대기중인 예약을 조회하려 하면 IllegalStateException")
+    @DisplayName("다른 클럽의 승인 대기중인 예약을 조회하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void findAllNotConfirmedReservationWhenOtherClubThenException() throws Exception {
         //given
         clubMember.setAdmin();
@@ -1047,12 +1115,14 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(otherClubResource.getId()).build();
-        assertThatThrownBy(() -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("승인 대기중인 예약 조회시 본인의 데이터가 없으면 NoSuchElementException")
+    @DisplayName("승인 대기중인 예약 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findAllNotConfirmedReservationsWhenNoClubMemberThenException() throws Exception {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(null));
@@ -1060,8 +1130,10 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
-        assertThatThrownBy(() -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -1091,6 +1163,7 @@ public class ReservationServiceTests {
         Member member = Member.builder().build();
         ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
         ReflectionTestUtils.setField(clubMember, "id", value);
+        clubMember.confirm();
         return clubMember;
     }
 
