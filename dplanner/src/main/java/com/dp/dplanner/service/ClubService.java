@@ -17,6 +17,7 @@ import com.dp.dplanner.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -28,6 +29,7 @@ import static com.dp.dplanner.util.InviteCodeGenerator.*;
 
 @Log4j2
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ClubService {
 
@@ -37,6 +39,7 @@ public class ClubService {
     private final ClubAuthorityRepository clubAuthorityRepository;
 
 
+    @Transactional
     public ClubDto.Response createClub(Long memberId, ClubDto.Create createDto) {
 
         Member member = memberRepository.findById(memberId)
@@ -71,6 +74,7 @@ public class ClubService {
         return ClubDto.Response.ofList(clubs);
     }
 
+    @Transactional
     public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -82,6 +86,7 @@ public class ClubService {
         return ClubDto.Response.of(updatedClub);
     }
 
+    @Transactional
     public void setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
 
         List<ClubAuthorityType> authorities = updateDto.toClubAuthorityTypeList();
@@ -122,6 +127,7 @@ public class ClubService {
     }
 
 
+    @Transactional
     public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
 
         Club club = clubRepository.findById(inviteDto.getClubId())

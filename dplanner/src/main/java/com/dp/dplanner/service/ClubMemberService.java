@@ -14,6 +14,7 @@ import com.dp.dplanner.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -24,6 +25,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Log4j2
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ClubMemberService {
 
@@ -32,6 +34,7 @@ public class ClubMemberService {
     private final ClubMemberRepository clubMemberRepository;
 
 
+    @Transactional
     public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto) {
 
         ClubMember exsitingClubMember =
@@ -99,6 +102,7 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(unconfirmedClubMember);
     }
 
+    @Transactional
     public ClubMemberDto.Response update(Long clubMemberId, ClubMemberDto.Update updateDto) {
 
         if (!clubMemberId.equals(updateDto.getId())) {
@@ -116,6 +120,7 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(clubMember);
     }
 
+    @Transactional
     public void changeClubMemberRole(Long adminId, ClubMemberDto.Update updateDto) {
 
         if (adminId.equals(updateDto.getId())) {
@@ -145,6 +150,7 @@ public class ClubMemberService {
         }
     }
 
+    @Transactional
     @RequiredAuthority(MEMBER_ALL)
     public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
 
@@ -163,6 +169,7 @@ public class ClubMemberService {
         unconfirmedClubMembers.forEach(ClubMember::confirm);
     }
 
+    @Transactional
     public void leaveClub(Long clubMemberId) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
@@ -174,6 +181,7 @@ public class ClubMemberService {
         clubMemberRepository.delete(clubMember);
     }
 
+    @Transactional
     @RequiredAuthority(MEMBER_ALL)
     public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto) {
 
@@ -191,6 +199,7 @@ public class ClubMemberService {
 
     }
 
+    @Transactional
     @RequiredAuthority(MEMBER_ALL)
     public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Delete> deleteDto) {
 

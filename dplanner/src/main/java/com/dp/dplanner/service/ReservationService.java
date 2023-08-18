@@ -15,6 +15,7 @@ import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,6 +26,7 @@ import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ReservationService {
 
@@ -34,6 +36,7 @@ public class ReservationService {
     private final LockRepository lockRepository;
 
 
+    @Transactional
     public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
 
         Long resourceId = createDto.getResourceId();
@@ -65,6 +68,7 @@ public class ReservationService {
         return ReservationDto.Response.of(reservation);
     }
 
+    @Transactional
     public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto) {
 
         Long reservationId = updateDto.getReservationId();
@@ -96,6 +100,7 @@ public class ReservationService {
         return ReservationDto.Response.of(reservation);
     }
 
+    @Transactional
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
 
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
@@ -112,6 +117,7 @@ public class ReservationService {
         }
     }
 
+    @Transactional
     @RequiredAuthority(SCHEDULE_ALL)
     public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto) {
 
@@ -128,6 +134,7 @@ public class ReservationService {
         reservationRepository.delete(reservation);
     }
 
+    @Transactional
     @RequiredAuthority(SCHEDULE_ALL)
     public void confirmAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
@@ -149,6 +156,7 @@ public class ReservationService {
         confirmReservations(reservations, true);
     }
 
+    @Transactional
     @RequiredAuthority(SCHEDULE_ALL)
     public void rejectAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
@@ -220,8 +228,9 @@ public class ReservationService {
     }
 
 
-
-
+    /**
+     * utility methods
+     */
     private void confirmReservations(List<Reservation> reservations, boolean isConfirm) {
 
         Map<Boolean, List<Reservation>> partitioned = partitionCanceledReservations(reservations);
