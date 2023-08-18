@@ -7,6 +7,9 @@ import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.InviteDto;
+import com.dp.dplanner.exception.ClubException;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -20,6 +23,7 @@ import java.util.NoSuchElementException;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
+import static com.dp.dplanner.exception.ErrorResult.*;
 import static com.dp.dplanner.util.InviteCodeGenerator.*;
 
 @Log4j2
@@ -33,32 +37,32 @@ public class ClubService {
     private final ClubAuthorityRepository clubAuthorityRepository;
 
 
-    public ClubDto.Response createClub(Long memberId, ClubDto.Create createDto) throws NoSuchElementException {
+    public ClubDto.Response createClub(Long memberId, ClubDto.Create createDto) {
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
 
         Club club = createDto.toEntity();
         clubRepository.save(club);
 
-        ClubMember clubMember = joinClubAsAdmin(member, club);
+        ClubMember clubMember = ClubMember.createAdmin(member, club);
         clubMemberRepository.save(clubMember);
 
         return ClubDto.Response.of(club);
     }
 
-    public ClubDto.Response findClubById(Long clubId) throws NoSuchElementException {
+    public ClubDto.Response findClubById(Long clubId) {
 
         Club club = clubRepository.findById(clubId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
 
         return ClubDto.Response.of(club);
     }
 
-    public List<ClubDto.Response> findMyClubs(Long memberId) throws NoSuchElementException {
+    public List<ClubDto.Response> findMyClubs(Long memberId) {
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
 
         List<Club> clubs = member.getClubMembers().stream()
                 .map(ClubMember::getClub)
@@ -67,39 +71,25 @@ public class ClubService {
         return ClubDto.Response.ofList(clubs);
     }
 
-    public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto)
-            throws NoSuchElementException, IllegalStateException{
+    public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(updateDto.getClubId())) {
-            throw new IllegalStateException();
-        }
-
-        if (clubMember.checkRoleIsNot(ADMIN)) {
-            throw new IllegalStateException();
-        }
+        checkUpdatable(clubMember, updateDto.getClubId());
 
         Club updatedClub = clubMember.getClub().updateInfo(updateDto.getInfo());
         return ClubDto.Response.of(updatedClub);
     }
 
-    public void setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto)
-            throws IllegalStateException, NoSuchElementException {
+    public void setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
 
         List<ClubAuthorityType> authorities = updateDto.toClubAuthorityTypeList();
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(updateDto.getClubId())) {
-            throw new IllegalStateException();
-        }
-
-        if (clubMember.checkRoleIsNot(ADMIN)) {
-            throw new IllegalStateException();
-        }
+        checkUpdatable(clubMember, updateDto.getClubId());
 
         clubAuthorityRepository.deleteAllByClub(clubMember.getClub());
 
@@ -107,29 +97,21 @@ public class ClubService {
         clubAuthorityRepository.saveAll(clubAuthorities);
     }
 
-    public ClubAuthorityDto.Response findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto)
-            throws IllegalStateException, NoSuchElementException {
+    public ClubAuthorityDto.Response findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(requestDto.getClubId())) {
-            throw new IllegalStateException();
-        }
-
-        if (clubMember.checkRoleIs(USER)) {
-            throw new IllegalStateException();
-        }
+        checkReadable(clubMember, requestDto.getClubId());
 
         return ClubAuthorityDto.Response.of(clubMember.getClub());
     }
 
     @RequiredAuthority(MEMBER_ALL)
-    public InviteDto inviteClub(Long managerId)
-            throws IllegalStateException, NoSuchElementException {
+    public InviteDto inviteClub(Long managerId) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         Club club = manager.getClub();
         String seed = club.getClubName();
@@ -140,40 +122,50 @@ public class ClubService {
     }
 
 
-    public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto)
-            throws IllegalStateException, NoSuchElementException {
+    public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
 
         Club club = clubRepository.findById(inviteDto.getClubId())
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
         String seed = club.getClubName();
 
         if (verify(seed, inviteDto.getInviteCode())) {
             Member member = memberRepository.findById(memberId)
-                    .orElseThrow(NoSuchElementException::new);
+                    .orElseThrow(() ->new MemberException(MEMBER_NOT_FOUND));
 
-            ClubMember clubMember = createClubMember(member, club);
+            ClubMember clubMember = ClubMember.createClubMember(member, club);
             clubMemberRepository.save(clubMember);
 
             return ClubMemberDto.Response.of(clubMember);
         } else {
-            throw new IllegalStateException();
+            throw new ClubException(WRONG_INVITE_CODE);
         }
     }
-
 
 
     /**
      * utility methods
      */
-    private static ClubMember joinClubAsAdmin(Member member, Club club) {
-        ClubMember clubMember = createClubMember(member, club);
-        clubMember.setAdmin();
-        clubMember.confirm();
-        return clubMember;
+
+    private static void checkUpdatable(ClubMember clubMember, Long clubId) {
+        checkSameClub(clubMember, clubId);
+
+        if (clubMember.checkRoleIsNot(ADMIN)) {
+            throw new ClubException(UPDATE_AUTHORIZATION_DENIED);
+        }
     }
 
-    private static ClubMember createClubMember(Member member, Club club) {
-        return ClubMember.builder().club(club).member(member).build();
+    private static void checkReadable(ClubMember clubMember, Long clubId) {
+        checkSameClub(clubMember, clubId);
+
+        if (clubMember.checkRoleIs(USER)) {
+            throw new ClubException(READ_AUTHORIZATION_DENIED);
+        }
+    }
+
+    private static void checkSameClub(ClubMember clubMember, Long clubId) {
+        if (!clubMember.isSameClub(clubId)) {
+            throw new ClubException(DIFFERENT_CLUB_EXCEPTION);
+        }
     }
 
 }

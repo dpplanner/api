@@ -47,6 +47,17 @@ public class ClubMember {
         this.isConfirmed = false;
     }
 
+    public static ClubMember createClubMember(Member member, Club club) {
+        return ClubMember.builder().club(club).member(member).build();
+    }
+
+    public static ClubMember createAdmin(Member member, Club club) {
+        ClubMember clubMember = createClubMember(member, club);
+        clubMember.setAdmin();
+        clubMember.confirm();
+        return clubMember;
+    }
+
     private void setMember(Member member) {
         this.member = member;
         member.getClubMembers().add(this);
