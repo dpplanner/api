@@ -3,6 +3,7 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
+import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
@@ -22,7 +23,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -90,7 +93,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("가입하려는 클럽이 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("가입하려는 클럽이 없는 경우 CLUB_NOT_FOUND")
     public void createClubMemberWithNotClubThenException() throws Exception {
         //given
         Long memberId = 1L;
@@ -102,12 +105,13 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Create createDto =
                 new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
-        assertThatThrownBy(() -> clubMemberService.create(memberId, createDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubException.class, () -> clubMemberService.create(memberId, createDto));
+        assertThat(exception.getErrorResult()).as("클럽이 없는 경우 CLUB_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUB_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("서비스에 등록되지 않은 회원일 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("서비스에 등록되지 않은 회원일 경우 MEMBER_NOT_FOUND")
     public void createClubMemberWithNotMemberThenException() throws Exception {
         //given
         Long memberId = 1L;
@@ -117,12 +121,13 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Create createDto =
                 new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
-        assertThatThrownBy(() -> clubMemberService.create(memberId, createDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(MemberException.class, () -> clubMemberService.create(memberId, createDto));
+        assertThat(exception.getErrorResult()).as("회원 정보가 없는 경우 MEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(MEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("이미 클럽에 가입된 회원일 경우 IllegalStateException")
+    @DisplayName("이미 클럽에 가입된 회원일 경우 CLUBMEMBER_ALREADY_EXISTS")
     public void createExistingClubMemberThenException() throws Exception {
         //given
         Long memberId = 1L;
@@ -134,8 +139,9 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Create createDto =
                 new ClubMemberDto.Create(clubId, "newClubMember", "newClubMemberInfo");
-        assertThatThrownBy(() -> clubMemberService.create(memberId, createDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.create(memberId, createDto));
+        assertThat(exception.getErrorResult()).as("이미 클럽 회원 데이터가 있는 경우 CLUBMEMBER_ALREADY_EXISTS 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_ALREADY_EXISTS);
     }
 
 
@@ -162,7 +168,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원의 정보를 조회하려 하면 NoSuchElementException")
+    @DisplayName("승인되지 않은 회원의 정보를 조회하려 하면 CLUBMEMBER_NOT_CONFIRMED")
     public void findNotConfirmedClubMemberThenException() throws Exception {
         //given
         Long notConfirmedClubMemberId = 1L;
@@ -174,13 +180,13 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Request requestDto = new ClubMemberDto.Request(notConfirmedClubMemberId);
-        assertThatThrownBy(() -> clubMemberService.findById(requestDto))
-                .isInstanceOf(NoSuchElementException.class);
-
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(requestDto));
+        assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원인 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
     }
 
     @Test
-    @DisplayName("클럽 회원 조회시 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("클럽 회원 조회시 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findNotClubMemberThenException() throws Exception {
         //given
         Long wrongClubMemberId = 1L;
@@ -189,8 +195,9 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Request requestDto = new ClubMemberDto.Request(wrongClubMemberId);
-        assertThatThrownBy(() -> clubMemberService.findById(requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -280,7 +287,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원이 클럽 회원을 조회하려 하면 IllegalStateException")
+    @DisplayName("승인되지 않은 회원이 클럽 회원을 조회하려 하면 CLUBMEMBER_NOT_CONFIRMED")
     public void findMyClubMembersByNotConfirmedMemberThenException() throws Exception {
         //given
         Long notConfirmedId = 1L;
@@ -291,12 +298,14 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(notConfirmedId))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.findMyClubMembers(notConfirmedId));
+        assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원인 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
     }
 
     @Test
-    @DisplayName("클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findNotMyClubMemberThenException() throws Exception {
         //given
         Long wrongClubMemberId = 2L;
@@ -304,8 +313,10 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(wrongClubMemberId))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.findMyClubMembers(wrongClubMemberId));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -400,7 +411,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원 조회시 본인의 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("승인되지 않은 회원 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findUnconfirmedClubMembersByNotClubMemberThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -408,8 +419,10 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findUnconfirmedClubMembers(clubMemberId))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.findUnconfirmedClubMembers(clubMemberId));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -435,7 +448,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽회원의 정보를 수정하려하면 IllegalStateException")
+    @DisplayName("본인이 아닌 클럽회원의 정보를 수정하려하면 UPDATE_AUTHORIZATION_DENIED")
     public void updateOtherClubMemberThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -444,12 +457,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDto(2L, "updatedMember", "updatedInfo");
-        assertThatThrownBy(() -> clubMemberService.update(clubMemberId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.update(clubMemberId, updateDto));
+        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원의 정보를 수정하려 하면 IllegalStateException")
+    @DisplayName("승인되지 않은 회원의 정보를 수정하려 하면 CLUBMEMBER_NOT_CONFIRMED")
     public void updateNotConfirmedClubMemberThenException() throws Exception {
         //given
         Long notConfirmedClubMemberId = 1L;
@@ -461,12 +476,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDto(notConfirmedClubMemberId, "updatedMember", "updatedInfo");
-        assertThatThrownBy(() -> clubMemberService.update(notConfirmedClubMemberId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.update(notConfirmedClubMemberId, updateDto));
+        assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원인 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
     }
 
     @Test
-    @DisplayName("클럽회원 정보 수정시 클럽 회원의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("클럽회원 정보 수정시 클럽 회원의 데이터가 없는 경우 CLUBMEMBER_NOT_FOUND")
     public void updateNotClubMemberThenException() throws Exception {
         //given
         Long wrongClubMemberId = 1L;
@@ -475,8 +492,10 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDto(wrongClubMemberId, "updatedMember", "updatedInfo");
-        assertThatThrownBy(() -> clubMemberService.update(wrongClubMemberId, updateDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.update(wrongClubMemberId, updateDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -574,7 +593,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("매니저가 임의의 클럽 회원의 역할을 변경하려 하면 IllegalStateException")
+    @DisplayName("매니저가 임의의 클럽 회원의 역할을 변경하려 하면 UPDATE_AUTHORIZATION_DENIED")
     public void changeClubMemberRoleByManagerThenException() throws Exception {
         //given
         Long managerId = 1L;
@@ -587,12 +606,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(anotherClubMemberId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(managerId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(managerId, updateDto));
+        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("일반 회원이 임의의 클럽 회원의 역할을 변경하려 하면 IllegalStateException")
+    @DisplayName("일반 회원이 임의의 클럽 회원의 역할을 변경하려 하면 UPDATE_AUTHORIZATION_DENIED")
     public void changeClubMemberRoleByUserThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -605,12 +626,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(anotherClubMemberId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(clubMemberId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(clubMemberId, updateDto));
+        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원의 역할을 변경하는 경우 IllegalStateException")
+    @DisplayName("승인되지 않은 회원의 역할을 변경하는 경우 CLUBMEMBER_NOT_CONFIRMED")
     public void changeNotConfirmedClubMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -624,12 +647,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(notConfirmedId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+        assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원인 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
     }
 
     @Test
-    @DisplayName("다른 클럽 회원의 역할을 변경하는 경우 IllegalStateException")
+    @DisplayName("다른 클럽 회원의 역할을 변경하는 경우 DIFFERENT_CLUB_EXCEPTION")
     public void changeOtherClubMemberRoleThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -646,12 +671,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(otherClubMemberId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 회원을 수정하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("자신의 역할을 변경하는 경우 IllegalStateException")
+    @DisplayName("자신의 역할을 변경하는 경우 UPDATE_AUTHORIZATION_DENIED")
     public void changeMyRoleThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -660,12 +687,15 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(adminId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
+
     }
 
     @Test
-    @DisplayName("역할을 바꾸려는 회원의 데이터가 존재하지 않을 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("역할을 바꾸려는 회원의 데이터가 존재하지 않을 경우 CLUBMEMBER_NOT_FOUND")
     public void changeNotClubMemberRole() throws Exception {
         //given
         Long adminId = 1L;
@@ -678,13 +708,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(wrongClubId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
-                .isInstanceOf(NoSuchElementException.class);
-
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("회원 역할 변경 시 관리자의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("회원 역할 변경 시 관리자의 데이터가 없는 경우 CLUBMEMBER_NOT_FOUND")
     public void changeClubMemberRoleByAdminWithNoData() throws Exception {
         //given
         Long adminId = 1L;
@@ -695,8 +726,10 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(clubMemberId, ClubRole.MANAGER);
-        assertThatThrownBy(() -> clubMemberService.changeClubMemberRole(adminId, updateDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -788,7 +821,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 회원을 승인하려하면 IllegalStateException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("다른 클럽의 회원을 승인하려하면 DIFFERENT_CLUB_EXCEPTION")
     public void confirmAllByOtherClubMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -802,12 +835,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.confirmAll(adminId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.confirmAll(adminId, requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 회원을 승인하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
-    @DisplayName("회원 승인시 본인의 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("회원 승인시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void confirmAllByNotMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -818,8 +853,10 @@ public class ClubMemberServiceTests {
         //when
         //then
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.confirmAll(adminId, requestDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.confirmAll(adminId, requestDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -843,7 +880,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("관리자가 스스로 클럽에서 탈퇴하려 하면 IllegalStateException")
+    @DisplayName("관리자가 스스로 클럽에서 탈퇴하려 하면 DELETE_AUTHORIZATION_DENIED")
     public void leaveClubByAdminThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -852,12 +889,13 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.leaveClub(adminId))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.leaveClub(adminId));
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("클럽 탈퇴시 클럽 회원 데이터가 없으면 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("클럽 탈퇴시 클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void leaveClubByNotClubMemberThenException() throws Exception {
         //given
         Long wrongClubMemberId = 1L;
@@ -865,8 +903,10 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.leaveClub(wrongClubMemberId))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.leaveClub(wrongClubMemberId));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -958,7 +998,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("회원 관리 권한이 있는 매니저가 관리자를 퇴출하려 하면 IllegalStateException")
+    @DisplayName("회원 관리 권한이 있는 매니저가 관리자를 퇴출하려 하면 DELETE_AUTHORIZATION_DENIED")
     public void kickOutAdminByManagerHasMEMBER_ALLThenException() throws Exception {
         //given
         ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
@@ -976,9 +1016,10 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(adminId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(managerId, deleteDto))
-                .isInstanceOf(IllegalStateException.class);
-
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.kickOut(managerId, deleteDto));
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
     @Test
@@ -1024,7 +1065,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 회원을 퇴출하려 하면 IllegalStateException")
+    @DisplayName("다른 클럽의 회원을 퇴출하려 하면 DELETE_AUTHORIZATION_DENIED")
     public void kickOutOtherClubMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -1040,12 +1081,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(otherClubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(adminId, deleteDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.kickOut(adminId, deleteDto));
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("클럽 회원 퇴출 시 관리자/매니저의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("클럽 회원 퇴출 시 관리자/매니저의 데이터가 없는 경우 CLUBMEMBER_NOT_FOUND")
     public void kickOutNotAdminThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -1056,12 +1099,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(clubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(adminId, deleteDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.kickOut(adminId, deleteDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("클럽 회원 퇴출 시 퇴출되는 회원의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("클럽 회원 퇴출 시 퇴출되는 회원의 데이터가 없는 경우 CLUBMEMBER_NOT_FOUND")
     public void kickOutNotClubMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -1074,12 +1119,14 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(clubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(adminId, deleteDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.kickOut(adminId, deleteDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("본인을 퇴출시키려는 경우 IllegalStateException")
+    @DisplayName("본인을 퇴출시키려는 경우 DELETE_AUTHORIZATION_DENIED")
     public void kickOutSelfThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -1089,8 +1136,10 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(adminId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(adminId, deleteDto))
-                .isInstanceOf(IllegalStateException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.kickOut(adminId, deleteDto));
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
 
@@ -1235,7 +1284,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("여러명의 클럽 회원 퇴출 시 관리자/매니저의 데이터가 없는 경우 NoSuchElementException -- 정상적으로는 불가능한 케이스")
+    @DisplayName("여러명의 클럽 회원 퇴출 시 관리자/매니저의 데이터가 없는 경우 CLUBMEMBER_NOT_FOUND")
     public void kickOutAllNotAdminThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -1246,8 +1295,10 @@ public class ClubMemberServiceTests {
         //when
         //then
         List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(List.of(clubMemberId));
-        assertThatThrownBy(() -> clubMemberService.kickOutAll(adminId, deleteDto))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.kickOutAll(adminId, deleteDto));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
@@ -1301,7 +1352,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("클럽 회원 데이터가 없는 경우 NoSuchElementException")
+    @DisplayName("클럽 회원 데이터가 없는 경우 CLUBMEMBER_NOT_FOUND")
     public void hasAuthorityWithNotClubMemberThenException() throws Exception {
         //given
         Long wrongClubMemberId = 1L;
@@ -1309,8 +1360,10 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.hasAuthority(wrongClubMemberId, ClubAuthorityType.MEMBER_ALL))
-                .isInstanceOf(NoSuchElementException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.hasAuthority(wrongClubMemberId, ClubAuthorityType.MEMBER_ALL));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
 
