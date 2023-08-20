@@ -12,16 +12,20 @@ import java.util.List;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
 
     @Id
     @GeneratedValue
     private Long id;
 
+    private String userName;
+
     @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
     private List<ClubMember> clubMembers = new ArrayList<>();
 
     @Builder
-    public Member() {
+    public Member(String userName) {
+        this.userName = userName;
     }
 }
