@@ -1,12 +1,16 @@
 package com.dp.dplanner.security;
 
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import static com.dp.dplanner.exception.ErrorResult.MEMBER_NOT_FOUND;
 
 
 @Service
@@ -17,7 +21,7 @@ public class PrincipalDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Member member = memberRepository.findByUserName(username).orElseThrow(()->new RuntimeException("사용자를 찾을 수 없습니다."));
+        Member member = memberRepository.findByUserName(username).orElseThrow(()->new MemberException(MEMBER_NOT_FOUND));
 
         return new PrincipalDetails(member);
     }

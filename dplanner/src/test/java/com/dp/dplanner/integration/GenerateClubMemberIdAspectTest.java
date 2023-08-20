@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.security.PrincipalDetails;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,7 +77,8 @@ public class GenerateClubMemberIdAspectTest {
 
     @Test
     public void UserDetailsService_Throw_Exception_MemberCanNotFound(){
-        assertThrows(RuntimeException.class, () -> userDetailsService.loadUserByUsername("UserCanNotFound"));
+        MemberException memberException = assertThrows(MemberException.class, () -> userDetailsService.loadUserByUsername("UserCanNotFound"));
+        assertThat(memberException.getErrorResult()).isEqualTo(MEMBER_NOT_FOUND);
     }
 
 
