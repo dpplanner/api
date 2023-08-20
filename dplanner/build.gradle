@@ -16,6 +16,11 @@ configurations {
 		extendsFrom annotationProcessor
 	}
 }
+gradle.projectsEvaluated {
+	tasks.withType(JavaCompile) {
+		options.compilerArgs << "-parameters"
+	}
+}
 
 repositories {
 	mavenCentral()
@@ -38,4 +43,5 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+
 }
