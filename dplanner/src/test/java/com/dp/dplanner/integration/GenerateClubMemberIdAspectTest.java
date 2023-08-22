@@ -60,7 +60,7 @@ public class GenerateClubMemberIdAspectTest {
     @WithUserDetails(value = "test",setupBefore = TestExecutionEvent.TEST_EXECUTION)
     public void GeneratedClubMemberId(){
 
-        Long clubMemberId = targetClass.targetMethod(club.getId(), null);
+        Long clubMemberId = targetClass.targetMethod( null,club.getId());
         assertThat(clubMemberId).isNotNull();
         assertThat(clubMemberId).isGreaterThan(0);
         assertThat(clubMemberId).isEqualTo(clubMember.getId());
@@ -106,7 +106,7 @@ class TestController {
     @Autowired
     TestService testService;
 
-    public Long targetMethod(Long clubId,@GeneratedClubMemberId Long clubMemberId) {
+    public Long targetMethod(@GeneratedClubMemberId Long clubMemberId,Long clubId) {
         return testService.testMethod(clubMemberId);
     }
 }
