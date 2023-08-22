@@ -1,6 +1,7 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
@@ -97,7 +98,21 @@ public class PostService {
 
         Post post = getPost(update.getId());
         checkUpdatable(post.getClubMember(), clubMemberId);
-        post.update(update);
+
+        List<String> deletedAttachmentUrl = post.getAttachments().stream()
+                .map(Attachment::getUrl)
+                .filter(url -> !update.getAttachmentUrl().contains(url))
+                .toList();
+
+        attachmentService.deleteAttachmentsByUrl(post, deletedAttachmentUrl);
+
+        attachmentService.createAttachment(
+                AttachmentDto.Create.builder()
+                        .postId(post.getId())
+                        .files(update.getFiles())
+                        .build());
+
+        post.updateContent(update.getContent());
 
         int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         int commentCount = commentRepository.countDistinctByPostId(post.getId());
