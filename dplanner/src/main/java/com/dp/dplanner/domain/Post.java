@@ -2,7 +2,6 @@ package com.dp.dplanner.domain;
 
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.PostDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -47,11 +46,13 @@ public class Post extends BaseEntity{
         }
     }
 
+    public void removeAttachment(Attachment attachment) {
+        this.attachments.remove(attachment);
+    }
 
+    public void updateContent(String content) {
 
-    public void update(PostDto.Update update) {
-
-        this.content = update.getContent();
+        this.content = content;
 
     }
 
