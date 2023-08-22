@@ -21,6 +21,7 @@ public class Attachment extends BaseEntity {
     @JoinColumn(name = "post_id")
     Post post;
 
+    @Column(unique = true)
     String url;
     FileType type;
 

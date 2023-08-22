@@ -4,6 +4,7 @@ import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
@@ -23,9 +24,10 @@ public class PostDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Create{
-
-        private long clubId;
+        @NotNull
+        private Long clubId;
         private String content;
         private List<MultipartFile> files;
 
@@ -97,10 +99,12 @@ public class PostDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Update {
         private Long id;
         private String content;
-
+        private List<String> attachmentUrl;
+        private List<MultipartFile> files;
 
     }
 }

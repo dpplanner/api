@@ -22,6 +22,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("select p " +
             "from Post p " +
             "join fetch p.clubMember " +
+            "where p.club.id = :clubId " +
+            "and p.clubMember.id = :clubMemberId "  +
+            "order by p.isFixed desc, p.createdDate desc")
+    Slice<Post> findMyPostsByClubId(@Param(value = "clubMemberId") Long clubMemberId,@Param(value = "clubId") Long clubId, Pageable pageable);
+
+    @Query("select p " +
+            "from Post p " +
+            "join fetch p.clubMember " +
             "where p.id = :id")
     Optional<Post> findById(@Param(value = "id")Long id);
 }

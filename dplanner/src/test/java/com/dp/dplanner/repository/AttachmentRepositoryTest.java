@@ -44,6 +44,7 @@ public class AttachmentRepositoryTest {
         testEntityManager.persist(club);
         testEntityManager.persist(clubMember);
         testEntityManager.persist(post);
+        postId = post.getId();
     }
     @Test
     public void AttachmentRepository_CreateAttachment_ReturnAttachment() {
@@ -63,6 +64,7 @@ public class AttachmentRepositoryTest {
 
     }
 
+
     @Test
     public void AttachmentRepository_findByPostId_ReturnAttachments() {
 
@@ -81,7 +83,7 @@ public class AttachmentRepositoryTest {
     }
 
     @Test
-    public void AttachmentRepository_deleteAttachment_Return(){
+    public void AttachmentRepository_delete(){
         Attachment attachment = createAttachment("test");
         attachmentRepository.save(attachment);
 
@@ -90,6 +92,24 @@ public class AttachmentRepositoryTest {
         Optional<Attachment> deletedAttachment = attachmentRepository.findById(attachment.getId());
         assertThat(deletedAttachment).isEmpty();
 
+    }
+
+    @Test
+    public void AttachmentRepository_deleteByUrl() throws Exception
+    {
+        Attachment attachment = createAttachment("test");
+        Attachment attachment2 = createAttachment("test2");
+        attachmentRepository.save(attachment);
+        attachmentRepository.save(attachment2);
+
+
+        attachmentRepository.deleteByUrl("test");
+        Optional<Attachment> deletedAttachment = attachmentRepository.findById(attachment.getId());
+        List<Attachment> attachments = attachmentRepository.findAttachmentsByPostId(postId);
+
+        assertThat(deletedAttachment).isEmpty();
+        assertThat(attachments.size()).isEqualTo(1);
+        assertThat(attachments.get(0)).isEqualTo(attachment2);
     }
     private Attachment createAttachment(String url) {
         return Attachment.builder()

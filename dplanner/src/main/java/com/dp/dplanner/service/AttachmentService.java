@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.dp.dplanner.dto.AttachmentDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
@@ -50,6 +51,19 @@ public class AttachmentService {
          * 각 attachment에 있는 url이 유효한가?
          */
         return Response.ofList(attachments);
+
+    }
+
+    public void deleteAttachmentsByUrl(Post post, List<String> urls) {
+
+        urls.forEach(url -> {
+            Optional<Attachment> optional = attachmentRepository.findByUrl(url);
+            if (optional.isPresent()) {
+                Attachment attachment = optional.get();
+                attachmentRepository.delete(attachment);
+                post.removeAttachment(attachment);
+            }
+        });
 
     }
 }

@@ -1,8 +1,12 @@
 package com.dp.dplanner.integration;
 
+import com.dp.dplanner.domain.Attachment;
+import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.repository.AttachmentRepository;
 import com.dp.dplanner.service.PostService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +17,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.dp.dplanner.dto.PostDto.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +30,8 @@ public class PostServiceIntegrationTest {
 
     @Autowired
     PostService postService;
+    @Autowired
+    AttachmentRepository attachmentRepository;
     @Autowired
     EntityManager entityManager;
 
@@ -110,8 +118,90 @@ public class PostServiceIntegrationTest {
         assertThat(foundPost.getLikeCount()).isEqualTo(0);
         assertThat(foundPost.getAttachmentsUrl().size()).isEqualTo(1);
         assertThat(foundPost.getAttachmentsUrl().get(0)).isEqualTo(savedPath);
+        
+    }
+    
 
+    @Test
+    public void PostService_UpdatePost_ReturnResponseDto() throws IOException {
+        Post post = Post.builder().clubMember(clubMember).club(club).content("test").build();
+        entityManager.persist(post);
 
+        Attachment attachment = Attachment.builder()
+                .post(post)
+                .type(FileType.IMAGE)
+                .url("testUrl").build();
+
+        Attachment attachment2 = Attachment.builder()
+                .post(post)
+                .type(FileType.IMAGE)
+                .url("testUrl2").build();
+
+        Attachment attachment3 = Attachment.builder()
+                .post(post)
+                .type(FileType.IMAGE)
+                .url("testUrl3").build();
+
+        entityManager.persist(attachment);
+        entityManager.persist(attachment2);
+        entityManager.persist(attachment3);
+
+        Response response = postService.getPostById(clubMember.getId(), post.getId());
+        assertThat(response.getAttachmentsUrl().size()).isEqualTo(3);
+        assertThat(response.getAttachmentsUrl()).containsOnly("testUrl","testUrl2","testUrl3");
+
+        entityManager.flush();
+        entityManager.clear();
+
+        String fileName = "testUpload";
+        String contentType = "jpg";
+        String filePath = "src/test/resources/test/testUpload.jpg";
+        String savedPath = "src/main/resources/test/save/" + fileName + "." + contentType;
+        FileInputStream fileInputStream = new FileInputStream(filePath);
+        MockMultipartFile multipartFile = new MockMultipartFile(fileName, fileName + "." + contentType, contentType, fileInputStream);
+
+        Update update = Update.builder()
+                .id(post.getId())
+                .content("update")
+                .attachmentUrl(List.of("testUrl"))
+                .files(List.of(multipartFile))
+                .build();
+
+        Response updateResponse = postService.updatePost(clubMember.getId(), update);
+        assertThat(updateResponse.getContent()).isEqualTo("update");
+        assertThat(updateResponse.getAttachmentsUrl()).containsOnly("testUrl", savedPath);
     }
 
+    @Test
+    public void PostService_DeletePostById() throws Exception {
+        Post post = Post.builder().clubMember(clubMember).club(club).content("test").build();
+        entityManager.persist(post);
+
+        Attachment attachment = Attachment.builder()
+                .post(post)
+                .type(FileType.IMAGE)
+                .url("testUrl").build();
+
+        Attachment attachment2 = Attachment.builder()
+                .post(post)
+                .type(FileType.IMAGE)
+                .url("testUrl2").build();
+
+        Attachment attachment3 = Attachment.builder()
+                .post(post)
+                .type(FileType.IMAGE)
+                .url("testUrl3").build();
+
+        entityManager.persist(attachment);
+        entityManager.persist(attachment2);
+        entityManager.persist(attachment3);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        postService.deletePostById(clubMember.getId(), post.getId());
+
+        List<Attachment> attachments = attachmentRepository.findAttachmentsByPostId(post.getId());
+        assertThat(attachments.size()).isEqualTo(0);
+    }
 }
