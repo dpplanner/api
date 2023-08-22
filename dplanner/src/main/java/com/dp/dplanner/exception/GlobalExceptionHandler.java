@@ -27,7 +27,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .toList();
 
         log.warn("Invalid DTO Parameter errors : {}", errorList);
-        return this.makeErrorResponseEntity(errorList.toString());
+        return this.makeErrorResponseEntity(errorList.toString(), HttpStatus.BAD_REQUEST);
 
 
     }
@@ -56,15 +56,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return this.makeErrorResponseEntity(exception);
     }
 
+    @ExceptionHandler({Exception.class})
+    public ResponseEntity<Object> handleException(final Exception exception) {
+        log.warn("Exception occur: ", exception);
+        return this.makeErrorResponseEntity(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     private ResponseEntity<ErrorResponse> makeErrorResponseEntity(BaseException baseException) {
         return ResponseEntity.status(baseException.getErrorResult().getHttpStatus())
                 .body(new ErrorResponse(baseException.getErrorResult().toString(),
                         baseException.getErrorResult().getMessage()));
     }
 
-    private ResponseEntity<Object> makeErrorResponseEntity(String errorDescription) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.toString(), errorDescription));
+    private ResponseEntity<Object> makeErrorResponseEntity(String errorDescription, HttpStatus httpStatus) {
+        return ResponseEntity.status(httpStatus)
+                .body(new ErrorResponse(httpStatus.toString(), errorDescription));
     }
 
 }
