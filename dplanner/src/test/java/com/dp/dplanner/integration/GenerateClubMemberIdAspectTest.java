@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.security.PrincipalDetails;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +60,7 @@ public class GenerateClubMemberIdAspectTest {
     @WithUserDetails(value = "test",setupBefore = TestExecutionEvent.TEST_EXECUTION)
     public void GeneratedClubMemberId(){
 
-        Long clubMemberId = targetClass.targetMethod(club.getId(), null);
+        Long clubMemberId = targetClass.targetMethod( null,club.getId());
         assertThat(clubMemberId).isNotNull();
         assertThat(clubMemberId).isGreaterThan(0);
         assertThat(clubMemberId).isEqualTo(clubMember.getId());
@@ -76,7 +77,8 @@ public class GenerateClubMemberIdAspectTest {
 
     @Test
     public void UserDetailsService_Throw_Exception_MemberCanNotFound(){
-        assertThrows(RuntimeException.class, () -> userDetailsService.loadUserByUsername("UserCanNotFound"));
+        MemberException memberException = assertThrows(MemberException.class, () -> userDetailsService.loadUserByUsername("UserCanNotFound"));
+        assertThat(memberException.getErrorResult()).isEqualTo(MEMBER_NOT_FOUND);
     }
 
 
@@ -104,7 +106,7 @@ class TestController {
     @Autowired
     TestService testService;
 
-    public Long targetMethod(Long clubId,@GeneratedClubMemberId Long clubMemberId) {
+    public Long targetMethod(@GeneratedClubMemberId Long clubMemberId,Long clubId) {
         return testService.testMethod(clubMemberId);
     }
 }

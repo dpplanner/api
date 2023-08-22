@@ -4,7 +4,6 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
-import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.security.PrincipalDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +31,6 @@ public class GeneratedClubMemberIdAspect {
 
     @Autowired
     private final ClubMemberRepository clubMemberRepository;
-    @Autowired
-    private final MemberRepository memberRepository;
 
     @Around("execution(* *(.., @com.dp.dplanner.aop.annotation.GeneratedClubMemberId (*), ..))")
     public Object generateClubMemberId(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -58,7 +55,8 @@ public class GeneratedClubMemberIdAspect {
             }
         }
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, member.getId()).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));        parameterValues[index] = clubMember.getId();
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, member.getId()).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        parameterValues[index] = clubMember.getId();
 
         return joinPoint.proceed(parameterValues);
     }
