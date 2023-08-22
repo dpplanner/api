@@ -40,7 +40,7 @@ public class PostService {
 
 
     @Transactional
-    public Response createPost(long clubMemberId, Create create) {
+    public Response createPost(Long clubMemberId, Create create) {
         ClubMember clubMember = getClubMember(clubMemberId);
         Club club = getClub(create.getClubId());
         checkIsSameClub(clubMemberId,club.getId());
@@ -56,7 +56,7 @@ public class PostService {
         return Response.of(post,0,0);
     }
 
-    public Response getPostById(long clubMemberId, long postId) {
+    public Response getPostById(Long clubMemberId, Long postId) {
 
         Post post = getPost(postId);
         checkIsSameClub(clubMemberId, post.getClub().getId());
@@ -68,20 +68,32 @@ public class PostService {
         return Response.of(post, likeCount, commentCount);
     }
 
-    public SliceResponse getPostsByClubId(long clubMemberId, long clubId, Pageable pageable) {
+    public SliceResponse getPostsByClubId(Long clubMemberId, Long clubId, Pageable pageable) {
 
         checkIsSameClub(clubMemberId, clubId);
         Slice<Post> postSlice = postRepository.findByClubId(clubId, pageable);
 
-        List<Integer> likeCounts = postSlice.getContent().stream().map(post -> postMemberLikeRepository.countDistinctByPostId(post.getId())).toList();
-        List<Integer> commentCounts = postSlice.getContent().stream().map(post -> commentRepository.countDistinctByPostId(post.getId())).toList();
-
-        return new SliceResponse(Response.ofList(postSlice.getContent(), likeCounts, commentCounts), pageable, postSlice.hasNext());
+        return getSliceResponse(pageable, postSlice);
 
     }
 
+    public SliceResponse getMyPostsByClubId(Long clubMemberId, Long clubId, Pageable pageable) {
+
+        checkIsSameClub(clubMemberId, clubId);
+        Slice<Post> postSlice = postRepository.findMyPostsByClubId(clubMemberId, clubId, pageable);
+
+        return getSliceResponse(pageable, postSlice);
+
+    }
+
+    private SliceResponse getSliceResponse(Pageable pageable, Slice<Post> postSlice) {
+        List<Integer> likeCounts = postSlice.getContent().stream().map(post -> postMemberLikeRepository.countDistinctByPostId(post.getId())).toList();
+        List<Integer> commentCounts = postSlice.getContent().stream().map(post -> commentRepository.countDistinctByPostId(post.getId())).toList();
+        return new SliceResponse(Response.ofList(postSlice.getContent(), likeCounts, commentCounts), pageable, postSlice.hasNext());
+    }
+
     @Transactional
-    public Response updatePost(long clubMemberId, Update update) {
+    public Response updatePost(Long clubMemberId, Update update) {
 
         Post post = getPost(update.getId());
         checkUpdatable(post.getClubMember(), clubMemberId);
@@ -94,7 +106,7 @@ public class PostService {
     }
 
     @Transactional
-    public void deletePostById(long clubMemberId, long postId) {
+    public void deletePostById(Long clubMemberId, Long postId) {
 
         ClubMember clubMember = getClubMember(clubMemberId);
         Post post = getPost(postId);
@@ -105,7 +117,7 @@ public class PostService {
     }
 
     @Transactional
-    public PostMemberLikeDto.Response likePost(long clubMemberId,long postId) {
+    public PostMemberLikeDto.Response likePost(Long clubMemberId,Long postId) {
 
         Optional<PostMemberLike> find = postMemberLikeRepository.findByClubMemberIdAndPostId(clubMemberId,postId);
 
@@ -134,7 +146,7 @@ public class PostService {
 
     @Transactional
     @RequiredAuthority(POST_ALL)
-    public Response toggleIsFixed(long clubMemberId, long postId) {
+    public Response toggleIsFixed(Long clubMemberId, Long postId) {
 
         Post post = getPost(postId);
         post.toggleIsFixed();
@@ -145,14 +157,14 @@ public class PostService {
         return Response.of(post,likeCount,commentCount);
     }
 
-    private void checkIsSameClub(long clubMemberId, long clubId) {
+    private void checkIsSameClub(Long clubMemberId, Long clubId) {
         ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(clubId)) {
             throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 
-    private void checkDeletable(ClubMember clubMember, long clubMemberId) {
+    private void checkDeletable(ClubMember clubMember, Long clubMemberId) {
 
         if (!clubMember.getId().equals(clubMemberId)) {
             if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
@@ -161,21 +173,21 @@ public class PostService {
         }
 
     }
-
-    private void checkUpdatable(ClubMember clubMember, long clubMemberId) {
+    private void checkUpdatable(ClubMember clubMember, Long clubMemberId) {
 
         if (!clubMember.getId().equals(clubMemberId)){
             throw new PostException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
-    private Post getPost(long postId) {
+    private Post getPost(Long postId) {
         return postRepository.findById(postId).orElseThrow(() -> new PostException(POST_NOT_FOUND));
     }
-    private Club getClub(long clubId) {
+
+    private Club getClub(Long clubId) {
         return clubRepository.findById(clubId).orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
     }
 
-    private ClubMember getClubMember(long clubMemberId) {
+    private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
 }
