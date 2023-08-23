@@ -34,8 +34,8 @@ public class PostController {
 
     @GetMapping("/clubs/{clubId}/posts")
     public ResponseEntity<Slice> getClubPosts(@GeneratedClubMemberId Long clubMemberId,
-                                          @PathVariable final Long clubId,
-                                          @PageableDefault final Pageable pageable) {
+                                              @PathVariable final Long clubId,
+                                              @PageableDefault final Pageable pageable) {
         SliceResponse response = postService.getPostsByClubId(clubMemberId, clubId, pageable);
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -84,7 +84,7 @@ public class PostController {
 
     @PutMapping("/posts/{postId}/like")
     public ResponseEntity<PostMemberLikeDto.Response> likePost(@GeneratedClubMemberId Long clubMemberId,
-                                   @PathVariable final Long postId) {
+                                                               @PathVariable final Long postId) {
 
         PostMemberLikeDto.Response response = postService.likePost(clubMemberId, postId);
 
@@ -92,4 +92,13 @@ public class PostController {
                 .body(response);
     }
 
+    @PutMapping("/posts/{postId}/fix")
+    public ResponseEntity<Response> fixPost(@GeneratedClubMemberId Long clubMemberId,
+                                  @PathVariable final Long postId) {
+
+        Response response = postService.toggleIsFixed(clubMemberId, postId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(response);
+    }
 }
