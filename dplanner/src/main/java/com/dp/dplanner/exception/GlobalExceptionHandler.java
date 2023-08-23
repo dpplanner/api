@@ -19,17 +19,13 @@ import java.util.List;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-
         List<String> errorList = ex.getBindingResult()
                 .getAllErrors()
                 .stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .toList();
-
         log.warn("Invalid DTO Parameter errors : {}", errorList);
         return this.makeErrorResponseEntity(errorList.toString(), HttpStatus.BAD_REQUEST);
-
-
     }
 
     @ExceptionHandler({PostException.class})
@@ -56,6 +52,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return this.makeErrorResponseEntity(exception);
     }
 
+    @ExceptionHandler({CommentException.class})
+    public ResponseEntity<ErrorResponse> handleRestApiException(final CommentException exception) {
+        log.warn("CommentException occurs : ", exception);
+        return this.makeErrorResponseEntity(exception);
+    }
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
         log.warn("Exception occur: ", exception);

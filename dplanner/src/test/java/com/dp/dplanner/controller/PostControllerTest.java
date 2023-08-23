@@ -12,9 +12,6 @@ import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.service.PostService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
-import com.nimbusds.jose.shaded.gson.TypeAdapter;
-import com.nimbusds.jose.shaded.gson.stream.JsonReader;
-import com.nimbusds.jose.shaded.gson.stream.JsonWriter;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,11 +31,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.dp.dplanner.dto.PostDto.*;
@@ -118,7 +113,8 @@ public class PostControllerTest {
 
     private ResultActions mockCreatePost(Create createDto) throws Exception {
         return mockMvc.perform(
-                MockMvcRequestBuilders.post("/clubs/{clubId}/posts", clubId)
+                MockMvcRequestBuilders.post("/posts")
+                        .param("clubId",clubId.toString())
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON));
     }
@@ -211,7 +207,8 @@ public class PostControllerTest {
 
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/clubs/{clubId}/posts", clubId)
+                MockMvcRequestBuilders.get("/posts")
+                        .param("clubId",clubId.toString())
                 .contentType(MediaType.APPLICATION_JSON));
 
         resultActions.andExpect(status().isOk());
@@ -225,7 +222,8 @@ public class PostControllerTest {
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/clubs/{clubId}/posts", clubId)
+                MockMvcRequestBuilders.get("/posts")
+                        .param("clubId",clubId.toString())
                 .contentType(MediaType.APPLICATION_JSON));
 
         resultActions.andExpect(status().isForbidden());
@@ -241,8 +239,9 @@ public class PostControllerTest {
 
         doAnswerAspect();
 
-       final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/members/{memberId}/clubs/{clubId}/posts", memberId, clubId));
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get("/members/{memberId}/posts", memberId)
+                        .param("clubId", clubId.toString()));
 
         resultActions.andExpect(status().isOk());
 
@@ -256,7 +255,8 @@ public class PostControllerTest {
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/members/{memberId}/clubs/{clubId}/posts", memberId, clubId));
+                MockMvcRequestBuilders.get("/members/{memberId}/posts", memberId)
+                        .param("clubId",clubId.toString()));
 
         resultActions.andExpect(status().isForbidden());
         verify(postService, times(1)).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
@@ -274,7 +274,8 @@ public class PostControllerTest {
         doAnswerAspect();
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/posts/{postId}", postId));
+                MockMvcRequestBuilders.get("/posts/{postId}", postId)
+                        .param("clubId",clubId.toString()));
 
         resultActions.andExpect(status().isOk());
         Response response = getResponse(resultActions, Response.class);
@@ -291,7 +292,8 @@ public class PostControllerTest {
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostById(anyLong(), anyLong());
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/posts/{postId}", postId));
+                MockMvcRequestBuilders.get("/posts/{postId}", postId)
+                        .param("clubId",clubId.toString()));
 
         resultActions.andExpect(status().isForbidden());
         verify(postService, times(1)).getPostById(clubMemberId, postId);
@@ -305,7 +307,8 @@ public class PostControllerTest {
         doAnswerAspect();
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.delete("/posts/{postId}", postId));
+                MockMvcRequestBuilders.delete("/posts/{postId}", postId)
+                        .param("clubId",clubId.toString()));
 
         resultActions.andExpect(status().isNoContent());
 
@@ -319,7 +322,8 @@ public class PostControllerTest {
         doThrow(new PostException(DELETE_AUTHORIZATION_DENIED)).when(postService).deletePostById(anyLong(), anyLong());
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.delete("/posts/{postId}", postId));
+                MockMvcRequestBuilders.delete("/posts/{postId}", postId)
+                        .param("clubId",clubId.toString()));
 
         resultActions.andExpect(status().isForbidden());
 
@@ -338,6 +342,7 @@ public class PostControllerTest {
         doAnswerAspect();
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/posts/{postId}", postId)
+                        .param("clubId",clubId.toString())
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -357,6 +362,7 @@ public class PostControllerTest {
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/posts/{postId}", postId)
+                        .param("clubId",clubId.toString())
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -371,32 +377,13 @@ public class PostControllerTest {
 
         doAnswerAspect();
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/posts/{postId}/like", postId));
+                MockMvcRequestBuilders.put("/posts/{postId}/like", postId)
+                        .param("clubId",clubId.toString()));
 
         resultActions.andExpect(status().isOk());
 
         verify(postService, times(1)).likePost(clubMemberId, postId);
     }
 
-
-    static class LocalDateTimeAdapter extends TypeAdapter<LocalDateTime> {
-
-        private static String PATTERN_DATE = "yyyy-MM-dd";
-        private static String PATTERN_TIME = "HH:mm:ss";
-        private static String PATTERN_DATETIME = String.format("%s %s", PATTERN_DATE, PATTERN_TIME);
-
-        DateTimeFormatter format = DateTimeFormatter.ofPattern(PATTERN_DATETIME);
-
-        @Override
-        public void write(JsonWriter out, LocalDateTime value) throws IOException {
-            if(value != null)
-                out.value(value.format(format));
-        }
-
-        @Override
-        public LocalDateTime read(JsonReader in) throws IOException {
-            return LocalDateTime.parse(in.nextString(), format);
-        }
-    }
 
 }
