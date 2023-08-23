@@ -12,9 +12,6 @@ import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.service.PostService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
-import com.nimbusds.jose.shaded.gson.TypeAdapter;
-import com.nimbusds.jose.shaded.gson.stream.JsonReader;
-import com.nimbusds.jose.shaded.gson.stream.JsonWriter;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,11 +31,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.dp.dplanner.dto.PostDto.*;
@@ -378,25 +373,5 @@ public class PostControllerTest {
         verify(postService, times(1)).likePost(clubMemberId, postId);
     }
 
-
-    static class LocalDateTimeAdapter extends TypeAdapter<LocalDateTime> {
-
-        private static String PATTERN_DATE = "yyyy-MM-dd";
-        private static String PATTERN_TIME = "HH:mm:ss";
-        private static String PATTERN_DATETIME = String.format("%s %s", PATTERN_DATE, PATTERN_TIME);
-
-        DateTimeFormatter format = DateTimeFormatter.ofPattern(PATTERN_DATETIME);
-
-        @Override
-        public void write(JsonWriter out, LocalDateTime value) throws IOException {
-            if(value != null)
-                out.value(value.format(format));
-        }
-
-        @Override
-        public LocalDateTime read(JsonReader in) throws IOException {
-            return LocalDateTime.parse(in.nextString(), format);
-        }
-    }
 
 }
