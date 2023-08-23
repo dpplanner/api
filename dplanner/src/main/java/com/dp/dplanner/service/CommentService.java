@@ -89,7 +89,7 @@ public class CommentService {
 
 
     @Transactional
-    public CommentMemberLikeDto.Response likeComment(long clubMemberId, long commentId) {
+    public CommentMemberLikeDto.Response likeComment(Long clubMemberId, Long commentId) {
 
         Optional<CommentMemberLike> find = commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId,commentId);
 
@@ -123,7 +123,7 @@ public class CommentService {
         }
     }
 
-    private void checkDeletable(long clubMemberId, ClubMember clubMember) {
+    private void checkDeletable(Long clubMemberId, ClubMember clubMember) {
 
         if (!clubMember.getId().equals(clubMemberId)) {
             if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
@@ -139,11 +139,11 @@ public class CommentService {
         }
     }
 
-    private Comment getComment(long commentId) {
+    private Comment getComment(Long commentId) {
         return commentRepository.findById(commentId).orElseThrow(() -> new CommentException(COMMENT_NOT_FOUND));
     }
 
-    private Post getPost(long postId) {
+    private Post getPost(Long postId) {
         return postRepository.findById(postId).orElseThrow(()->new PostException(POST_NOT_FOUND));
     }
 
