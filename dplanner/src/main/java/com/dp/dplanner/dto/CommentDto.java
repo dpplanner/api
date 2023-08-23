@@ -3,10 +3,7 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.ClubMember;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +18,7 @@ public class CommentDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Create {
         private Long postId;
         private Long parentId;
@@ -41,6 +39,7 @@ public class CommentDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Response {
         private Long id;
         private Long parentId;
@@ -104,6 +103,7 @@ public class CommentDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Update {
         private Long id;
         private String content;
