@@ -6,9 +6,7 @@ import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.CommentMemberLikeDto;
-import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.CommentException;
-import com.dp.dplanner.exception.PostException;
+import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
@@ -29,7 +27,6 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 @Transactional(readOnly = true)
 public class CommentService {
 
-
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final ClubMemberRepository clubMemberRepository;
@@ -41,6 +38,8 @@ public class CommentService {
 
         ClubMember clubMember = getClubMember(clubMemberId);
         Post post = getPost(createDto.getPostId());
+        checkIsSameClub(post.getClub().getId(),clubMember);
+
         Comment parent = null;
 
         if (createDto.getParentId() != null) {
@@ -52,14 +51,23 @@ public class CommentService {
         return Response.of(savedComment,0);
     }
 
-    public List<Response> getCommentsByPostId(Long postId) {
+    public List<Response> getCommentsByPostId(Long clubMemberId, Long postId) {
+
+        Post post = getPost(postId);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(post.getClub().getId(), clubMember);
+
         List<Comment> comments = commentRepository.findCommentsUsingPostId(postId);
         List<Integer> likeCounts = getLikeCounts(comments);
 
         return Response.ofList(comments,likeCounts);
     }
 
-    public List<Response> getCommentsByClubMemberId(Long clubMemberId) {
+    public List<Response> getCommentsByClubMemberId(Long clubMemberId, Long clubId) {
+
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubId, clubMember);
+
         List<Comment> comments = commentRepository.findCommentsByClubMemberId(clubMemberId);
         List<Integer> likeCounts = getLikeCounts(comments);
 
@@ -77,6 +85,7 @@ public class CommentService {
 
         return Response.of(comment,likeCount);
     }
+
     @Transactional
     public void deleteComment(Long clubMemberId, Long commentId) {
 
@@ -87,16 +96,17 @@ public class CommentService {
 
     }
 
-
     @Transactional
     public CommentMemberLikeDto.Response likeComment(Long clubMemberId, Long commentId) {
 
-        Optional<CommentMemberLike> find = commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId,commentId);
+        Comment comment = getComment(commentId);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(comment.getClub().getId(), clubMember);
+
+        Optional<CommentMemberLike> find = commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId, commentId);
 
         if (find.isEmpty()) {
 
-            Comment comment = commentRepository.findById(commentId).orElseThrow(RuntimeException::new);
-            ClubMember clubMember = getClubMember(clubMemberId);
 
             CommentMemberLike commentMemberLike = commentMemberLikeRepository.save(
                     CommentMemberLike.builder()
@@ -108,14 +118,18 @@ public class CommentService {
             return CommentMemberLikeDto.Response.like(commentMemberLike);
         }else{
             CommentMemberLike clubMemberLike = find.get();
-
             commentMemberLikeRepository.delete(clubMemberLike);
-
             return CommentMemberLikeDto.Response.dislike(clubMemberLike);
         }
 
     }
 
+
+    private static void checkIsSameClub(Long clubId, ClubMember clubMember) {
+        if (!clubMember.isSameClub(clubId)) {
+            throw new CommentException(DIFFERENT_CLUB_EXCEPTION);
+        }
+    }
 
     private void checkIsParent(Comment parent,Long postId) {
         if ((parent.getParent() != null) || !(postId.equals(parent.getPost().getId()))) {
@@ -154,6 +168,5 @@ public class CommentService {
     private List<Integer> getLikeCounts(List<Comment> comments) {
         return comments.stream().map(comment -> commentMemberLikeRepository.countDistinctByCommentId(comment.getId())).toList();
     }
-
 
 }

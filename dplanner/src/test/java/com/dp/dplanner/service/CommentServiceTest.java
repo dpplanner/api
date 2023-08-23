@@ -185,9 +185,10 @@ public class CommentServiceTest {
     @Test
     public void CommentService_GetCommentsByPostId_ReturnListCommentResponseDto(){
 
-//        when(commentRepository.findCommentsUsingPostId(postId)).thenReturn(createComments());
+        doReturn(Optional.of(post)).when(postRepository).findById(postId);
+        doReturn(Optional.of(clubMember)).when(clubMemberRepository).findById(clubMemberId);
         doReturn(createComments()).when(commentRepository).findCommentsUsingPostId(postId);
-        List<CommentDto.Response> commentsList =  commentService.getCommentsByPostId(postId);
+        List<CommentDto.Response> commentsList =  commentService.getCommentsByPostId(clubMemberId,postId);
 
         assertThat(commentsList.size()).isEqualTo(2);
         assertThat(commentsList.get(0).getChildren().size()).isEqualTo(2);
@@ -215,10 +216,10 @@ public class CommentServiceTest {
         Comment comment4 = createComment(clubMember, post,comment3, "test4");
 
         Long newCommentId = comment3.getId();
-
+        doReturn(Optional.of(clubMember)).when(clubMemberRepository).findById(clubMemberId);
         when(commentRepository.findCommentsByClubMemberId(clubMemberId)).thenReturn(Arrays.asList(comment, comment2, comment4));
 
-        List<CommentDto.Response> commentsList = commentService.getCommentsByClubMemberId(clubMemberId);
+        List<CommentDto.Response> commentsList = commentService.getCommentsByClubMemberId(clubMemberId, clubId);
 
         assertThat(commentsList).isNotNull();
         assertThat(commentsList.size()).isEqualTo(2);
@@ -331,6 +332,7 @@ public class CommentServiceTest {
 
         Long commentMemberLikeId = 50L;
         Comment comment = createComment(clubMember, post, null, "test");
+        ReflectionTestUtils.setField(comment, "club", club);
         CommentMemberLike commentMemberLike = CommentMemberLike.builder()
                 .comment(comment)
                 .clubMember(clubMember)
@@ -353,12 +355,15 @@ public class CommentServiceTest {
 
         Long commentMemberLikeId = 50L;
         Comment comment = createComment(clubMember, post, null, "test");
+        ReflectionTestUtils.setField(comment, "club", club);
         CommentMemberLike commentMemberLike = CommentMemberLike.builder()
                 .comment(comment)
                 .clubMember(clubMember)
                 .build();
         ReflectionTestUtils.setField(commentMemberLike,"id",commentMemberLikeId);
 
+        doReturn(Optional.of(comment)).when(commentRepository).findById(commentId);
+        doReturn(Optional.of(clubMember)).when(clubMemberRepository).findById(clubMemberId);
         when(commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId,commentId)).thenReturn(Optional.ofNullable(commentMemberLike));
 
         CommentMemberLikeDto.Response response = commentService.likeComment(clubMemberId,commentId);

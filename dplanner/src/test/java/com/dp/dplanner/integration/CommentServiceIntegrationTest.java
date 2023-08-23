@@ -51,7 +51,7 @@ public class CommentServiceIntegrationTest {
     @Test
     public void CommentService_getCommentsByPostId_likeCountTest() {
         createComments();
-        List<CommentDto.Response> commentsResponseList = commentService.getCommentsByPostId(post.getId());
+        List<CommentDto.Response> commentsResponseList = commentService.getCommentsByPostId(clubMember.getId(),post.getId());
 
         assertThat(commentsResponseList.size()).isEqualTo(2);
         assertThat(commentsResponseList.get(0).getChildren().size()).isEqualTo(2);
