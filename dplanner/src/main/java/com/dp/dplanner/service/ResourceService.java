@@ -28,7 +28,7 @@ public class ResourceService {
     private final ClubRepository clubRepository;
 
     @RequiredAuthority(SCHEDULE_ALL)
-    public Response createResource(long clubMemberId, Create createDto) {
+    public Response createResource(Long clubMemberId, Create createDto) {
 
         Club club = getClub(createDto.getClubId());
         checkIfSameClub(clubMemberId, club.getId());
@@ -81,7 +81,7 @@ public class ResourceService {
         }
     }
 
-    private ClubMember getClubMember(long clubMemberId) {
+    private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
 
