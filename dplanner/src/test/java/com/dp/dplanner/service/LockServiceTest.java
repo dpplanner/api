@@ -7,7 +7,6 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.LockException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
@@ -153,7 +152,7 @@ public class LockServiceTest {
 
         assertThatThrownBy(() -> lockService.createLock(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> lockService.createLock(clubMemberId, createDto));
+        BaseException clubMemberException = assertThrows(LockException.class, () -> lockService.createLock(clubMemberId, createDto));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
@@ -226,7 +225,7 @@ public class LockServiceTest {
         when(lockRepository.findById(lockId)).thenReturn(Optional.ofNullable(lock));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class,() -> lockService.deleteLock(clubMemberId, lockId));
+        BaseException clubMemberException = assertThrows(LockException.class,() -> lockService.deleteLock(clubMemberId, lockId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
@@ -297,7 +296,7 @@ public class LockServiceTest {
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class,() -> lockService.updateLock(clubMemberId, updateDto));
+        BaseException clubMemberException = assertThrows(LockException.class,() -> lockService.updateLock(clubMemberId, updateDto));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
 
@@ -395,7 +394,7 @@ public class LockServiceTest {
         when(resourceRepository.findById(resourceId+1)).thenReturn(Optional.ofNullable(otherClubResource));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> lockService.getLocks(clubMemberId, resourceId + 1, period));
+        BaseException clubMemberException = assertThrows(LockException.class, () -> lockService.getLocks(clubMemberId, resourceId + 1, period));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
