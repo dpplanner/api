@@ -5,7 +5,7 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -131,7 +131,7 @@ public class ResourceServiceTest {
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(clubRepository.findById(createDto.getClubId())).thenReturn(Optional.ofNullable(newClub));
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> resourceService.createResource(clubMemberId, createDto));
+        BaseException clubMemberException = assertThrows(ResourceException.class, () -> resourceService.createResource(clubMemberId, createDto));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
     
@@ -164,7 +164,7 @@ public class ResourceServiceTest {
         Club newClub = Club.builder().build();
         ReflectionTestUtils.setField(resource,"club",newClub);
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, ()->resourceService.deleteResource(clubMemberId, resourceId));
+        BaseException clubMemberException = assertThrows(ResourceException.class, ()->resourceService.deleteResource(clubMemberId, resourceId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
@@ -203,7 +203,7 @@ public class ResourceServiceTest {
         when(resourceRepository.findById(updateDto.getId())).thenReturn(Optional.ofNullable(resource));
         ReflectionTestUtils.setField(resource,"club",newClub);
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> resourceService.updateResource(clubMemberId, updateDto));
+        BaseException clubMemberException = assertThrows(ResourceException.class, () -> resourceService.updateResource(clubMemberId, updateDto));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
@@ -230,7 +230,7 @@ public class ResourceServiceTest {
         Club newClub = Club.builder().build();
         ReflectionTestUtils.setField(resource,"club",newClub);
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> resourceService.getResourceById(clubMemberId, resourceId));
+        BaseException clubMemberException = assertThrows(ResourceException.class, () -> resourceService.getResourceById(clubMemberId, resourceId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
