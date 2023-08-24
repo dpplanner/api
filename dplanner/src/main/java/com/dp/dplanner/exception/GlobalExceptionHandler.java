@@ -57,6 +57,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("CommentException occurs : ", exception);
         return this.makeErrorResponseEntity(exception);
     }
+
+    @ExceptionHandler({ResourceException.class})
+    public ResponseEntity<ErrorResponse> handleRestApiException(final ResourceException exception) {
+        log.warn("ResourceException occurs : ", exception);
+        return this.makeErrorResponseEntity(exception);
+    }
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
         log.warn("Exception occur: ", exception);
