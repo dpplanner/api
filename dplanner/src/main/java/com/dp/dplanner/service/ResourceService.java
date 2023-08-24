@@ -4,8 +4,6 @@ import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.ClubException;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -77,16 +75,16 @@ public class ResourceService {
     private  void checkIfSameClub(Long clubMemberId, Long clubId) {
         ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(clubId)) {
-            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 
     private ClubMember getClubMember(Long clubMemberId) {
-        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ResourceException(CLUBMEMBER_NOT_FOUND));
     }
 
     private Club getClub(Long clubId) {
-        return clubRepository.findById(clubId).orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+        return clubRepository.findById(clubId).orElseThrow(() -> new ResourceException(CLUB_NOT_FOUND));
     }
 
     private Resource getResource(Long resourceId) {
