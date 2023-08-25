@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.dp.dplanner.dto.LockDto.*;
@@ -17,6 +19,7 @@ import static com.dp.dplanner.dto.LockDto.*;
 public class LockController {
 
     private final LockService lockService;
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @PostMapping(value = "/locks/resources/{resourceId}", params = "clubId")
     public ResponseEntity<Response> createLock(@GeneratedClubMemberId Long clubMemberId,
@@ -30,11 +33,17 @@ public class LockController {
 
     }
 
-    @GetMapping(value = "/locks/resources/{resourceId}", params = "clubId")
+    @GetMapping(value = "/locks/resources/{resourceId}", params = {"clubId","start","end"})
     public ResponseEntity<List<Response>> getLocks(@GeneratedClubMemberId Long clubMemberId,
                                                    @RequestParam Long clubId,
-                                                   @PathVariable Long resourceId,
-                                                   @RequestBody Request request) {
+                                                   @RequestParam String start,
+                                                   @RequestParam String end,
+                                                   @PathVariable Long resourceId) {
+
+        Request request = Request.builder()
+                .startDateTime(LocalDateTime.parse(start, formatter))
+                .endDateTime(LocalDateTime.parse(end, formatter))
+                .build();
 
         List<Response> response = lockService.getLocks(clubMemberId, resourceId, new Period(request.getStartDateTime(),request.getEndDateTime()));
 

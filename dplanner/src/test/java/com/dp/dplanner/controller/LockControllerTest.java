@@ -282,7 +282,6 @@ public class LockControllerTest {
     }
 
 
-
     @Test
     public void LockController_deleteLock_NOCONTENT() throws Throwable
     {
@@ -332,8 +331,9 @@ public class LockControllerTest {
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/locks/resources/{resourceId}", resourceId)
                         .param("clubId", clubId.toString())
-                        .content(gson.toJson(request))
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .param("start", "2023-08-25 12:00:00")
+                        .param("end","2023-08-25 14:00:00")
+
         );
 
         resultActions.andExpect(status().isOk());
