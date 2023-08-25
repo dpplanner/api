@@ -249,7 +249,7 @@ public class ReservationControllerTest {
         doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.delete("/reservations/delete")
+                MockMvcRequestBuilders.delete("/reservations")
                         .content(gson.toJson(deleteDto))
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("clubId", clubId.toString())
@@ -273,7 +273,7 @@ public class ReservationControllerTest {
         doThrow(exception).when(reservationService).deleteReservation(anyLong(),any(Delete.class));
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.delete("/reservations/delete")
+                MockMvcRequestBuilders.delete("/reservations")
                         .content(gson.toJson(deleteDto))
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("clubId", clubId.toString())

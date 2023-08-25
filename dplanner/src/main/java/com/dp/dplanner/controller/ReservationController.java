@@ -54,7 +54,7 @@ public class ReservationController {
     }
 
 
-    @DeleteMapping(value = "/reservations/delete", params = "clubId")
+    @DeleteMapping(value = "/reservations", params = "clubId")
     public ResponseEntity deleteReservation(@GeneratedClubMemberId Long clubMemberId,
                                             @RequestParam Long clubId,
                                             @RequestBody Delete deleteDto) {
