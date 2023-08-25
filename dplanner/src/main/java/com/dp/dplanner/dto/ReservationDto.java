@@ -4,11 +4,8 @@ import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.validation.annotation.Validated;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,12 +16,15 @@ public class ReservationDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Create {
         private Long resourceId;
         private String title;
         private String usage;
         private boolean sharing;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
 
         public Reservation toEntity(ClubMember clubMember, Resource resource) {
@@ -43,13 +43,16 @@ public class ReservationDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Update {
         private Long reservationId;
         private Long resourceId;
         private String title;
         private String usage;
         private boolean sharing;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
 
     }
@@ -58,6 +61,7 @@ public class ReservationDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Delete {
         private Long reservationId;
 
@@ -67,10 +71,13 @@ public class ReservationDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Request {
         private Long reservationId;
         private Long resourceId;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
 
         public Request(Long reservationId) {
@@ -102,7 +109,9 @@ public class ReservationDto {
         private String usage;
         private boolean sharing;
         private String  status;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
         private LocalDateTime createDate;
         private LocalDateTime lastModifiedDate;

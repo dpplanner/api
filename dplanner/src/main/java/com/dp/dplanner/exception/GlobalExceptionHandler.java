@@ -68,6 +68,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("LockException occurs : ", exception);
         return this.makeErrorResponseEntity(exception);
     }
+    @ExceptionHandler({ReservationException.class})
+    public ResponseEntity<ErrorResponse> handleRestApiException(final ReservationException exception) {
+        log.warn("ReservationException occurs : ", exception);
+        return this.makeErrorResponseEntity(exception);
+    }
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
         log.warn("Exception occur: ", exception);
