@@ -5,9 +5,7 @@ import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.LockException;
-import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -96,7 +94,7 @@ public class LockService {
     private void checkIsSameClub(Long clubMemberId, Resource resource) {
         ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(resource)) {
-            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+            throw new LockException(DIFFERENT_CLUB_EXCEPTION);
         }
 
     }
@@ -116,11 +114,11 @@ public class LockService {
         return lockRepository.findById(lockId).orElseThrow(()->new LockException(LOCK_NOT_FOUND));
     }
 
-    private Resource getResource(long resourceId) {
-        return resourceRepository.findById(resourceId).orElseThrow(() -> new ResourceException(RESOURCE_NOT_FOUND));
+    private Resource getResource(Long resourceId) {
+        return resourceRepository.findById(resourceId).orElseThrow(() -> new LockException(RESOURCE_NOT_FOUND));
     }
 
     private ClubMember getClubMember(Long clubMemberId) {
-        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new LockException(CLUBMEMBER_NOT_FOUND));
     }
 }

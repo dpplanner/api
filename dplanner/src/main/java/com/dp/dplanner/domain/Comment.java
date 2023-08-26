@@ -1,5 +1,6 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -15,7 +16,6 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comment extends BaseEntity{
 
-//    public static final Comment EMPTY = new Comment();
     @Id
     @GeneratedValue
     private Long id;
@@ -29,6 +29,11 @@ public class Comment extends BaseEntity{
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id")
+    private Club club;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comment parent;
 
@@ -39,7 +44,7 @@ public class Comment extends BaseEntity{
 
 
     @Builder
-    public Comment(ClubMember clubMember, Post post, Comment parent, String content) {
+    public Comment(ClubMember clubMember, Post post, Comment parent, String content,Club club) {
         setPost(post);
         if (parent != null) {
             addChildren(parent);
@@ -47,6 +52,7 @@ public class Comment extends BaseEntity{
         this.clubMember = clubMember;
         this.parent = parent;
         this.content = content;
+        this.club = club;
     }
 
     private void setPost(Post post) {

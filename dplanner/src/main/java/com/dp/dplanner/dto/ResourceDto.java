@@ -2,10 +2,7 @@ package com.dp.dplanner.dto;
 
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +13,7 @@ public class ResourceDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Create {
         private String name;
         private String info;
@@ -33,6 +31,7 @@ public class ResourceDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Update {
         private Long id;
         private String name;

@@ -3,10 +3,8 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,10 +16,13 @@ public class LockDto{
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Create{
 
         Long resourceId;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime endDateTime;
 
 
@@ -41,7 +42,9 @@ public class LockDto{
 
         Long id;
         Long resourceId;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime endDateTime;
 
         public static Response of(Lock lock) {
@@ -62,10 +65,25 @@ public class LockDto{
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Update{
         Long id;
         Long resourceId;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        LocalDateTime endDateTime;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Request{
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        LocalDateTime startDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime endDateTime;
     }
 }

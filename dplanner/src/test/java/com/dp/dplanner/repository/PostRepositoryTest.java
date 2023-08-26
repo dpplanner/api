@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
@@ -100,7 +101,7 @@ public class PostRepositoryTest {
     }
 
     @Test
-    public void PostRepository_GetAllByClubId_ReturnMoreThanOnePost() {
+    public void PostRepository_GetAllByClubId_ReturnMoreThanOnePost() throws InterruptedException {
 
 
         Post post = createPost(club,clubMember);
@@ -108,16 +109,17 @@ public class PostRepositoryTest {
         Post post3 = createPost(null,clubMember);
 
         postRepository.save(post);
+        Thread.sleep(100);
         postRepository.save(post2);
         postRepository.save(post3);
 
         pageRequest = PageRequest.of(0, 2);
-        Slice<Post> postList = postRepository.findByClubId(club.getId(),pageRequest);
+        Slice<Post> postSlice = postRepository.findByClubId(club.getId(),pageRequest);
 
-        assertThat(postList).isNotNull();
-        assertThat(postList).extracting(Post::getId).isNotNull();
-        assertThat(postList.getSize()).isEqualTo(2);
-        assertThat(postList).containsExactly(post2, post);
+        assertThat(postSlice).isNotNull();
+        assertThat(postSlice).extracting(Post::getId).isNotNull();
+        assertThat(postSlice.getSize()).isEqualTo(2);
+        assertThat(postSlice).containsExactly(post2, post);
 
     }
 
@@ -177,6 +179,38 @@ public class PostRepositoryTest {
         postRepository.deleteById(post.getId());
 
         assertThat(postRepository.findById(post.getId())).isEmpty();
+    }
+
+    @Test
+    public void PostRepository_findMyPostsByClubId_ReturnPosts() {
+        Post post1 = createPost(club, clubMember);
+        Post post2 = createPost(club, clubMember);
+        Post post3 = createPost(club, clubMember);
+        Post post4 = createPost(club, clubMember);
+
+        Club newClub = Club.builder().build();
+        ClubMember newClubMember = ClubMember.createClubMember(member, newClub);
+        testEntityManager.persist(newClub);
+        testEntityManager.persist(newClubMember);
+        Post post5 = createPost(newClub, newClubMember);
+
+
+        postRepository.save(post1);
+        postRepository.save(post2);
+        postRepository.save(post3);
+        postRepository.save(post4);
+        postRepository.save(post5);
+
+
+        Slice<Post> postSlice = postRepository.findMyPostsByClubId(clubMember.getId(), club.getId(), Pageable.unpaged());
+
+        assertThat(postSlice).isNotNull();
+        assertThat(postSlice.getContent().size()).isEqualTo(4);
+        assertThat(postSlice.getContent()).extracting(Post::getClubMember).extracting(ClubMember::getId).containsOnly(clubMember.getId());
+
+
+
+
     }
 
 
