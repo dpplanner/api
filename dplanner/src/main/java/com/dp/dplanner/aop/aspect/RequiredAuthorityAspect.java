@@ -1,12 +1,16 @@
 package com.dp.dplanner.aop.aspect;
 
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.service.ClubMemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.stereotype.Component;
+
+import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Slf4j
 @Aspect
@@ -21,7 +25,7 @@ public class RequiredAuthorityAspect {
             "&& args(clubMemberId, ..)")
     public void checkAuthority(Long clubMemberId, RequiredAuthority requiredAuthority) throws Throwable {
         if (!clubMemberService.hasAuthority(clubMemberId, requiredAuthority.value())) {
-            throw new IllegalStateException();
+            throw new ClubMemberException(AUTHORIZATION_DENIED);
         }
     }
 }
