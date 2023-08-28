@@ -87,7 +87,7 @@ public class ClubService {
     }
 
     @Transactional
-    public void setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
+    public ClubAuthorityDto.Response setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
 
         List<ClubAuthorityType> authorities = updateDto.toClubAuthorityTypeList();
 
@@ -100,6 +100,8 @@ public class ClubService {
 
         List<ClubAuthority> clubAuthorities = ClubAuthority.createAuthorities(clubMember.getClub(), authorities);
         clubAuthorityRepository.saveAll(clubAuthorities);
+
+        return ClubAuthorityDto.Response.of(clubMember.getClub());
     }
 
     public ClubAuthorityDto.Response findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto) {
@@ -127,6 +129,7 @@ public class ClubService {
     }
 
 
+    //TODO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
     @Transactional
     public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
 

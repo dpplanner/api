@@ -3,10 +3,7 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -26,6 +23,7 @@ public class ClubAuthorityDto {
     @Getter
     @Setter
     @Builder
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class Update {
         private Long clubId;

@@ -1,10 +1,7 @@
 package com.dp.dplanner.dto;
 
 import com.dp.dplanner.domain.club.Club;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -16,6 +13,7 @@ public class ClubDto {
     @Getter
     @Setter
     @Builder
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class Create{
         private String clubName;
@@ -32,6 +30,7 @@ public class ClubDto {
     @Getter
     @Setter
     @Builder
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class Update{
         private Long clubId;

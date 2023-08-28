@@ -25,6 +25,7 @@ public enum ErrorResult {
     /**
      * 403 - 권한 없음
      */
+    AUTHORIZATION_DENIED(HttpStatus.FORBIDDEN,"authorization is denied, request is invalid" ),
     READ_AUTHORIZATION_DENIED(HttpStatus.FORBIDDEN,"read authorization is denied, request is invalid" ),
     UPDATE_AUTHORIZATION_DENIED(HttpStatus.FORBIDDEN,"update authorization is denied, request is invalid" ),
     DELETE_AUTHORIZATION_DENIED(HttpStatus.FORBIDDEN, "delete authorization is denied, request is invalid"),
