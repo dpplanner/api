@@ -33,7 +33,7 @@ public class ClubMemberService {
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
 
-
+    //clubService.joinClub -> clubMemberService.create
     @Transactional
     public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto) {
 
@@ -220,6 +220,10 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(clubMembers);
     }
 
+
+    /**
+     * AOP method
+     */
     public boolean hasAuthority(Long clubMemberId, ClubAuthorityType authority) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -227,7 +231,6 @@ public class ClubMemberService {
 
         return clubMember.hasAuthority(authority);
     }
-
 
 
     /**

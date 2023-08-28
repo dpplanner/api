@@ -3,6 +3,7 @@ package com.dp.dplanner.integration;
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
+import com.dp.dplanner.exception.ClubMemberException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -73,7 +74,7 @@ public class RequiredAuthorityAspectTests {
     }
 
     @Test
-    @DisplayName("권한이 없는 매니저가 요청하면 IllegalStateException")
+    @DisplayName("권한이 없는 매니저가 요청하면 ClubMemberException")
     public void requestByUnauthorizedManagerThenException() throws Exception {
         //given
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
@@ -86,11 +87,11 @@ public class RequiredAuthorityAspectTests {
         //when
         //then
         assertThatThrownBy(() -> targetClass.targetMethod(manager.getId()))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(ClubMemberException.class);
     }
 
     @Test
-    @DisplayName("일반 회원이 요청하면 IllegalStateException")
+    @DisplayName("일반 회원이 요청하면 ClubMemberException")
     public void requestByUserThenException() throws Exception {
         //given
         ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
@@ -101,7 +102,7 @@ public class RequiredAuthorityAspectTests {
         //when
         //then
         assertThatThrownBy(() -> targetClass.targetMethod(clubMember.getId()))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(ClubMemberException.class);
     }
 }
 
