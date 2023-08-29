@@ -23,6 +23,6 @@ public class PrincipalDetailsService implements UserDetailsService {
 
         Member member = memberRepository.findByUserName(username).orElseThrow(()->new MemberException(MEMBER_NOT_FOUND));
 
-        return new PrincipalDetails(member);
+        return new PrincipalDetails(member.getId(), member.getUserName());
     }
 }

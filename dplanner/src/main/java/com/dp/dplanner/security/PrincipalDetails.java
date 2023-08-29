@@ -4,15 +4,24 @@ import com.dp.dplanner.domain.Member;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Collection;
+import java.util.Map;
 
 @Getter
-public class PrincipalDetails implements UserDetails {
-    private Member member;
+public class PrincipalDetails implements UserDetails, OAuth2User {
+    private Long id;
+    private String email;
 
-    public PrincipalDetails(Member member) {
-        this.member = member;
+    public PrincipalDetails(Long id, String email) {
+        this.id = id;
+        this.email = email;
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return null;
     }
 
     @Override
@@ -48,5 +57,10 @@ public class PrincipalDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return false;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 }

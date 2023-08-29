@@ -37,7 +37,7 @@ public class GeneratedClubMemberIdAspect {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-        Member member = principalDetails.getMember();
+        Long memberId = principalDetails.getId();
 
         Object[] parameterValues = joinPoint.getArgs();
         Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
@@ -55,7 +55,7 @@ public class GeneratedClubMemberIdAspect {
             }
         }
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, member.getId()).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, memberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
         parameterValues[index] = clubMember.getId();
 
         return joinPoint.proceed(parameterValues);

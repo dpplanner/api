@@ -87,11 +87,8 @@ public class GenerateClubMemberIdAspectTest {
         UserDetails userDetails = userDetailsService.loadUserByUsername("test");
         PrincipalDetails principalDetails = (PrincipalDetails) userDetails;
 
-        Member foundMember = principalDetails.getMember();
-
-        assertThat(foundMember).isNotNull();
-        assertThat(foundMember).isEqualTo(member);
-        assertThat(foundMember.getId()).isGreaterThan(0);
+        assertThat(principalDetails).isNotNull();
+        assertThat(principalDetails.getId()).isGreaterThan(0);
 
     }
 
