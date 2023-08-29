@@ -20,7 +20,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static com.dp.dplanner.exception.ErrorResult.*;
@@ -939,22 +938,22 @@ public class ClubMemberServiceTests {
 
 
         //when
-        ClubMemberDto.Delete deleteDto1 = new ClubMemberDto.Delete(anotherAdminId);
-        clubMemberService.kickOut(adminId, deleteDto1);
+        ClubMemberDto.Request requestDto1 = new ClubMemberDto.Request(anotherAdminId);
+        clubMemberService.kickOut(adminId, requestDto1);
         //then
         ClubMember deletedAdmin = captureFromMockRepositoryWhenDelete();
         assertThat(deletedAdmin).as("퇴출된 관리자는 실제 관리자와 일치해야 한다").isEqualTo(anotherAdmin);
 
         //when
-        ClubMemberDto.Delete deleteDto2 = new ClubMemberDto.Delete(managerId);
-        clubMemberService.kickOut(adminId, deleteDto2);
+        ClubMemberDto.Request requestDto2 = new ClubMemberDto.Request(managerId);
+        clubMemberService.kickOut(adminId, requestDto2);
         //then
         ClubMember deletedManager = captureFromMockRepositoryWhenDelete();
         assertThat(deletedManager).as("퇴출된 매니저는 실제 매니저와 일치해야 한다").isEqualTo(manager);
 
         //when
-        ClubMemberDto.Delete deleteDto3 = new ClubMemberDto.Delete(clubMemberId);
-        clubMemberService.kickOut(adminId, deleteDto3);
+        ClubMemberDto.Request requestDto3 = new ClubMemberDto.Request(clubMemberId);
+        clubMemberService.kickOut(adminId, requestDto3);
         //then
         ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("퇴출된 회원은 실제 회원과 일치해야 한다").isEqualTo(clubMember);
@@ -983,15 +982,15 @@ public class ClubMemberServiceTests {
 
 
         //when
-        ClubMemberDto.Delete deleteDto1 = new ClubMemberDto.Delete(anotherManagerId);
-        clubMemberService.kickOut(managerId, deleteDto1);
+        ClubMemberDto.Request requestDto1 = new ClubMemberDto.Request(anotherManagerId);
+        clubMemberService.kickOut(managerId, requestDto1);
         //then
         ClubMember deletedManager = captureFromMockRepositoryWhenDelete();
         assertThat(deletedManager).as("퇴출된 매니저는 실제 매니저와 일치해야 한다").isEqualTo(anotherManager);
 
         //when
-        ClubMemberDto.Delete deleteDto2 = new ClubMemberDto.Delete(clubMemberId);
-        clubMemberService.kickOut(managerId, deleteDto2);
+        ClubMemberDto.Request requestDto2 = new ClubMemberDto.Request(clubMemberId);
+        clubMemberService.kickOut(managerId, requestDto2);
         //then
         ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("퇴출된 회원은 실제 회원과 일치해야 한다").isEqualTo(clubMember);
@@ -1015,9 +1014,9 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(adminId);
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(adminId);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.kickOut(managerId, deleteDto));
+                () -> clubMemberService.kickOut(managerId, requestDto));
         assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
@@ -1038,8 +1037,8 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(clubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(managerId, deleteDto))
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(clubMemberId);
+        assertThatThrownBy(() -> clubMemberService.kickOut(managerId, requestDto))
                 .isInstanceOf(IllegalStateException.class);
 
     }
@@ -1058,8 +1057,8 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(anotherClubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(clubMemberId, deleteDto))
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(anotherClubMemberId);
+        assertThatThrownBy(() -> clubMemberService.kickOut(clubMemberId, requestDto))
                 .isInstanceOf(IllegalStateException.class);
 
     }
@@ -1080,9 +1079,9 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(otherClubMemberId);
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(otherClubMemberId);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.kickOut(adminId, deleteDto));
+                () -> clubMemberService.kickOut(adminId, requestDto));
         assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
@@ -1098,9 +1097,9 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(clubMemberId);
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(clubMemberId);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.kickOut(adminId, deleteDto));
+                () -> clubMemberService.kickOut(adminId, requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
@@ -1118,9 +1117,9 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(clubMemberId);
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(clubMemberId);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.kickOut(adminId, deleteDto));
+                () -> clubMemberService.kickOut(adminId, requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
@@ -1135,9 +1134,9 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        ClubMemberDto.Delete deleteDto = new ClubMemberDto.Delete(adminId);
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(adminId);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.kickOut(adminId, deleteDto));
+                () -> clubMemberService.kickOut(adminId, requestDto));
         assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
@@ -1159,8 +1158,8 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findAllById(clubMemberIds)).willReturn(clubMembers);
 
         //when
-        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
-        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(adminId, deleteDto);
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(clubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(adminId, requestDto);
 
         //then
         assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
@@ -1186,8 +1185,8 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findAllById(clubMemberIds)).willReturn(clubMembers);
 
         //when
-        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
-        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, deleteDto);
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(clubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, requestDto);
 
         //then
         assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
@@ -1213,8 +1212,8 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.kickOutAll(managerId, deleteDto))
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(clubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(managerId, requestDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -1231,8 +1230,8 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(clubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.kickOutAll(clubMemberId, deleteDto))
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(clubMemberIds);
+        assertThatThrownBy(() -> clubMemberService.kickOutAll(clubMemberId, requestDto))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -1266,8 +1265,8 @@ public class ClubMemberServiceTests {
 
 
         //when
-        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(savedClubMemberIds);
-        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, deleteDto);
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(savedClubMemberIds);
+        List<ClubMemberDto.Response> responseDtoList = clubMemberService.kickOutAll(managerId, requestDto);
 
         //then
         assertThat(responseDtoList).as("결과가 존재해야 한다").isNotNull();
@@ -1294,9 +1293,9 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        List<ClubMemberDto.Delete> deleteDto = ClubMemberDto.Delete.ofList(List.of(clubMemberId));
+        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(clubMemberId));
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.kickOutAll(adminId, deleteDto));
+                () -> clubMemberService.kickOutAll(adminId, requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }

@@ -22,7 +22,7 @@ public class ClubMemberDto {
         private Long id;
 
         public static List<ClubMemberDto.Request> ofList(List<Long> clubMembersIds) {
-            return clubMembersIds.stream().map(Request::new).toList();
+            return clubMembersIds.stream().map(ClubMemberDto.Request::new).toList();
         }
     }
 
@@ -56,17 +56,6 @@ public class ClubMemberDto {
         private String info;
         private String role;
 
-    }
-
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    public static class Delete {
-        private Long id;
-
-        public static List<ClubMemberDto.Delete> ofList(List<Long> clubMembersIds) {
-            return clubMembersIds.stream().map(Delete::new).toList();
-        }
     }
 
     @Getter

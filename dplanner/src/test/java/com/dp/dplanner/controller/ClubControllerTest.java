@@ -4,7 +4,6 @@ package com.dp.dplanner.controller;
 import com.dp.dplanner.aop.aspect.GeneratedClubMemberIdAspect;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;

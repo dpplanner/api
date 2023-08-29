@@ -6,7 +6,6 @@ import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.exception.ClubException;
 import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -183,12 +181,12 @@ public class ClubMemberService {
 
     @Transactional
     @RequiredAuthority(MEMBER_ALL)
-    public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto) {
+    public void kickOut(Long managerId, ClubMemberDto.Request requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        ClubMember clubMember = clubMemberRepository.findById(deleteDto.getId())
+        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         if (invalidKickOutRequest(manager, clubMember)) {
@@ -201,12 +199,12 @@ public class ClubMemberService {
 
     @Transactional
     @RequiredAuthority(MEMBER_ALL)
-    public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Delete> deleteDto) {
+    public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        List<Long> requestIds = deleteDto.stream().map(ClubMemberDto.Delete::getId).toList();
+        List<Long> requestIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
 
         List<ClubMember> deletedClubMembers = clubMembers.stream()
