@@ -25,7 +25,7 @@ public class ClubController {
     @PostMapping("")
     public ResponseEntity<ClubDto.Response> createClub(@AuthenticationPrincipal PrincipalDetails principal,
                                                        @RequestBody @Valid ClubDto.Create createDto) {
-        Long memberId = principal.getMember().getId();
+        Long memberId = principal.getId();
         ClubDto.Response responseDto = clubService.createClub(memberId, createDto);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -34,7 +34,7 @@ public class ClubController {
 
     @GetMapping("")
     public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal) {
-        Long memberId = principal.getMember().getId();
+        Long memberId = principal.getId();
         List<ClubDto.Response> myClubs = clubService.findMyClubs(memberId);
         return ResponseEntity
                 .status(HttpStatus.OK)
