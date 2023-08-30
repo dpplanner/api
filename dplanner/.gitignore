@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Secret Configuration ###
+src/main/resources/application-oauth.yml
