@@ -5,7 +5,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +24,6 @@ public class JwtTokenProvider {
     private static final Long REFRESH_TOKEN_VALID_TIME = 3 * 30 * 24 * 30 * 60 * 1000L; // 3 month
     private final MemberRepository memberRepository;
 
-    private final EntityManager entityManager;
 
 
     public boolean verify(String token) {
@@ -44,9 +42,12 @@ public class JwtTokenProvider {
         Claims claims = getClaims(accessToken);
         Long id = Long.valueOf(claims.getSubject());
 
+        /**
+         * 추후에 authorities 일반 유저인지 개발자 유저인지 구분 필요함
+         */
         PrincipalDetails principal = new PrincipalDetails(id, "", null);
 
-        return new UsernamePasswordAuthenticationToken(principal, "");
+        return new UsernamePasswordAuthenticationToken(principal, "",null);
     }
 
     public String generateAccessToken(Authentication authentication) {
