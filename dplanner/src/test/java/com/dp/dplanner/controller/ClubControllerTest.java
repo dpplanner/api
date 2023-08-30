@@ -523,7 +523,7 @@ public class ClubControllerTest {
         @Override
         public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                       NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, "email");
+            return new PrincipalDetails(1L, "email", null);
         }
     }
 

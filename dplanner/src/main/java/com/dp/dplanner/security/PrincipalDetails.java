@@ -14,16 +14,23 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     private Long id;
     private String email;
 
-    public PrincipalDetails(Long id, String email) {
+    private Map<String, Object> attributes;
+
+    public PrincipalDetails(Long id, String email,Map<String, Object> attributes) {
         this.id = id;
         this.email = email;
+        this.attributes = attributes;
     }
 
-    @Override
-    public Map<String, Object> getAttributes() {
-        return null;
+    public static PrincipalDetails create(Member member, Map<String,Object> attributes) {
+
+        return new PrincipalDetails(member.getId(), member.getEmail(), attributes);
     }
 
+
+    /**
+     * UserDetails
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return null;
@@ -36,31 +43,40 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     @Override
     public String getUsername() {
-        return null;
+        return email;
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
+    }
+
+    /**
+     * OAuth2User
+     */
+    @Override
+    public String getName() {
+        return String.valueOf(id);
     }
 
     @Override
-    public String getName() {
-        return null;
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
+
 }
