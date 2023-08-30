@@ -44,7 +44,7 @@ public class GenerateClubMemberIdAspectTest {
 
     @BeforeEach
     public void setUp() {
-        member = Member.builder().userName("test").build();
+        member = Member.builder().email("test").build();
         club = Club.builder().build();
         clubMember = ClubMember.builder().club(club).member(member).build();
 
