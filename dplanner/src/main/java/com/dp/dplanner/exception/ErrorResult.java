@@ -21,6 +21,7 @@ public enum ErrorResult {
      * 401 - 인증되지 않음
      */
     CLUBMEMBER_NOT_CONFIRMED(HttpStatus.UNAUTHORIZED, "클럽 멤버가 아직 승인되지 않았습니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "올바르지 않은 토큰입니다."),
 
     /**
      * 403 - 권한 없음
