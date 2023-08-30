@@ -1,18 +1,19 @@
 package com.dp.dplanner.security;
 
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.repository.MemberRepository;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.Optional;
 
 @Slf4j
 @Component
@@ -23,6 +24,8 @@ public class JwtTokenProvider {
     private static final Long ACCESS_TOKEN_VALID_TIME = 30 * 60 * 1000L;            // 30 min
     private static final Long REFRESH_TOKEN_VALID_TIME = 3 * 30 * 24 * 30 * 60 * 1000L; // 3 month
     private final MemberRepository memberRepository;
+
+    private final EntityManager entityManager;
 
 
     public boolean verify(String token) {
@@ -46,25 +49,7 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(principal, "");
     }
 
-    public Token getToken(Authentication authentication) {
-        return new Token(
-                generateAccessToken(authentication),
-                generateRefreshToken(authentication)
-        );
-    }
-
-    //TODO accessToken 만료 && refreshToken 유효 -> accessToken 재발급
-    public String refresh() {
-        return null;
-    }
-
-
-
-    private static boolean isExpired(Claims claims) {
-        return claims.getExpiration().before(new Date());
-    }
-
-    private String generateAccessToken(Authentication authentication) {
+    public String generateAccessToken(Authentication authentication) {
         PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
         Claims claims = Jwts.claims().setSubject(principal.getName());
         Date now = new Date();
@@ -78,7 +63,8 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    private String generateRefreshToken(Authentication authentication) {
+    @Transactional
+    public String generateRefreshToken(Authentication authentication) {
         Date now = new Date();
 
         String refreshToken = Jwts.builder()
@@ -90,12 +76,13 @@ public class JwtTokenProvider {
 
         PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
         Long id = Long.valueOf(principal.getName());
-        Member member = memberRepository.findById(id).orElseThrow(
-                () -> new MemberException(ErrorResult.MEMBER_NOT_FOUND));
-
-        member.updateRefreshToken(refreshToken);
+        memberRepository.updateRefreshToken(id, refreshToken);
 
         return refreshToken;
+    }
+
+    private static boolean isExpired(Claims claims) {
+        return claims.getExpiration().before(new Date());
     }
 
     private Claims getClaims(String accessToken) {
