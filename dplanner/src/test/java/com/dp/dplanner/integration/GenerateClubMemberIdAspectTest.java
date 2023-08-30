@@ -5,17 +5,16 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.MemberException;
+import com.dp.dplanner.security.CustomOAuth2UserService;
 import com.dp.dplanner.security.PrincipalDetails;
 import jakarta.persistence.EntityManager;
+import org.aopalliance.aop.AspectException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.test.context.support.TestExecutionEvent;
-import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,10 +31,11 @@ public class GenerateClubMemberIdAspectTest {
     @Autowired
     TestController targetClass;
     @Autowired
-    UserDetailsService userDetailsService;
+    CustomOAuth2UserService customOAuth2UserService;
 
     @Autowired
     EntityManager entityManager;
+
 
     Member member;
     Club club;
@@ -54,48 +54,43 @@ public class GenerateClubMemberIdAspectTest {
 
         memberId = member.getId();
 
+        PrincipalDetails principalDetails = PrincipalDetails.create(member, null);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principalDetails, principalDetails.getPassword(), principalDetails.getAuthorities()));
 
     }
-    @Test
-    @WithUserDetails(value = "test",setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    public void GeneratedClubMemberId(){
 
-        Long clubMemberId = targetClass.targetMethod( null,club.getId());
+    @Test
+    public void GeneratedClubMemberId() {
+
+        Long clubMemberId = targetClass.targetMethod(null, club.getId());
         assertThat(clubMemberId).isNotNull();
         assertThat(clubMemberId).isGreaterThan(0);
         assertThat(clubMemberId).isEqualTo(clubMember.getId());
     }
 
     @Test
-    @WithUserDetails(value = "test",setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    public void GeneratedClubMemberId_Throw_Exception_ClubMemberCanNotFound(){
+    public void GeneratedClubMemberId_Throw_Exception_ClubMemberCanNotFound() {
         Long wrongClubId = 100L;
-        ClubMemberException clubMemberException = assertThrows(ClubMemberException.class, () -> targetClass.targetMethod(wrongClubId, null));
+        ClubMemberException clubMemberException = assertThrows(ClubMemberException.class, () -> targetClass.targetMethod(null,wrongClubId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
-
     @Test
-    public void UserDetailsService_Throw_Exception_MemberCanNotFound(){
-        MemberException memberException = assertThrows(MemberException.class, () -> userDetailsService.loadUserByUsername("UserCanNotFound"));
-        assertThat(memberException.getErrorResult()).isEqualTo(MEMBER_NOT_FOUND);
+    public void GeneratedClubMemberId_Throw_AspectException() throws Exception {
+        AspectException aspectException = assertThrows(AspectException.class, () -> targetClass.wrongMethod(null));
+
+        assertThat(aspectException.getMessage()).isEqualTo("메서드 인자에서 clubId를 찾을 수 없습니다.");
     }
-
-
     @Test
-    public void UserDetailsService_ReturnUserDetails(){
-        UserDetails userDetails = userDetailsService.loadUserByUsername("test");
-        PrincipalDetails principalDetails = (PrincipalDetails) userDetails;
+    public void GeneratedClubMemberId_Throw_AspectException2() throws Exception {
+        AspectException aspectException = assertThrows(AspectException.class, () -> targetClass.wrongMethod2(null, club.getId()));
 
-        assertThat(principalDetails).isNotNull();
-        assertThat(principalDetails.getId()).isGreaterThan(0);
-
+        assertThat(aspectException.getMessage()).isEqualTo("메서드 인자에서 clubMemberId를 찾을 수 없습니다.");
     }
-
-
 
 
 }
+
 
 @Component
 class TestController {
@@ -105,6 +100,14 @@ class TestController {
 
     public Long targetMethod(@GeneratedClubMemberId Long clubMemberId,Long clubId) {
         return testService.testMethod(clubMemberId);
+    }
+
+    public Long wrongMethod(@GeneratedClubMemberId Long clubMemberId) {
+        return testService.testMethod(clubMemberId);
+    }
+
+    public Long wrongMethod2(@GeneratedClubMemberId Long Id,Long clubId) {
+        return testService.testMethod(Id);
     }
 }
 
