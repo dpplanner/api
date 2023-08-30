@@ -1,12 +1,12 @@
 package com.dp.dplanner.aop.aspect;
 
-import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.security.PrincipalDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.aop.AspectException;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -37,14 +37,13 @@ public class GeneratedClubMemberIdAspect {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-        Member member = principalDetails.getMember();
 
         Object[] parameterValues = joinPoint.getArgs();
         Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
         List<String> parameterNames = Arrays.stream(method.getParameters()).map(Parameter::getName).toList();
 
         Long clubId = null;
-        int index = 0;
+        Integer index = null;
 
         for (int i = 0; i < parameterNames.size(); i++) {
             String parameterName = parameterNames.get(i);
@@ -54,8 +53,15 @@ public class GeneratedClubMemberIdAspect {
                 index = i;
             }
         }
+        if (clubId == null) {
+            throw new AspectException("메서드 인자에서 clubId를 찾을 수 없습니다.");
+        }
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, member.getId()).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        if (index == null) {
+            throw new AspectException("메서드 인자에서 clubMemberId를 찾을 수 없습니다.");
+        }
+
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, principalDetails.getId()).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
         parameterValues[index] = clubMember.getId();
 
         return joinPoint.proceed(parameterValues);
