@@ -19,13 +19,23 @@ public class Member {
     @GeneratedValue
     private Long id;
 
-    private String userName;
+    private String email;
+    private String name;
+    private String refreshToken;
+
+
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
     private List<ClubMember> clubMembers = new ArrayList<>();
 
     @Builder
-    public Member(String userName) {
-        this.userName = userName;
+    public Member(String email, String name, String refreshToken) {
+        this.email = email;
+        this.name = name;
+        this.refreshToken = refreshToken;
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }

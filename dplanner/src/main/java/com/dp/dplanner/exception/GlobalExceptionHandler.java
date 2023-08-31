@@ -73,6 +73,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("ReservationException occurs : ", exception);
         return this.makeErrorResponseEntity(exception);
     }
+
+    @ExceptionHandler({InviteCodeException.class})
+    public ResponseEntity<ErrorResponse> handleRestApiException(final InviteCodeException exception) {
+        log.warn("InviteCodeException occurs : ", exception);
+        return this.makeErrorResponseEntity(exception);
+    }
+
+    @ExceptionHandler({AuthenticationException.class})
+    public ResponseEntity<ErrorResponse> handleRestApiException(final AuthenticationException exception) {
+        log.warn("AuthenticationException occurs : ", exception);
+        return this.makeErrorResponseEntity(exception);
+    }
+
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
         log.warn("Exception occur: ", exception);
