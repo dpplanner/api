@@ -88,7 +88,6 @@ public class ClubMemberServiceTests {
         assertThat(savedClubMember.getClub()).as("생성된 클럽 회원은 club과 매핑되어야 한다").isEqualTo(club);
         assertThat(savedClubMember.getRole()).as("생성된 클럽 회원의 역할은 USER여야 한다").isEqualTo(ClubRole.USER);
         assertThat(savedClubMember.isConfirmed()).as("생성된 클럽회원은 승인대기상태여야 한다").isFalse();
-
     }
 
     @Test
