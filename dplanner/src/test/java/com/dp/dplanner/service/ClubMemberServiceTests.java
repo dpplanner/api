@@ -152,24 +152,52 @@ public class ClubMemberServiceTests {
         //given
         Long clubMemberId = 1L;
         ClubMember clubMember = createConfirmedClubMember(club, "member");
-        ReflectionTestUtils.setField(clubMember, "id", clubMemberId);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
+        Long sameClubMemberId = 2L;
+        ClubMember sameClubMember = createConfirmedClubMember(club, "sameClubMember");
+        ReflectionTestUtils.setField(sameClubMember, "id", sameClubMemberId);
+        given(clubMemberRepository.findById(sameClubMemberId)).willReturn(Optional.ofNullable(sameClubMember));
+
         //when
-        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(clubMemberId);
-        ClubMemberDto.Response responseDto = clubMemberService.findById(requestDto);
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(sameClubMemberId);
+        ClubMemberDto.Response responseDto = clubMemberService.findById(clubMemberId, requestDto);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
-        assertThat(responseDto.getId()).as("조회한 clubMemberId가 일치해야 한다.").isEqualTo(clubMemberId);
-        assertThat(responseDto.getName()).as("조회한 이름이 실제 회원의 이름과 일치해야 한다.").isEqualTo("member");
+        assertThat(responseDto.getId()).as("조회한 clubMemberId가 일치해야 한다.").isEqualTo(sameClubMemberId);
+        assertThat(responseDto.getName()).as("조회한 이름이 실제 회원의 이름과 일치해야 한다.").isEqualTo("sameClubMember");
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 회원을 조회하는 경우 DIFFERENT_CLUB_EXCEPTION")
+    public void findOtherClubMemberThenException() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        Long otherClubMemberId = 2L;
+        ClubMember otherClubMember = createConfirmedClubMember(Club.builder().build(), "otherClubMember");
+        given(clubMemberRepository.findById(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
+
+        //when
+        //then
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(otherClubMemberId);
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(clubMemberId, requestDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 회원인 경우 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
     @Test
     @DisplayName("승인되지 않은 회원의 정보를 조회하려 하면 CLUBMEMBER_NOT_CONFIRMED")
     public void findNotConfirmedClubMemberThenException() throws Exception {
         //given
-        Long notConfirmedClubMemberId = 1L;
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        Long notConfirmedClubMemberId = 2L;
         ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
         given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
 
@@ -178,7 +206,7 @@ public class ClubMemberServiceTests {
         //when
         //then
         ClubMemberDto.Request requestDto = new ClubMemberDto.Request(notConfirmedClubMemberId);
-        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(requestDto));
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(clubMemberId, requestDto));
         assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원인 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
     }
@@ -187,13 +215,17 @@ public class ClubMemberServiceTests {
     @DisplayName("클럽 회원 조회시 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void findNotClubMemberThenException() throws Exception {
         //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
         Long wrongClubMemberId = 1L;
         given(clubMemberRepository.findById(wrongClubMemberId)).willReturn(Optional.ofNullable(null));
 
         //when
         //then
         ClubMemberDto.Request requestDto = new ClubMemberDto.Request(wrongClubMemberId);
-        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(requestDto));
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubMemberService.findById(clubMemberId, requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }

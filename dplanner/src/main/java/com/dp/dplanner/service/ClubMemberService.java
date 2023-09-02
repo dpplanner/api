@@ -31,7 +31,6 @@ public class ClubMemberService {
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
 
-    //clubService.joinClub -> clubMemberService.create
     @Transactional
     public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto) {
 
@@ -55,16 +54,23 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(savedMember);
     }
 
-    public ClubMemberDto.Response findById(ClubMemberDto.Request requestDto) {
+    public ClubMemberDto.Response findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
 
-        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isConfirmed()) {
+        ClubMember requestClubMember = clubMemberRepository.findById(requestDto.getId())
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(requestClubMember)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
+
+        if (!requestClubMember.isConfirmed()) {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
 
-        return ClubMemberDto.Response.of(clubMember);
+        return ClubMemberDto.Response.of(requestClubMember);
     }
 
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) {
