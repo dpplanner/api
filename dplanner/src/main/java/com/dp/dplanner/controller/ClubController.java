@@ -3,6 +3,7 @@ package com.dp.dplanner.controller;
 import com.dp.dplanner.aop.annotation.GeneratedClubMemberId;
 import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
+import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.InviteDto;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
@@ -70,7 +71,17 @@ public class ClubController {
                 .body(response);
     }
 
-    // joinClub
+    @PostMapping("/{clubId}/join")
+    public ResponseEntity<ClubMemberDto.Response> joinClub(@AuthenticationPrincipal PrincipalDetails principal,
+                                                           @PathVariable("clubId") Long clubId,
+                                                           @RequestBody InviteDto inviteDto) {
+        Long memberId = principal.getId();
+
+        ClubMemberDto.Response response = clubService.joinClub(memberId, inviteDto);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
 
     @GetMapping("/{clubId}/authorities")
     public ResponseEntity<ClubAuthorityDto.Response> findManagerAuthorities(@GeneratedClubMemberId Long clubMemberId,
