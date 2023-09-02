@@ -339,7 +339,6 @@ public class ClubControllerTest {
 
     @Test
     @DisplayName("클럽 가입시 201 CREATED")
-    @Disabled("보류")
     public void joinClub_CREATED() throws Exception {
         //given
         Long clubId = 1L;
@@ -362,6 +361,42 @@ public class ClubControllerTest {
 
         ClubMemberDto.Response response = getResponse(resultActions, ClubMemberDto.Response.class);
         assertThat(response.getId()).isEqualTo(clubMemberId);
+    }
+
+    @Test
+    @DisplayName("클럽 가입시 클럽 정보가 없으면 404 NOT_FOUND")
+    public void joinClub_NOTFOUND() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(CLUB_NOT_FOUND));
+
+        //when
+        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(inviteDto))
+                .contentType(APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("클럽 가입시 초대 코드가 다르면 400 BAD_REQUEST")
+    public void joinClub_BADREQUEST() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(WRONG_INVITE_CODE));
+
+        //when
+        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(inviteDto))
+                .contentType(APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
     }
 
     @Test
