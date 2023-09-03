@@ -95,15 +95,19 @@ public class ClubMemberService {
     }
 
     @RequiredAuthority(MEMBER_ALL)
-    public List<ClubMemberDto.Response> findUnconfirmedClubMembers(Long managerId) {
+    public List<ClubMemberDto.Response> findMyClubMembers(Long managerId, boolean confirmed) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        List<ClubMember> unconfirmedClubMember = clubMemberRepository
-                .findAllUnconfirmedClubMemberByClub(manager.getClub());
+        List<ClubMember> clubMembers;
+        if (confirmed) {
+            clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(manager.getClub());
+        } else {
+            clubMembers = clubMemberRepository.findAllUnconfirmedClubMemberByClub(manager.getClub());
+        }
 
-        return ClubMemberDto.Response.ofList(unconfirmedClubMember);
+        return ClubMemberDto.Response.ofList(clubMembers);
     }
 
     @Transactional

@@ -232,7 +232,7 @@ public class ClubMemberServiceTests {
 
 
     /**
-     * findMyClubMembers
+     * findMyClubMembers(clubMemberId)
      */
     @Test
     @DisplayName("사용자는 같은 클럽에 속한 회원들의 정보를 조회할 수 있다.")
@@ -351,7 +351,7 @@ public class ClubMemberServiceTests {
 
 
     /**
-     * findUnconfirmedClubMembers
+     * findMyClubMembers(clubMemberId, confirmed)
      */
     @Test
     @DisplayName("관리자는 승인되지 않은 회원들을 리스트로 조회할 수 있다.")
@@ -368,7 +368,7 @@ public class ClubMemberServiceTests {
                 .willReturn(unconfirmedClubMembers);
 
         //when
-        List<ClubMemberDto.Response> responseDto = clubMemberService.findUnconfirmedClubMembers(adminId);
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(adminId, false);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
@@ -378,6 +378,33 @@ public class ClubMemberServiceTests {
                 .contains("unconfirmed0", "unconfirmed1", "unconfirmed2");
         assertThat(responseNames).as("승인된 회원들을 포함하지 않아야 한다")
                 .doesNotContain("clubMember0", "clubMember1", "clubMember2");
+    }
+
+    @Test
+    @DisplayName("관리자는 승인된 회원들을 리스트로 조회할 수 있다.")
+    public void findConfirmedClubMembersByAdmin() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        List<ClubMember> confirmedClubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
+
+        given(clubMemberRepository.findAllConfirmedClubMemberByClub(club))
+                .willReturn(confirmedClubMembers);
+
+        //when
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(adminId, true);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+
+        List<String> responseNames = responseDto.stream().map(ClubMemberDto.Response::getName).toList();
+        assertThat(responseNames).as("승인된 회원들을 포함해야 한다")
+                .contains("clubMember0", "clubMember1", "clubMember2");
+        assertThat(responseNames).as("승인되지 않은 회원들을 포함하지 않아야 한다")
+                .doesNotContain("unconfirmed0", "unconfirmed1", "unconfirmed2");
     }
 
     @Test
@@ -397,7 +424,7 @@ public class ClubMemberServiceTests {
                 .willReturn(unconfirmedClubMembers);
 
         //when
-        List<ClubMemberDto.Response> responseDto = clubMemberService.findUnconfirmedClubMembers(managerId);
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(managerId, false);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
@@ -407,6 +434,35 @@ public class ClubMemberServiceTests {
                 .contains("unconfirmed0", "unconfirmed1", "unconfirmed2");
         assertThat(responseNames).as("승인된 회원들을 포함하지 않아야 한다")
                 .doesNotContain("clubMember0", "clubMember1", "clubMember2");
+    }
+
+    @Test
+    @DisplayName("회원 관리 권한을 가진 매니저는 승인된 회원을 리스트로 조회할 수 있다.")
+    public void findConfirmedClubMembersByManagerHasMEMBER_ALL() throws Exception {
+        //given
+        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        List<ClubMember> confirmedClubMembers = createConfirmedClubMembers(club, 3, "clubMember");
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
+
+        given(clubMemberRepository.findAllConfirmedClubMemberByClub(club))
+                .willReturn(confirmedClubMembers);
+
+        //when
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(managerId, true);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+
+        List<String> responseNames = responseDto.stream().map(ClubMemberDto.Response::getName).toList();
+        assertThat(responseNames).as("승인된 회원들을 포함해야 한다")
+                .contains("clubMember0", "clubMember1", "clubMember2");
+        assertThat(responseNames).as("승인되지 않은 회원들을 포함하지 않아야 한다")
+                .doesNotContain("unconfirmed0", "unconfirmed1", "unconfirmed2");
     }
 
     @Test
@@ -421,7 +477,7 @@ public class ClubMemberServiceTests {
         assert !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findUnconfirmedClubMembers(managerId))
+        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(managerId, false))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -436,13 +492,13 @@ public class ClubMemberServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubMemberService.findUnconfirmedClubMembers(clubMemberId))
+        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(clubMemberId, false))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("승인되지 않은 회원 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
-    public void findUnconfirmedClubMembersByNotClubMemberThenException() throws Exception {
+    @DisplayName("승인 여부로 필터링한 회원 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
+    public void findFilteredClubMembersByNotClubMemberThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(null));
@@ -450,7 +506,7 @@ public class ClubMemberServiceTests {
         //when
         //then
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.findUnconfirmedClubMembers(clubMemberId));
+                () -> clubMemberService.findMyClubMembers(clubMemberId, false));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
