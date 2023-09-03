@@ -9,6 +9,7 @@ import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,8 +35,11 @@ public class ClubController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal) {
-        Long memberId = principal.getId();
+    public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal,
+                                                              @Param("memberId") Long memberId) {
+        if (!memberId.equals(principal.getId())) {
+            memberId = principal.getId();
+        }
         List<ClubDto.Response> myClubs = clubService.findMyClubs(memberId);
         return ResponseEntity
                 .status(HttpStatus.OK)

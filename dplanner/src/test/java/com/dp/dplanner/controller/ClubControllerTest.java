@@ -182,7 +182,8 @@ public class ClubControllerTest {
         given(clubService.findMyClubs(memberId)).willReturn(responseList);
 
         //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs"));
+        ResultActions resultActions = mockMvc.perform(get("/clubs")
+                .param("memberId", memberId.toString()));
 
         //then
         resultActions.andExpect(status().isOk());
@@ -199,7 +200,8 @@ public class ClubControllerTest {
         given(clubService.findMyClubs(memberId)).willThrow(new MemberException(MEMBER_NOT_FOUND));
 
         //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs"));
+        ResultActions resultActions = mockMvc.perform(get("/clubs")
+                .param("memberId", memberId.toString()));
 
         //then
         resultActions.andExpect(status().isNotFound());
@@ -387,6 +389,24 @@ public class ClubControllerTest {
         //given
         Long clubId = 1L;
         given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(WRONG_INVITE_CODE));
+
+        //when
+        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(inviteDto))
+                .contentType(APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("클럽 가입시 이미 가입한 클럽이라면 400 BAD_REQUEST")
+    public void joinClub_BADREQUEST2() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubMemberException(CLUBMEMBER_ALREADY_EXISTS));
 
         //when
         InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
