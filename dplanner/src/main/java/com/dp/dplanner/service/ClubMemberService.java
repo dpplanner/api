@@ -129,7 +129,7 @@ public class ClubMemberService {
     }
 
     @Transactional
-    public void changeClubMemberRole(Long adminId, ClubMemberDto.Update updateDto) {
+    public ClubMemberDto.Response updateClubMemberRole(Long adminId, ClubMemberDto.Update updateDto) {
 
         if (adminId.equals(updateDto.getId())) {
             throw new ClubMemberException(UPDATE_AUTHORIZATION_DENIED);
@@ -153,11 +153,28 @@ public class ClubMemberService {
             }
 
             clubMember.changeRole(ClubRole.valueOf(updateDto.getRole()));
+
+            return ClubMemberDto.Response.of(clubMember);
         } else {
             throw new ClubMemberException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
 
+    @Transactional
+    @RequiredAuthority(MEMBER_ALL)
+    public void confirm(Long managerId, ClubMemberDto.Request requestDto) {
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(manager)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
+
+        clubMember.confirm();
+    }
     @Transactional
     @RequiredAuthority(MEMBER_ALL)
     public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
@@ -204,7 +221,6 @@ public class ClubMemberService {
         }
 
         clubMemberRepository.delete(clubMember);
-
     }
 
     @Transactional
