@@ -608,10 +608,10 @@ public class ClubMemberServiceTests {
 
         //when
         ClubMemberDto.Update updateDto1 = createUpdateDtoToChangeRole(toBeManagerId, ClubRole.MANAGER);
-        clubMemberService.changeClubMemberRole(adminId, updateDto1);
+        clubMemberService.updateClubMemberRole(adminId, updateDto1);
 
         ClubMemberDto.Update updateDto2 = createUpdateDtoToChangeRole(toBeAdminId, ClubRole.ADMIN);
-        clubMemberService.changeClubMemberRole(adminId, updateDto2);
+        clubMemberService.updateClubMemberRole(adminId, updateDto2);
 
         //then
         assertThat(toBeManager.getRole()).as("클럽 회원의 역할은 매니저여야 함").isEqualTo(ClubRole.MANAGER);
@@ -638,10 +638,10 @@ public class ClubMemberServiceTests {
 
         //when
         ClubMemberDto.Update updateDto1 = createUpdateDtoToChangeRole(toBeUserId, ClubRole.USER);
-        clubMemberService.changeClubMemberRole(adminId, updateDto1);
+        clubMemberService.updateClubMemberRole(adminId, updateDto1);
 
         ClubMemberDto.Update updateDto2 = createUpdateDtoToChangeRole(toBeAdminId, ClubRole.ADMIN);
-        clubMemberService.changeClubMemberRole(adminId, updateDto2);
+        clubMemberService.updateClubMemberRole(adminId, updateDto2);
 
         //then
         assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
@@ -668,10 +668,10 @@ public class ClubMemberServiceTests {
 
         //when
         ClubMemberDto.Update updateDto1 = createUpdateDtoToChangeRole(toBeUserId, ClubRole.USER);
-        clubMemberService.changeClubMemberRole(adminId, updateDto1);
+        clubMemberService.updateClubMemberRole(adminId, updateDto1);
 
         ClubMemberDto.Update updateDto2 = createUpdateDtoToChangeRole(toBeManagerId, ClubRole.MANAGER);
-        clubMemberService.changeClubMemberRole(adminId, updateDto2);
+        clubMemberService.updateClubMemberRole(adminId, updateDto2);
 
         //then
         assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
@@ -693,7 +693,7 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(anotherClubMemberId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(managerId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(managerId, updateDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
@@ -713,7 +713,7 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(anotherClubMemberId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(clubMemberId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(clubMemberId, updateDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
@@ -734,7 +734,7 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(notConfirmedId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(adminId, updateDto));
         assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원인 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
     }
@@ -758,7 +758,7 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(otherClubMemberId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(adminId, updateDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 회원을 수정하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
@@ -774,7 +774,7 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(adminId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(adminId, updateDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
 
@@ -795,7 +795,7 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(wrongClubId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(adminId, updateDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
@@ -813,8 +813,108 @@ public class ClubMemberServiceTests {
         //then
         ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(clubMemberId, ClubRole.MANAGER);
         BaseException exception = assertThrows(ClubMemberException.class,
-                () -> clubMemberService.changeClubMemberRole(adminId, updateDto));
+                () -> clubMemberService.updateClubMemberRole(adminId, updateDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
+    }
+
+
+    /**
+     * confirm
+     */
+    @Test
+    @DisplayName("관리자는 승인 대기중인 회원을 승인할 수 있다.")
+    public void confirmByAdmin() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long unconfirmedClubMemberId = 2L;
+        ClubMember unconfirmed = createClubMember(club, "unconfirmed");
+        given(clubMemberRepository.findById(unconfirmedClubMemberId)).willReturn(Optional.ofNullable(unconfirmed));
+
+        //when
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(unconfirmedClubMemberId);
+        clubMemberService.confirm(adminId, requestDto);
+
+        //then
+        assertThat(unconfirmed.isConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue();
+    }
+    
+    @Test
+    @DisplayName("회원 관리 권한이 있는 매니저는 승인 대기중인 회원을 승인할 수 있다.")
+    public void confirmByManagerHasMEMBER_ALL() throws Exception {
+        //given
+        Long managerId = 1L;
+        ClubMember manager = createClubMemberAsManager("manager");
+        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
+
+        Long unconfirmedClubMemberId = 2L;
+        ClubMember unconfirmed = createClubMember(club, "unconfirmed");
+        given(clubMemberRepository.findById(unconfirmedClubMemberId)).willReturn(Optional.ofNullable(unconfirmed));
+
+        //when
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(unconfirmedClubMemberId);
+        clubMemberService.confirm(managerId, requestDto);
+
+        //then
+        assertThat(unconfirmed.isConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue();
+    }
+
+    @Test
+    @DisplayName("다른 클럽의 회원을 승인하려하면 DIFFERENT_CLUB_EXCEPTION")
+    public void confirmByOtherClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long unconfirmedClubMemberId = 2L;
+        ClubMember unconfirmed = createClubMember(createClub("otherClub"), "unconfirmed");
+        given(clubMemberRepository.findById(unconfirmedClubMemberId)).willReturn(Optional.ofNullable(unconfirmed));
+
+        //when
+        //then
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.confirm(adminId, new ClubMemberDto.Request(unconfirmedClubMemberId)));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 회원을 승인하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
+    }
+
+    @Test
+    @DisplayName("승인하려는 클럽 회원의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
+    public void confirmNotClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        ClubMember admin = createClubMemberAsAdmin("admin");
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+
+        Long unconfirmedClubMemberId = 2L;
+        given(clubMemberRepository.findById(unconfirmedClubMemberId)).willReturn(Optional.ofNullable(null));
+
+        //when
+        //then
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.confirm(adminId, new ClubMemberDto.Request(unconfirmedClubMemberId)));
+        assertThat(exception.getErrorResult()).as("클럽 회원의 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
+                .isEqualTo(CLUBMEMBER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("회원 승인시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
+    public void confirmByNotClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(null));
+
+        Long unconfirmedClubMemberId = 2L;
+
+        //when
+        //then
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> clubMemberService.confirm(adminId, new ClubMemberDto.Request(unconfirmedClubMemberId)));
+        assertThat(exception.getErrorResult()).as("클럽 회원의 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
 
@@ -907,7 +1007,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("다른 클럽의 회원을 승인하려하면 DIFFERENT_CLUB_EXCEPTION")
+    @DisplayName("다른 클럽의 회원들을 승인하려하면 DIFFERENT_CLUB_EXCEPTION")
     public void confirmAllByOtherClubMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
@@ -928,7 +1028,7 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("회원 승인시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
+    @DisplayName("여러명의 회원 승인시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void confirmAllByNotMemberThenException() throws Exception {
         //given
         Long adminId = 1L;
