@@ -175,6 +175,7 @@ public class ClubMemberService {
 
         clubMember.confirm();
     }
+
     @Transactional
     @RequiredAuthority(MEMBER_ALL)
     public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
