@@ -34,9 +34,9 @@ public class ClubController {
                 .body(responseDto);
     }
 
-    @GetMapping("")
+    @GetMapping(value = "", params = "memberId")
     public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal,
-                                                              @Param("memberId") Long memberId) {
+                                                              @RequestParam Long memberId) {
         if (!memberId.equals(principal.getId())) {
             memberId = principal.getId();
         }
@@ -78,7 +78,7 @@ public class ClubController {
     @PostMapping("/{clubId}/join")
     public ResponseEntity<ClubMemberDto.Response> joinClub(@AuthenticationPrincipal PrincipalDetails principal,
                                                            @PathVariable("clubId") Long clubId,
-                                                           @RequestBody InviteDto inviteDto) {
+                                                           @RequestBody @Valid InviteDto inviteDto) {
         Long memberId = principal.getId();
 
         ClubMemberDto.Response response = clubService.joinClub(memberId, inviteDto);
