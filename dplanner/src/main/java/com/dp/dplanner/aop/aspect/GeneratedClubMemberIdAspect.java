@@ -61,7 +61,13 @@ public class GeneratedClubMemberIdAspect {
             throw new AspectException("메서드 인자에서 clubMemberId를 찾을 수 없습니다.");
         }
 
-        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, principalDetails.getId()).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(clubId, principalDetails.getId())
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isConfirmed()) {
+            throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
+        }
+
         parameterValues[index] = clubMember.getId();
 
         return joinPoint.proceed(parameterValues);

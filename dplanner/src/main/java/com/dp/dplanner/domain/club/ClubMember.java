@@ -49,7 +49,11 @@ public class ClubMember {
     }
 
     public static ClubMember createClubMember(Member member, Club club) {
-        return ClubMember.builder().club(club).member(member).build();
+        return ClubMember.builder()
+                .club(club)
+                .member(member)
+                .name(member.getName())
+                .build();
     }
 
     public static ClubMember createAdmin(Member member, Club club) {

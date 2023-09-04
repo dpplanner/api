@@ -35,15 +35,14 @@ public class ClubServiceTests {
 
     @Mock
     ClubRepository clubRepository;
-
     @Mock
     ClubMemberRepository clubMemberRepository;
-
     @Mock
     MemberRepository memberRepository;
-
     @Mock
     ClubAuthorityRepository clubAuthorityRepository;
+    @Mock
+    ClubMemberService clubMemberService;
 
     @InjectMocks
     ClubService clubService;
@@ -756,7 +755,8 @@ public class ClubServiceTests {
         Club club = createClub(clubId, "club", null);
         given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
-        given(clubMemberRepository.save(any(ClubMember.class))).willAnswer(invocation -> invocation.getArgument(0));
+        ClubMemberDto.Response response = ClubMemberDto.Response.of(ClubMember.createClubMember(member, club));
+        given(clubMemberService.create(eq(memberId), any(ClubMemberDto.Create.class))).willReturn(response);
 
         String inviteCode = InviteCodeGenerator.generateInviteCode("club"); // seed = clubName
 
@@ -766,13 +766,7 @@ public class ClubServiceTests {
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
-
-        ClubMember clubMember = captureClubMemberFromMockRepository();
-        assertThat(clubMember).as("클럽 회원으로 등록되어야 한다").isNotNull();
-        assertThat(clubMember.getMember()).as("클럽 회원은 member와 매핑되어야 한다").isEqualTo(member);
-        assertThat(clubMember.getClub()).as("클럽 회원은 club과 매핑되어야 한다").isEqualTo(club);
-        assertThat(clubMember.getRole()).as("클럽 회원은 최초에 USER 역할을 가진다").isEqualTo(ClubRole.USER);
-        assertThat(clubMember.isConfirmed()).as("클럽 회원은 승인 대기 상태여야 한다").isFalse();
+        assertThat(responseDto.getName()).as("닉네임은 이름으로 초기회된다").isEqualTo(member.getName());
     }
 
     @Test
