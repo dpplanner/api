@@ -38,3 +38,4 @@ out/
 
 ### Secret Configuration ###
 src/main/resources/application-oauth.yml
+/coverageReport/**
