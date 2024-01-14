@@ -1,21 +1,20 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.aop.aspect.GeneratedClubMemberIdAspect;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.exception.ResourceException;
+import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ResourceService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.core.MethodParameter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -23,6 +22,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 
@@ -37,13 +40,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ResourceControllerTest {
 
     @InjectMocks
-    private ResourceController proxy;
+    private ResourceController target;
 
     @Mock
     private ResourceService resourceService;
 
-    @Mock
-    private GeneratedClubMemberIdAspect aspect;
 
     @Mock
     private MockMvc mockMvc;
@@ -56,34 +57,22 @@ public class ResourceControllerTest {
 
     @BeforeEach
     public void setUp() {
-        ResourceController resourceController = new ResourceController(resourceService);
 
-        AspectJProxyFactory factory = new AspectJProxyFactory(resourceController);
-        factory.addAspect(aspect);
-
-        proxy = factory.getProxy();
+        target = new ResourceController(resourceService);
 
         gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(proxy)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(), new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
         clubMemberId = 123L;
         clubId = 12L;
                
-    }
-    private void doAnswerAspect() throws Throwable {
-        doAnswer(invocation -> {
-            ProceedingJoinPoint joinPoint = invocation.getArgument(0);
-            Object[] args = joinPoint.getArgs();
-            args[0] = clubMemberId;
-            return joinPoint.proceed(args);
-        }).when(aspect).generateClubMemberId(any(ProceedingJoinPoint.class));
     }
 
 
@@ -106,14 +95,12 @@ public class ResourceControllerTest {
                 .build();
         ReflectionTestUtils.setField(resource, "id", 1L);
 
-        doAnswerAspect();
         doReturn(Response.of(resource)).when(resourceService).createResource(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/resources")
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isCreated());
@@ -137,14 +124,12 @@ public class ResourceControllerTest {
                 .build();
 
 
-        doAnswerAspect();
         doThrow(new ResourceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).createResource(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/resources")
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isForbidden());
@@ -156,11 +141,9 @@ public class ResourceControllerTest {
     @Test
     public void ResourceController_getResources_OK() throws Throwable {
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/resources")
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isOk());
@@ -172,12 +155,10 @@ public class ResourceControllerTest {
     @Test
     public void ResourceController_getResources_FORBIDDEN() throws Throwable {
 
-        doAnswerAspect();
         doThrow(new ResourceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).getResourceByClubId(clubMemberId, clubId);
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/resources")
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isForbidden());
@@ -191,11 +172,9 @@ public class ResourceControllerTest {
     {
         Long resourceId = 1L;
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/resources/{resourceId}",resourceId)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isOk());
@@ -210,11 +189,9 @@ public class ResourceControllerTest {
         Long resourceId = 1L;
 
         doThrow(new ResourceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).getResourceById(clubMemberId, resourceId);
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/resources/{resourceId}",resourceId)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isForbidden());
@@ -243,14 +220,12 @@ public class ResourceControllerTest {
                 .build();
         ReflectionTestUtils.setField(resource, "id", 1L);
 
-        doAnswerAspect();
         doReturn(Response.of(resource)).when(resourceService).updateResource(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/resources/{resourceId}", resourceId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(updateDto))
-                        .param("clubId",clubId.toString())
         );
 
         resultActions.andExpect(status().isOk());
@@ -275,14 +250,12 @@ public class ResourceControllerTest {
                 .build();
 
 
-        doAnswerAspect();
         doThrow(new ResourceException(UPDATE_AUTHORIZATION_DENIED)).when(resourceService).updateResource(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/resources/{resourceId}", resourceId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(updateDto))
-                        .param("clubId",clubId.toString())
         );
 
         resultActions.andExpect(status().isForbidden());
@@ -295,11 +268,9 @@ public class ResourceControllerTest {
     {
         Long resourceId = 1L;
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/resources/{resourceId}",resourceId)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isNoContent());
@@ -312,12 +283,10 @@ public class ResourceControllerTest {
     {
         Long resourceId = 1L;
 
-        doAnswerAspect();
         doThrow(new ResourceException(DELETE_AUTHORIZATION_DENIED)).when(resourceService).deleteResource(clubMemberId, resourceId);
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/resources/{resourceId}",resourceId)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isForbidden());
@@ -325,5 +294,16 @@ public class ResourceControllerTest {
         verify(resourceService, times(1)).deleteResource(clubMemberId, resourceId);
 
     }
+    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
+        @Override
+        public boolean supportsParameter(MethodParameter parameter) {
+            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
+        }
 
+        @Override
+        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
+        }
+    }
 }

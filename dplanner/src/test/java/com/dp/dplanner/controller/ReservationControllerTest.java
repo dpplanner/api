@@ -1,6 +1,5 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.aop.aspect.GeneratedClubMemberIdAspect;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;
@@ -10,10 +9,10 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.dto.ReservationDto.Request;
 import com.dp.dplanner.exception.*;
+import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ReservationService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,6 +30,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,11 +51,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ReservationControllerTest {
 
     @InjectMocks
-    private ReservationController proxy;
+    private ReservationController target;
     @Mock
     private ReservationService reservationService;
-    @Mock
-    private GeneratedClubMemberIdAspect aspect;
     @Mock
     private MockMvc mockMvc;
     @Mock
@@ -66,17 +67,15 @@ public class ReservationControllerTest {
 
     @BeforeEach
     public void setUp() throws Throwable {
-        ReservationController controller = new ReservationController(reservationService);
-        AspectJProxyFactory factory = new AspectJProxyFactory(controller);
-        factory.addAspect(aspect);
-        proxy = factory.getProxy();
+        target = new ReservationController(reservationService);
 
         gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(proxy)
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
@@ -106,11 +105,9 @@ public class ReservationControllerTest {
         ReflectionTestUtils.setField(reservation, "id", reservationId);
 
         doReturn(Response.of(reservation)).when(reservationService).createReservation(anyLong(), any(Create.class));
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/reservations")
-                        .param("clubId", clubId.toString())
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
@@ -135,12 +132,10 @@ public class ReservationControllerTest {
                 .endDateTime(end)
                 .build();
 
-        doAnswerAspect();
         doThrow(exception).when(reservationService).createReservation(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/reservations")
-                        .param("clubId", clubId.toString())
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
@@ -166,14 +161,12 @@ public class ReservationControllerTest {
         Reservation reservation = getReservation("updateTitle","updateUsage",resourceId,true,start,end);
         ReflectionTestUtils.setField(reservation, "id", reservationId);
 
-        doAnswerAspect();
         doReturn(Response.of(reservation)).when(reservationService).updateReservation(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/reservations/{reservationId}/update", reservationId)
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isOk());
@@ -201,14 +194,12 @@ public class ReservationControllerTest {
                 .endDateTime(end)
                 .build();
 
-        doAnswerAspect();
         doThrow(exception).when(reservationService).updateReservation(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/reservations/{reservationId}/update", reservationId)
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(matcher);
@@ -223,13 +214,11 @@ public class ReservationControllerTest {
                 .reservationId(reservationId)
                 .build();
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/reservations/{reservationId}/cancel", reservationId)
                         .content(gson.toJson(deleteDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isNoContent());
@@ -246,13 +235,11 @@ public class ReservationControllerTest {
                 .reservationId(reservationId)
                 .build();
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/reservations")
                         .content(gson.toJson(deleteDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
         resultActions.andExpect(status().isNoContent());
@@ -269,14 +256,12 @@ public class ReservationControllerTest {
                 .reservationId(reservationId)
                 .build();
 
-        doAnswerAspect();
         doThrow(exception).when(reservationService).deleteReservation(anyLong(),any(Delete.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/reservations")
                         .content(gson.toJson(deleteDto))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("clubId", clubId.toString())
         );
 
 
@@ -290,11 +275,9 @@ public class ReservationControllerTest {
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
         List<Request> requestDto = ReservationDto.Request.ofList(reservationIds);
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/reservations")
-                        .param("clubId", clubId.toString())
                         .param("confirm","true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(requestDto))
@@ -311,11 +294,9 @@ public class ReservationControllerTest {
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
         List<Request> requestDto = ReservationDto.Request.ofList(reservationIds);
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/reservations")
-                        .param("clubId", clubId.toString())
                         .param("confirm","false")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(requestDto))
@@ -331,11 +312,9 @@ public class ReservationControllerTest {
     {
         Long reservationId = 1L;
 
-        doAnswerAspect();
-
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/reservations/{reservationsId}",reservationId)
-                        .param("clubId", clubId.toString()));
+                MockMvcRequestBuilders.get("/reservations/{reservationsId}", reservationId)
+        );
 
         resultActions.andExpect(status().isOk());
 
@@ -346,11 +325,9 @@ public class ReservationControllerTest {
     public void ReservationController_getAllReservationsByPeriod_OK() throws Throwable {
 
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/reservations")
-                        .param("clubId", clubId.toString())
                         .param("resourceId",resourceId.toString())
                         .param("start","2023-08-25 12:00:00")
                         .param("end","2023-08-25 14:00:00")
@@ -369,11 +346,9 @@ public class ReservationControllerTest {
                 .resourceId(resourceId)
                 .build();
 
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/reservations")
-                        .param("clubId", clubId.toString())
                         .param("status","non-confirmed")
                         .param("resourceId", resourceId.toString())
         );
@@ -387,14 +362,6 @@ public class ReservationControllerTest {
     /**
      * utility method
      */
-    private void doAnswerAspect() throws Throwable {
-        doAnswer(invocation -> {
-            ProceedingJoinPoint joinPoint = invocation.getArgument(0);
-            Object[] args = joinPoint.getArgs();
-            args[0] = clubMemberId;
-            return joinPoint.proceed(args);
-        }).when(aspect).generateClubMemberId(any(ProceedingJoinPoint.class));
-    }
 
     private Reservation getReservation(String title,String usage,Long resourceId,boolean sharing,LocalDateTime start ,LocalDateTime end) {
         Member member = Member.builder().build();
@@ -425,5 +392,17 @@ public class ReservationControllerTest {
                 Arguments.of(new ReservationException(RESERVATION_NOT_FOUND),status().isNotFound()),
                 Arguments.of(new ReservationException(UPDATE_AUTHORIZATION_DENIED),status().isForbidden())
         );
+    }
+    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
+        @Override
+        public boolean supportsParameter(MethodParameter parameter) {
+            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
+        }
+
+        @Override
+        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
+        }
     }
 }

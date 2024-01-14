@@ -1,5 +1,6 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -23,6 +24,9 @@ public class Member {
     private String name;
     private String refreshToken;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recent_club_id")
+    private Club recentClub;
 
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
@@ -35,7 +39,7 @@ public class Member {
         this.refreshToken = refreshToken;
     }
 
-    public void updateRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
+    public void updateRecentClub(Club club) {
+        this.recentClub = club;
     }
 }

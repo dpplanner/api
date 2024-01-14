@@ -1,6 +1,11 @@
 package com.dp.dplanner.security.config;
 
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.security.PrincipalDetails;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,7 @@ import java.util.Optional;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final MemberRepository memberRepository;
+    private final ClubMemberRepository clubMemberRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest oAuth2UserRequest) throws OAuth2AuthenticationException {
@@ -51,8 +57,13 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         Optional<Member> optionalMember = memberRepository.findByEmail(attributes.getEmail());
         Member member;
         member = optionalMember.orElseGet(() -> createMember(attributes));
+        Club recentClub = member.getRecentClub();
+        if (recentClub != null) {
+            ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(recentClub.getId(), member.getId()).orElseThrow(() -> new ClubMemberException(ErrorResult.CLUBMEMBER_NOT_FOUND));
+            return PrincipalDetails.create(member,recentClub,clubMember, attributes.getAttributes());
+        }
 
-        return PrincipalDetails.create(member, attributes.getAttributes());
+        return  PrincipalDetails.create(member,null,null, attributes.getAttributes());
     }
 
     private Member createMember(OAuthAttributes attributes) {

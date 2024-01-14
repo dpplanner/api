@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -47,6 +46,8 @@ public class ClubService {
 
         Club club = createDto.toEntity();
         clubRepository.save(club);
+
+        member.updateRecentClub(club);
 
         ClubMember clubMember = ClubMember.createAdmin(member, club);
         clubMemberRepository.save(clubMember);
@@ -129,7 +130,7 @@ public class ClubService {
     }
 
 
-    //TODO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
+    //ToDO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
     @Transactional
     public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
 

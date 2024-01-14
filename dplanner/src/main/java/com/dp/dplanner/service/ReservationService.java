@@ -261,7 +261,7 @@ public class ReservationService {
         }
     }
 
-    //TODO refactor
+    //ToDO refactor
     private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
         return reservation.getClubMember().getId().equals(clubMemberId);
     }

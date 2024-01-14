@@ -1,14 +1,13 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.aop.aspect.GeneratedClubMemberIdAspect;
 import com.dp.dplanner.dto.CommentDto.Create;
 import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
+import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,13 +15,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.core.MethodParameter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 
@@ -37,13 +40,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class CommentControllerTest {
 
     @InjectMocks
-    private CommentController proxy;
+    private CommentController target;
 
     @Mock
     private CommentService commentService;
-
-    @Mock
-    private GeneratedClubMemberIdAspect aspect;
 
     private MockMvc mockMvc;
     private Gson gson;
@@ -55,18 +55,15 @@ public class CommentControllerTest {
     Long commentId;
     @BeforeEach
     public void setUp() {
-        CommentController target = new CommentController(commentService);
-        AspectJProxyFactory factory = new AspectJProxyFactory(target);
-        factory.addAspect(aspect);
-        proxy = factory.getProxy();
+        target = new CommentController(commentService);
 
         gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(proxy)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(),new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
@@ -78,15 +75,6 @@ public class CommentControllerTest {
 
     }
 
-    private void doAnswerAspect() throws Throwable {
-        doAnswer(invocation -> {
-            ProceedingJoinPoint joinPoint = invocation.getArgument(0);
-            Object[] args = joinPoint.getArgs();
-            args[0] = clubMemberId;
-            return joinPoint.proceed(args);
-        }).when(aspect).generateClubMemberId(any(ProceedingJoinPoint.class));
-    }
-
     @Test
     public void CommentController_CreateComment_CREATED() throws Throwable
     {
@@ -96,10 +84,8 @@ public class CommentControllerTest {
                 .content("test")
                 .build();
 
-        doAnswerAspect();
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/comments")
-                        .param("clubId",clubId.toString())
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -117,12 +103,10 @@ public class CommentControllerTest {
                 .content("test")
                 .build();
 
-        doAnswerAspect();
         doThrow(new CommentException(ErrorResult.CREATE_COMMENT_DENIED)).when(commentService).createComment(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/comments")
-                        .param("clubId",clubId.toString())
                         .content(gson.toJson(createDto))
                         .contentType(MediaType.APPLICATION_JSON));
 
@@ -134,10 +118,8 @@ public class CommentControllerTest {
     @Test
     public void CommentController_getComments() throws Throwable
     {
-        doAnswerAspect();
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/posts/{postId}/comments", postId)
-                        .param("clubId",clubId.toString())
         );
 
         resultActions.andExpect(status().isOk());
@@ -148,10 +130,8 @@ public class CommentControllerTest {
 
     @Test
     public void CommentController_getMyComments() throws Throwable {
-        doAnswerAspect();
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/members/{memberId}/comments", memberId)
-                        .param("clubId",clubId.toString())
         );
 
         resultActions.andExpect(status().isOk());
@@ -168,15 +148,14 @@ public class CommentControllerTest {
                 .content("update")
                 .build();
 
-        doAnswerAspect();
         doReturn(Response.builder().id(commentId).content(updateDto.getContent()).build())
                 .when(commentService).updateComment(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/comments/{commentId}",commentId)
-                        .param("clubId",clubId.toString())
                         .content(gson.toJson(updateDto))
-                        .contentType(MediaType.APPLICATION_JSON));
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
 
         resultActions.andExpect(status().isOk());
 
@@ -195,14 +174,13 @@ public class CommentControllerTest {
                 .content("update")
                 .build();
 
-        doAnswerAspect();
         doThrow(new CommentException(UPDATE_AUTHORIZATION_DENIED)).when(commentService).updateComment(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/comments/{commentId}",commentId)
-                        .param("clubId",clubId.toString())
                         .content(gson.toJson(updateDto))
-                        .contentType(MediaType.APPLICATION_JSON));
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
 
         resultActions.andExpect(status().isForbidden());
 
@@ -212,11 +190,10 @@ public class CommentControllerTest {
     @Test
     public void CommentController_deleteComment_NOCONTENT() throws Throwable
     {
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/comments/{commentId}", commentId)
-                        .param("clubId", clubId.toString()));
+        );
 
         resultActions.andExpect(status().isNoContent());
 
@@ -226,11 +203,10 @@ public class CommentControllerTest {
     @Test
     public void CommentController_deleteComment_FORBIDDEN() throws Throwable
     {
-        doAnswerAspect();
         doThrow(new CommentException(DELETE_AUTHORIZATION_DENIED)).when(commentService).deleteComment(clubMemberId, commentId);
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/comments/{commentId}", commentId)
-                        .param("clubId", clubId.toString()));
+        );
 
         resultActions.andExpect(status().isForbidden());
 
@@ -241,11 +217,10 @@ public class CommentControllerTest {
     @Test
     public void CommentController_likeComment_OK() throws Throwable
     {
-        doAnswerAspect();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/comments/{commentId}/like", commentId)
-                        .param("clubId", clubId.toString()));
+        );
 
         resultActions.andExpect(status().isOk());
 
@@ -255,6 +230,18 @@ public class CommentControllerTest {
     }
 
 
+    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
+        @Override
+        public boolean supportsParameter(MethodParameter parameter) {
+            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
+        }
+
+        @Override
+        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
+        }
+    }
 
 
 }

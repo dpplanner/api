@@ -1,6 +1,8 @@
 package com.dp.dplanner.security;
 
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,19 +14,27 @@ import java.util.Map;
 @Getter
 public class PrincipalDetails implements UserDetails, OAuth2User {
     private Long id;
+    private Long clubId;
+    private Long clubMemberId;
     private String email;
 
     private Map<String, Object> attributes;
 
-    public PrincipalDetails(Long id, String email,Map<String, Object> attributes) {
+    public PrincipalDetails(Long id, Long club_id, Long club_member_id, String email, Map<String, Object> attributes) {
         this.id = id;
+        this.clubId = club_id;
+        this.clubMemberId = club_member_id;
         this.email = email;
         this.attributes = attributes;
     }
 
-    public static PrincipalDetails create(Member member, Map<String,Object> attributes) {
+    public static PrincipalDetails create(Member member, Club club, ClubMember clubMember, Map<String,Object> attributes) {
 
-        return new PrincipalDetails(member.getId(), member.getEmail(), attributes);
+        if (club != null && clubMember != null) {
+            return new PrincipalDetails(member.getId(), club.getId(), clubMember.getId(), member.getEmail(), attributes);
+        }
+
+        return new PrincipalDetails(member.getId(), null, null, member.getEmail(), attributes);
     }
 
 

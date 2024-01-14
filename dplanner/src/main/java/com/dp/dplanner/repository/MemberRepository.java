@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByEmail(String email);
+    Optional<Member> findByRefreshToken(String RefreshToken);
 
     @Modifying
     @Query("update Member m set m.refreshToken = :refreshToken where m.id = :memberId")

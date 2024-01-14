@@ -1,7 +1,6 @@
 package com.dp.dplanner.controller;
 
 
-import com.dp.dplanner.aop.aspect.GeneratedClubMemberIdAspect;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
@@ -16,7 +15,6 @@ import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
 import com.nimbusds.jose.shaded.gson.Gson;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +23,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -52,26 +49,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ClubControllerTest {
 
     @InjectMocks
-    ClubController proxy;
+    ClubController target;
     @Mock
     ClubService clubService;
-    @Mock
-    GeneratedClubMemberIdAspect aspect;
-
     MockMvc mockMvc;
     Gson gson;
 
     @BeforeEach
     void setUp() {
-        ClubController target = new ClubController(clubService);
-        AspectJProxyFactory factory = new AspectJProxyFactory(target);
-        factory.addAspect(aspect);
-        proxy = factory.getProxy();
-
+        target = new ClubController(clubService);
         gson = new Gson();
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(proxy)
+                .standaloneSetup(target)
                 .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -210,7 +200,6 @@ public class ClubControllerTest {
     public void updateClubInfo_OK() throws Throwable {
         //given
         Long clubId = 1L;
-        answerClubMemberId();
         ClubDto.Response responseDto = ClubDto.Response.builder()
                 .id(clubId)
                 .clubName("club")
@@ -241,7 +230,6 @@ public class ClubControllerTest {
     public void updateClubInfo_FORBIDDEN() throws Throwable {
         //given
         Long clubId = 1L;
-        answerClubMemberId();
         given(clubService.updateClubInfo(any(Long.class), any(ClubDto.Update.class)))
                 .willThrow(new ClubException(UPDATE_AUTHORIZATION_DENIED));
 
@@ -264,7 +252,6 @@ public class ClubControllerTest {
     public void updateClubInfo_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
-        answerClubMemberId();
         given(clubService.updateClubInfo(any(Long.class), any(ClubDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
@@ -287,7 +274,6 @@ public class ClubControllerTest {
     public void inviteClub_OK() throws Throwable {
         //given
         Long clubId = 1L;
-        answerClubMemberId();
         given(clubService.inviteClub(any(Long.class)))
                 .willReturn(InviteDto.builder()
                         .clubId(clubId)
@@ -311,7 +297,6 @@ public class ClubControllerTest {
     public void inviteClub_FORBIDDEN() throws Throwable {
         //given
         Long clubId = 1L;
-        answerClubMemberId();
         given(clubService.inviteClub(any(Long.class))).willThrow(new ClubMemberException(AUTHORIZATION_DENIED));
 
         //when
@@ -326,7 +311,6 @@ public class ClubControllerTest {
     public void inviteClub_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
-        answerClubMemberId();
         given(clubService.inviteClub(any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
@@ -375,7 +359,6 @@ public class ClubControllerTest {
                 .build();
         given(clubService.findClubManagerAuthorities(any(Long.class), any(ClubAuthorityDto.Request.class)))
                 .willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/authorities", clubId));
@@ -395,7 +378,6 @@ public class ClubControllerTest {
         Long clubId = 1L;
         given(clubService.findClubManagerAuthorities(any(Long.class), any(ClubAuthorityDto.Request.class)))
                 .willThrow(new ClubException(READ_AUTHORIZATION_DENIED));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/authorities", clubId));
@@ -411,7 +393,6 @@ public class ClubControllerTest {
         Long clubId = 1L;
         given(clubService.findClubManagerAuthorities(any(Long.class), any(ClubAuthorityDto.Request.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/authorities", clubId));
@@ -431,7 +412,6 @@ public class ClubControllerTest {
                 .build();
         given(clubService.setManagerAuthority(any(Long.class), any(ClubAuthorityDto.Update.class)))
                 .willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         ClubAuthorityDto.Update updateDto = ClubAuthorityDto.Update.builder()
@@ -457,7 +437,6 @@ public class ClubControllerTest {
         Long clubId = 1L;
         given(clubService.setManagerAuthority(any(Long.class), any(ClubAuthorityDto.Update.class)))
                 .willThrow(new ClubException(UPDATE_AUTHORIZATION_DENIED));
-        answerClubMemberId();
 
         //when
         ClubAuthorityDto.Update updateDto = ClubAuthorityDto.Update.builder()
@@ -479,7 +458,6 @@ public class ClubControllerTest {
         Long clubId = 1L;
         given(clubService.setManagerAuthority(any(Long.class), any(ClubAuthorityDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         ClubAuthorityDto.Update updateDto = ClubAuthorityDto.Update.builder()
@@ -503,16 +481,16 @@ public class ClubControllerTest {
         return gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), responseType);
     }
 
-    private void answerClubMemberId() throws Throwable {
-        Long clubMemberId = 1L;
-        given(aspect.generateClubMemberId(any(ProceedingJoinPoint.class)))
-                .willAnswer(invocation -> {
-                    ProceedingJoinPoint joinPoint = invocation.getArgument(0);
-                    Object[] args = joinPoint.getArgs();
-                    args[0] = clubMemberId;
-                    return joinPoint.proceed(args);
-                } );
-    }
+//    private void answerClubMemberId() throws Throwable {
+//        Long clubMemberId = 1L;
+//        given(aspect.generateClubMemberId(any(ProceedingJoinPoint.class)))
+//                .willAnswer(invocation -> {
+//                    ProceedingJoinPoint joinPoint = invocation.getArgument(0);
+//                    Object[] args = joinPoint.getArgs();
+//                    args[0] = clubMemberId;
+//                    return joinPoint.proceed(args);
+//                } );
+//    }
 
     static class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
         @Override
@@ -523,7 +501,7 @@ public class ClubControllerTest {
         @Override
         public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                       NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, "email", null);
+            return new PrincipalDetails(1L, 1L, 1L, "email", null);
         }
     }
 

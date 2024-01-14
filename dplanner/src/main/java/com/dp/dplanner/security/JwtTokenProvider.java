@@ -1,10 +1,14 @@
 package com.dp.dplanner.security;
 
+import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.MemberException;
+import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +27,7 @@ public class JwtTokenProvider {
     private static final Long ACCESS_TOKEN_VALID_TIME = 30 * 60 * 1000L;            // 30 min
     private static final Long REFRESH_TOKEN_VALID_TIME = 3 * 30 * 24 * 30 * 60 * 1000L; // 3 month
     private final MemberRepository memberRepository;
+    private final ClubMemberRepository clubMemberRepository;
 
 
 
@@ -32,7 +37,7 @@ public class JwtTokenProvider {
             return !isExpired(claims);
         } catch (ExpiredJwtException e) {
             log.info("토큰 유효기간 만료");
-        } catch (IllegalStateException e) {
+        } catch (JwtException e) {
             log.info("올바르지 않은 토큰");
         }
         return false;
@@ -42,17 +47,33 @@ public class JwtTokenProvider {
         Claims claims = getClaims(accessToken);
         Long id = Long.valueOf(claims.getSubject());
 
-        /**
-         * 추후에 authorities 일반 유저인지 개발자 유저인지 구분 필요함
-         */
-        PrincipalDetails principal = new PrincipalDetails(id, "", null);
+        Long recentClubId = (claims.get("recent_club_id") != null) ? (long) (int) claims.get("recent_club_id") : null;
+        Long clubMemberId =(claims.get("club_member_id") != null) ? (long) (int) claims.get("club_member_id") : null;
 
-        return new UsernamePasswordAuthenticationToken(principal, "",null);
+
+         // ToDO 추후에 authorities 일반 유저인지 개발자 유저인지 구분 필요
+        PrincipalDetails principal = new PrincipalDetails(id,recentClubId,clubMemberId,"", null);
+
+        return new UsernamePasswordAuthenticationToken(principal, "",null); // UsernamePasswordAuthenticationToken  생성자가 authorities 에 따라 다름.  setAuthenticated 차이가 있음.
     }
 
     public String generateAccessToken(Authentication authentication) {
         PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
         Claims claims = Jwts.claims().setSubject(principal.getName());
+
+        Member member = memberRepository.findById(principal.getId()).orElseThrow(() -> new MemberException(ErrorResult.MEMBER_NOT_FOUND));
+        Club recentClub = member.getRecentClub();
+        ClubMember clubMember;
+
+        if (recentClub != null) {
+            clubMember = clubMemberRepository.findByClubIdAndMemberId(recentClub.getId(), member.getId()).orElseThrow(() -> new ClubMemberException(ErrorResult.CLUBMEMBER_NOT_FOUND));
+            claims.put("recent_club_id", recentClub.getId());
+            claims.put("club_member_id", clubMember.getId());
+        }else{
+            claims.put("recent_club_id", null);
+            claims.put("club_member_id", null);
+        }
+
         Date now = new Date();
 
         return Jwts.builder()
