@@ -2,11 +2,13 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
+import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.InviteDto;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,9 +33,12 @@ public class ClubController {
                 .body(responseDto);
     }
 
-    @GetMapping("")
-    public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal) {
-        Long memberId = principal.getId();
+    @GetMapping(value = "", params = "memberId")
+    public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal,
+                                                              @RequestParam Long memberId) {
+        if (!memberId.equals(principal.getId())) {
+            memberId = principal.getId();
+        }
         List<ClubDto.Response> myClubs = clubService.findMyClubs(memberId);
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -74,7 +79,17 @@ public class ClubController {
                 .body(response);
     }
 
-    // joinClub
+    @PostMapping("/{clubId}/join")
+    public ResponseEntity<ClubMemberDto.Response> joinClub(@AuthenticationPrincipal PrincipalDetails principal,
+                                                           @PathVariable("clubId") Long clubId,
+                                                           @RequestBody @Valid InviteDto inviteDto) {
+        Long memberId = principal.getId();
+
+        ClubMemberDto.Response response = clubService.joinClub(memberId, inviteDto);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
 
     @GetMapping("/{clubId}/authorities")
     public ResponseEntity<ClubAuthorityDto.Response> findManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,

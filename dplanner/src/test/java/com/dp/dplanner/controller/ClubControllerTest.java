@@ -67,6 +67,9 @@ public class ClubControllerTest {
                 .build();
     }
 
+    /**
+     * POST /clubs
+     */
     @Test
     @DisplayName("클럽이 정상적으로 생성되면 201 CREATED")
     public void createClub_OK() throws Exception {
@@ -119,6 +122,53 @@ public class ClubControllerTest {
         resultActions.andExpect(status().isNotFound());
     }
 
+
+    /**
+     * GET /clubs?memberId=
+     */
+    @Test
+    @DisplayName("내가 가입한 클럽들을 조회하면 200 OK")
+    public void findMyClubs_OK() throws Exception {
+        //given
+        Long memberId = 1L;
+        int responseNum = 3;
+        List<ClubDto.Response> responseList = new ArrayList<>();
+        for (int i = 0; i < responseNum; i++) {
+            ClubDto.Response response = ClubDto.Response.of(Club.builder().clubName("club" + i).build());
+            responseList.add(response);
+        }
+        given(clubService.findMyClubs(memberId)).willReturn(responseList);
+
+        //when
+        ResultActions resultActions = mockMvc.perform(get("/clubs")
+                .param("memberId", memberId.toString()));
+
+        //then
+        resultActions.andExpect(status().isOk());
+
+        List<ClubDto.Response> responses = getResponse(resultActions, List.class);
+        assertThat(responses.size()).isEqualTo(responseNum);
+    }
+
+    @Test
+    @DisplayName("가입한 클럽 조회시 회원정보가 없으면 404 NOT_FOUND")
+    public void findMyClubs_NOTFOUND() throws Exception {
+        //given
+        Long memberId = 1L;
+        given(clubService.findMyClubs(memberId)).willThrow(new MemberException(MEMBER_NOT_FOUND));
+
+        //when
+        ResultActions resultActions = mockMvc.perform(get("/clubs")
+                .param("memberId", memberId.toString()));
+
+        //then
+        resultActions.andExpect(status().isNotFound());
+    }
+
+
+    /**
+     * GET /clubs/{clubId}
+     */
     @Test
     @DisplayName("클럽 조회에 성공하면 200 OK")
     public void findClubById_OK() throws Exception {
@@ -158,43 +208,10 @@ public class ClubControllerTest {
         resultActions.andExpect(status().isNotFound());
     }
 
-    @Test
-    @DisplayName("내가 가입한 클럽들을 조회하면 200 OK")
-    public void findMyClubs_OK() throws Exception {
-        //given
-        Long memberId = 1L;
-        int responseNum = 3;
-        List<ClubDto.Response> responseList = new ArrayList<>();
-        for (int i = 0; i < responseNum; i++) {
-            ClubDto.Response response = ClubDto.Response.of(Club.builder().clubName("club" + i).build());
-            responseList.add(response);
-        }
-        given(clubService.findMyClubs(memberId)).willReturn(responseList);
 
-        //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs"));
-
-        //then
-        resultActions.andExpect(status().isOk());
-
-        List<ClubDto.Response> responses = getResponse(resultActions, List.class);
-        assertThat(responses.size()).isEqualTo(responseNum);
-    }
-
-    @Test
-    @DisplayName("가입한 클럽 조회시 회원정보가 없으면 404 NOT_FOUND")
-    public void findMyClubs_NOTFOUND() throws Exception {
-        //given
-        Long memberId = 1L;
-        given(clubService.findMyClubs(memberId)).willThrow(new MemberException(MEMBER_NOT_FOUND));
-
-        //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs"));
-
-        //then
-        resultActions.andExpect(status().isNotFound());
-    }
-
+    /**
+     * PATCH /clubs/{clubId}
+     */
     @Test
     @DisplayName("클럽 정보 수정시 200 OK")
     public void updateClubInfo_OK() throws Throwable {
@@ -269,6 +286,10 @@ public class ClubControllerTest {
         resultActions.andExpect(status().isNotFound());
     }
 
+
+    /**
+     * GET /clubs/{clubId}/invite
+     */
     @Test
     @DisplayName("클럽 초대코드 조회시 200 OK")
     public void inviteClub_OK() throws Throwable {
@@ -321,9 +342,12 @@ public class ClubControllerTest {
 
     }
 
+
+    /**
+     * POST /clubs/{clubId}/join
+     */
     @Test
     @DisplayName("클럽 가입시 201 CREATED")
-    @Disabled("보류")
     public void joinClub_CREATED() throws Exception {
         //given
         Long clubId = 1L;
@@ -348,6 +372,64 @@ public class ClubControllerTest {
         assertThat(response.getId()).isEqualTo(clubMemberId);
     }
 
+    @Test
+    @DisplayName("클럽 가입시 클럽 정보가 없으면 404 NOT_FOUND")
+    public void joinClub_NOTFOUND() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(CLUB_NOT_FOUND));
+
+        //when
+        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(inviteDto))
+                .contentType(APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("클럽 가입시 초대 코드가 다르면 400 BAD_REQUEST")
+    public void joinClub_BADREQUEST() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(WRONG_INVITE_CODE));
+
+        //when
+        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(inviteDto))
+                .contentType(APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("클럽 가입시 이미 가입한 클럽이라면 400 BAD_REQUEST")
+    public void joinClub_BADREQUEST2() throws Exception {
+        //given
+        Long clubId = 1L;
+        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubMemberException(CLUBMEMBER_ALREADY_EXISTS));
+
+        //when
+        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(inviteDto))
+                .contentType(APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+
+    /**
+     * GET /clubs/{clubId}/authorities
+     */
     @Test
     @DisplayName("매니저 권한 조회시 200 OK")
     public void findManagerAuthorities_OK() throws Throwable {
@@ -401,6 +483,10 @@ public class ClubControllerTest {
         resultActions.andExpect(status().isNotFound());
     }
 
+
+    /**
+     * PUT /clubs/{clubId}/authorities
+     */
     @Test
     @DisplayName("매니저 권한 설정시 200 OK")
     public void setManagerAuthorities_OK() throws Throwable {
@@ -471,7 +557,6 @@ public class ClubControllerTest {
         //then
         resultActions.andExpect(status().isNotFound());
     }
-
 
 
     /**

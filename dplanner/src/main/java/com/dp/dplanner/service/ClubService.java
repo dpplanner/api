@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -36,6 +37,7 @@ public class ClubService {
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubAuthorityRepository clubAuthorityRepository;
+    private final ClubMemberService clubMemberService;
 
 
     @Transactional
@@ -130,7 +132,7 @@ public class ClubService {
     }
 
 
-    //ToDO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
+    //TODO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
     @Transactional
     public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
 
@@ -142,10 +144,12 @@ public class ClubService {
             Member member = memberRepository.findById(memberId)
                     .orElseThrow(() ->new MemberException(MEMBER_NOT_FOUND));
 
-            ClubMember clubMember = ClubMember.createClubMember(member, club);
-            clubMemberRepository.save(clubMember);
+            ClubMemberDto.Create createDto = ClubMemberDto.Create.builder()
+                    .clubId(inviteDto.getClubId())
+                    .name(member.getName())
+                    .build();
 
-            return ClubMemberDto.Response.of(clubMember);
+            return clubMemberService.create(memberId, createDto);
         } else {
             throw new ClubException(WRONG_INVITE_CODE);
         }

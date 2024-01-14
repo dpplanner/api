@@ -6,7 +6,6 @@ import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.exception.ClubException;
 import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -33,7 +31,6 @@ public class ClubMemberService {
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
 
-    //clubService.joinClub -> clubMemberService.create
     @Transactional
     public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto) {
 
@@ -57,16 +54,23 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(savedMember);
     }
 
-    public ClubMemberDto.Response findById(ClubMemberDto.Request requestDto) {
+    public ClubMemberDto.Response findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
 
-        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isConfirmed()) {
+        ClubMember requestClubMember = clubMemberRepository.findById(requestDto.getId())
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(requestClubMember)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
+
+        if (!requestClubMember.isConfirmed()) {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
 
-        return ClubMemberDto.Response.of(clubMember);
+        return ClubMemberDto.Response.of(requestClubMember);
     }
 
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) {
@@ -91,15 +95,19 @@ public class ClubMemberService {
     }
 
     @RequiredAuthority(MEMBER_ALL)
-    public List<ClubMemberDto.Response> findUnconfirmedClubMembers(Long managerId) {
+    public List<ClubMemberDto.Response> findMyClubMembers(Long managerId, boolean confirmed) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        List<ClubMember> unconfirmedClubMember = clubMemberRepository
-                .findAllUnconfirmedClubMemberByClub(manager.getClub());
+        List<ClubMember> clubMembers;
+        if (confirmed) {
+            clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(manager.getClub());
+        } else {
+            clubMembers = clubMemberRepository.findAllUnconfirmedClubMemberByClub(manager.getClub());
+        }
 
-        return ClubMemberDto.Response.ofList(unconfirmedClubMember);
+        return ClubMemberDto.Response.ofList(clubMembers);
     }
 
     @Transactional
@@ -121,7 +129,7 @@ public class ClubMemberService {
     }
 
     @Transactional
-    public void changeClubMemberRole(Long adminId, ClubMemberDto.Update updateDto) {
+    public ClubMemberDto.Response updateClubMemberRole(Long adminId, ClubMemberDto.Update updateDto) {
 
         if (adminId.equals(updateDto.getId())) {
             throw new ClubMemberException(UPDATE_AUTHORIZATION_DENIED);
@@ -145,9 +153,27 @@ public class ClubMemberService {
             }
 
             clubMember.changeRole(ClubRole.valueOf(updateDto.getRole()));
+
+            return ClubMemberDto.Response.of(clubMember);
         } else {
             throw new ClubMemberException(UPDATE_AUTHORIZATION_DENIED);
         }
+    }
+
+    @Transactional
+    @RequiredAuthority(MEMBER_ALL)
+    public void confirm(Long managerId, ClubMemberDto.Request requestDto) {
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(manager)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
+
+        clubMember.confirm();
     }
 
     @Transactional
@@ -183,12 +209,12 @@ public class ClubMemberService {
 
     @Transactional
     @RequiredAuthority(MEMBER_ALL)
-    public void kickOut(Long managerId, ClubMemberDto.Delete deleteDto) {
+    public void kickOut(Long managerId, ClubMemberDto.Request requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        ClubMember clubMember = clubMemberRepository.findById(deleteDto.getId())
+        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         if (invalidKickOutRequest(manager, clubMember)) {
@@ -196,17 +222,16 @@ public class ClubMemberService {
         }
 
         clubMemberRepository.delete(clubMember);
-
     }
 
     @Transactional
     @RequiredAuthority(MEMBER_ALL)
-    public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Delete> deleteDto) {
+    public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        List<Long> requestIds = deleteDto.stream().map(ClubMemberDto.Delete::getId).toList();
+        List<Long> requestIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
 
         List<ClubMember> deletedClubMembers = clubMembers.stream()

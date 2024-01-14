@@ -3,10 +3,7 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -18,11 +15,12 @@ public class ClubMemberDto {
     @Getter
     @Setter
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Request {
         private Long id;
 
         public static List<ClubMemberDto.Request> ofList(List<Long> clubMembersIds) {
-            return clubMembersIds.stream().map(Request::new).toList();
+            return clubMembersIds.stream().map(ClubMemberDto.Request::new).toList();
         }
     }
 
@@ -50,6 +48,7 @@ public class ClubMemberDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Update {
         private Long id;
         private String name;
@@ -60,18 +59,9 @@ public class ClubMemberDto {
 
     @Getter
     @Setter
+    @Builder
     @AllArgsConstructor
-    public static class Delete {
-        private Long id;
-
-        public static List<ClubMemberDto.Delete> ofList(List<Long> clubMembersIds) {
-            return clubMembersIds.stream().map(Delete::new).toList();
-        }
-    }
-
-    @Getter
-    @Setter
-    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Response {
             private Long id;
             private String name;
