@@ -1,15 +1,14 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.aop.aspect.GeneratedClubMemberIdAspect;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
+import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubMemberService;
 import com.nimbusds.jose.shaded.gson.Gson;
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,11 +16,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -40,26 +43,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ClubMemberControllerTests {
 
     @InjectMocks
-    ClubMemberController proxy;
+    ClubMemberController target;
     @Mock
     ClubMemberService clubMemberService;
-    @Mock
-    GeneratedClubMemberIdAspect aspect;
 
     MockMvc mockMvc;
     Gson gson;
 
     @BeforeEach
     void setUp() {
-        ClubMemberController target = new ClubMemberController(clubMemberService);
-        AspectJProxyFactory factory = new AspectJProxyFactory(target);
-        factory.addAspect(aspect);
-        proxy = factory.getProxy();
+        target = new ClubMemberController(clubMemberService);
 
         gson = new Gson();
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(proxy)
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -83,7 +82,6 @@ public class ClubMemberControllerTests {
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
         given(clubMemberService.findMyClubMembers(any(Long.class))).willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId));
@@ -101,7 +99,6 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
         given(clubMemberService.findMyClubMembers(any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId));
@@ -124,7 +121,6 @@ public class ClubMemberControllerTests {
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
         given(clubMemberService.findMyClubMembers(any(Long.class), eq(true))).willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
@@ -146,7 +142,6 @@ public class ClubMemberControllerTests {
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
         given(clubMemberService.findMyClubMembers(any(Long.class), eq(false))).willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
@@ -166,7 +161,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.findMyClubMembers(any(Long.class), any(Boolean.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
@@ -189,7 +183,6 @@ public class ClubMemberControllerTests {
         List<ClubMember> notDeletedClubMembers = getConfirmedClubMembers(Club.builder().build(), 2); // 삭제되지 않은 회원을 반환
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(notDeletedClubMembers);
         given(clubMemberService.kickOutAll(any(Long.class), any(List.class))).willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -212,7 +205,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.kickOutAll(any(Long.class), any(List.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -235,7 +227,6 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
 
         doNothing().when(clubMemberService).confirmAll(any(Long.class), any(List.class));
-        answerClubMemberId();
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -255,7 +246,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION))
                 .when(clubMemberService).confirmAll(any(Long.class), any(List.class));
-        answerClubMemberId();
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -275,7 +265,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).confirmAll(any(Long.class), any(List.class));
-        answerClubMemberId();
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -303,7 +292,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
                 .willReturn(ClubMemberDto.Response.of(clubMember));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -325,7 +313,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -343,7 +330,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
                 .willThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -362,7 +348,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -391,7 +376,6 @@ public class ClubMemberControllerTests {
                 .build();
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class))).willReturn(responseDto);
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -420,7 +404,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -445,7 +428,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(UPDATE_AUTHORIZATION_DENIED));
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -470,7 +452,6 @@ public class ClubMemberControllerTests {
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -501,7 +482,6 @@ public class ClubMemberControllerTests {
         given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willReturn(responseDto);
 
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder().role("MANAGER").build();
@@ -525,7 +505,6 @@ public class ClubMemberControllerTests {
         given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
 
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder().role("MANAGER").build();
@@ -547,7 +526,6 @@ public class ClubMemberControllerTests {
         given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(UPDATE_AUTHORIZATION_DENIED));
 
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder().role("MANAGER").build();
@@ -569,7 +547,6 @@ public class ClubMemberControllerTests {
         given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION));
 
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder().role("MANAGER").build();
@@ -591,7 +568,6 @@ public class ClubMemberControllerTests {
         given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        answerClubMemberId();
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder().role("MANAGER").build();
@@ -615,7 +591,6 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 2L;
 
         doNothing().when(clubMemberService).confirm(any(Long.class), any(ClubMemberDto.Request.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -634,7 +609,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION))
                 .when(clubMemberService).confirm(any(Long.class), any(ClubMemberDto.Request.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -653,7 +627,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).confirm(any(Long.class), any(ClubMemberDto.Request.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -675,7 +648,6 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         doNothing().when(clubMemberService).leaveClub(any(Long.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -695,7 +667,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(DELETE_AUTHORIZATION_DENIED))
                 .when(clubMemberService).leaveClub(any(Long.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -715,7 +686,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).leaveClub(any(Long.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -738,7 +708,6 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         doNothing().when(clubMemberService).kickOut(any(Long.class), any(ClubMemberDto.Request.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -758,7 +727,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(DELETE_AUTHORIZATION_DENIED))
                 .when(clubMemberService).kickOut(any(Long.class), any(ClubMemberDto.Request.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -778,7 +746,6 @@ public class ClubMemberControllerTests {
 
         doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).kickOut(any(Long.class), any(ClubMemberDto.Request.class));
-        answerClubMemberId();
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -797,16 +764,16 @@ public class ClubMemberControllerTests {
         return gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), responseType);
     }
 
-    private void answerClubMemberId() throws Throwable {
-        Long clubMemberId = 1L;
-        given(aspect.generateClubMemberId(any(ProceedingJoinPoint.class)))
-                .willAnswer(invocation -> {
-                    ProceedingJoinPoint joinPoint = invocation.getArgument(0);
-                    Object[] args = joinPoint.getArgs();
-                    args[0] = clubMemberId;
-                    return joinPoint.proceed(args);
-                } );
-    }
+//    private void answerClubMemberId() throws Throwable {
+//        Long clubMemberId = 1L;
+//        given(aspect.generateClubMemberId(any(ProceedingJoinPoint.class)))
+//                .willAnswer(invocation -> {
+//                    ProceedingJoinPoint joinPoint = invocation.getArgument(0);
+//                    Object[] args = joinPoint.getArgs();
+//                    args[0] = clubMemberId;
+//                    return joinPoint.proceed(args);
+//                } );
+//    }
 
     private static List<ClubMember> getUnconfirmedClubMembers(Club club, int n) {
         List<ClubMember> clubMembers = new ArrayList<>();
@@ -824,5 +791,18 @@ public class ClubMemberControllerTests {
         clubMembers.forEach(ClubMember::confirm);
 
         return clubMembers;
+    }
+
+    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
+        @Override
+        public boolean supportsParameter(MethodParameter parameter) {
+            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
+        }
+
+        @Override
+        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+            return new PrincipalDetails(1L, 1L, 1L, "email", null);
+        }
     }
 }
