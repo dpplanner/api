@@ -6,7 +6,6 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.exception.LockException;
-import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.LockService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.MethodParameter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -24,10 +22,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 
@@ -49,7 +43,7 @@ public class LockControllerTest {
     private MockMvc mockMvc;
     @Mock
     private Gson gson;
-
+    Long memberId;
     Long clubId;
     Long clubMemberId;
     Long resourceId;
@@ -60,21 +54,23 @@ public class LockControllerTest {
     @BeforeEach
     public void setUp() {
 
+
         target = new LockController(lockService);
 
         gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
-        mockMvc = MockMvcBuilders
-                .standaloneSetup(target)
-                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(),new PageableHandlerMethodArgumentResolver())
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-
+        memberId = 1L;
         clubId = 11L;
         clubMemberId = 123L;
         resourceId = 1234L;
+
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(memberId, clubId, clubMemberId), new PageableHandlerMethodArgumentResolver())
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
 
         start = LocalDateTime.of(2023,10,1,12,0,0);
         end = start.plusHours(1);
@@ -295,10 +291,6 @@ public class LockControllerTest {
     public void LockController_getLocks_OK() throws Throwable
     {
 
-        Request request = Request.builder()
-                .startDateTime(start)
-                .endDateTime(end)
-                .build();
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/locks/resources/{resourceId}", resourceId)
@@ -313,17 +305,4 @@ public class LockControllerTest {
 
     }
 
-    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
-        @Override
-        public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
-        }
-
-        @Override
-        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
-        }
-
-    }
 }

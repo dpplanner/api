@@ -4,7 +4,6 @@ import com.dp.dplanner.dto.CommentDto.Create;
 import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -15,17 +14,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.MethodParameter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 
@@ -55,23 +49,25 @@ public class CommentControllerTest {
     Long commentId;
     @BeforeEach
     public void setUp() {
+
+
         target = new CommentController(commentService);
 
         gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
-        mockMvc = MockMvcBuilders
-                .standaloneSetup(target)
-                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(),new PageableHandlerMethodArgumentResolver())
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-
         clubMemberId = 123L;
         postId = 12L;
         memberId = 1L;
         clubId = 10L;
         commentId = -1L;
+
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(memberId,clubId,clubMemberId),new PageableHandlerMethodArgumentResolver())
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
 
     }
 
@@ -230,18 +226,6 @@ public class CommentControllerTest {
     }
 
 
-    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
-        @Override
-        public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
-        }
-
-        @Override
-        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
-        }
-    }
 
 
 }

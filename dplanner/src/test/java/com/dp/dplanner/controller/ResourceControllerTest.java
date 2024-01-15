@@ -4,7 +4,6 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.exception.ResourceException;
-import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ResourceService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.MethodParameter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -22,10 +20,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 
@@ -50,7 +44,8 @@ public class ResourceControllerTest {
     private MockMvc mockMvc;
     @Mock
     private Gson gson;
-    
+
+    Long memberId;
     Long clubMemberId ;
     Long clubId;
     
@@ -64,15 +59,17 @@ public class ResourceControllerTest {
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
+
+        memberId = 1L;
+        clubMemberId = 123L;
+        clubId = 12L;
+
         mockMvc = MockMvcBuilders
                 .standaloneSetup(target)
-                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(), new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(memberId,clubId,clubMemberId), new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
-        clubMemberId = 123L;
-        clubId = 12L;
-               
     }
 
 
@@ -293,17 +290,5 @@ public class ResourceControllerTest {
 
         verify(resourceService, times(1)).deleteResource(clubMemberId, resourceId);
 
-    }
-    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
-        @Override
-        public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
-        }
-
-        @Override
-        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
-        }
     }
 }

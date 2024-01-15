@@ -6,7 +6,6 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubMemberService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,15 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +52,7 @@ public class ClubMemberControllerTests {
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(target)
-                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver())
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(1L, 1L, 1L))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -793,16 +787,4 @@ public class ClubMemberControllerTests {
         return clubMembers;
     }
 
-    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
-        @Override
-        public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
-        }
-
-        @Override
-        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, 1L, 1L, "email", null);
-        }
-    }
 }

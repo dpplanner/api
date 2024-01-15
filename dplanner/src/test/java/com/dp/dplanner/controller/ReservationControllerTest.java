@@ -9,7 +9,6 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.dto.ReservationDto.Request;
 import com.dp.dplanner.exception.*;
-import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ReservationService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -22,7 +21,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,10 +28,6 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -58,7 +52,7 @@ public class ReservationControllerTest {
     private MockMvc mockMvc;
     @Mock
     private Gson gson;
-
+    Long memberId;
     Long clubMemberId;
     Long resourceId;
     Long clubId;
@@ -73,18 +67,19 @@ public class ReservationControllerTest {
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
                 .create();
 
-        mockMvc = MockMvcBuilders
-                .standaloneSetup(target)
-                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver())
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
 
+        memberId = 1L;
         clubMemberId = 123L;
         resourceId = 12L;
         clubId = 23L;
         start = LocalDateTime.of(2023, 12, 28, 18, 0, 0);
         end = start.plusHours(2);
 
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(target)
+                .setCustomArgumentResolvers(new MockAuthenticationPrincipalArgumentResolver(memberId, clubId, clubMemberId))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -392,17 +387,5 @@ public class ReservationControllerTest {
                 Arguments.of(new ReservationException(RESERVATION_NOT_FOUND),status().isNotFound()),
                 Arguments.of(new ReservationException(UPDATE_AUTHORIZATION_DENIED),status().isForbidden())
         );
-    }
-    class MockAuthenticationPrincipalArgumentResolver implements HandlerMethodArgumentResolver {
-        @Override
-        public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.getParameterType().isAssignableFrom(PrincipalDetails.class);
-        }
-
-        @Override
-        public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-            return new PrincipalDetails(1L, clubId, clubMemberId, "email", null);
-        }
     }
 }
