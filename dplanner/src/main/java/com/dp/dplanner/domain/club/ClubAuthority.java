@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static jakarta.persistence.FetchType.LAZY;
 
@@ -18,7 +19,6 @@ public class ClubAuthority {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "authority_id")
     private Long id;
 
     @ManyToOne(fetch = LAZY)
@@ -26,28 +26,30 @@ public class ClubAuthority {
     private Club club;
 
     @Enumerated(EnumType.STRING)
-    private ClubAuthorityType clubAuthorityType;
+    private List<ClubAuthorityType> clubAuthorityTypes = new ArrayList<>();
+    private String name;
+    private String description;
 
     @Builder
-    public ClubAuthority(Club club, ClubAuthorityType clubAuthorityType) {
+    public ClubAuthority(Club club, List<ClubAuthorityType> clubAuthorityTypes,String name, String description) {
         this.club = club;
-        this.clubAuthorityType = clubAuthorityType;
+        this.clubAuthorityTypes = clubAuthorityTypes;
+        this.name = name;
+        this.description = description;
+
     }
 
-    public static List<ClubAuthority> createAuthorities(Club club, List<ClubAuthorityType> authorityTypes) {
-        List<ClubAuthority> authorities = new ArrayList<>();
+    public void update(List<ClubAuthorityType> clubAuthorityTypes, String name, String description) {
+        this.clubAuthorityTypes = clubAuthorityTypes;
+        this.name = name;
+        this.description = description;
+    }
 
-        for (ClubAuthorityType authorityType : authorityTypes) {
-            ClubAuthority clubAuthority = ClubAuthority.builder()
-                    .club(club)
-                    .clubAuthorityType(authorityType)
-                    .build();
+    public List<String> clubAuthorityTypeToString() {
+        return clubAuthorityTypes.stream().map(ClubAuthorityType::name).collect(Collectors.toList());
+    }
 
-            authorities.add(clubAuthority);
-        }
-        club.getManagerAuthorities().clear();
-        club.getManagerAuthorities().addAll(authorities);
-
-        return authorities;
+    public boolean hasAuthority(ClubAuthorityType authority) {
+        return clubAuthorityTypes.contains(authority);
     }
 }

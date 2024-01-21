@@ -19,7 +19,6 @@ public class ClubMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="club_member_id")
     private Long id;
 
     @ManyToOne(fetch = LAZY)
@@ -30,12 +29,14 @@ public class ClubMember {
     @JoinColumn(name="club_id")
     private Club club;
 
-    private String name;
-    private String info;
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "club_authority_id")
+    private ClubAuthority clubAuthority;
 
     @Enumerated(EnumType.STRING)
     private ClubRole role;
-
+    private String name;
+    private String info;
     private Boolean isConfirmed;
 
     @Builder
@@ -72,7 +73,6 @@ public class ClubMember {
         this.club = club;
         club.getClubMembers().add(this);
     }
-
     public void setAdmin() {
         this.role = ADMIN;
     }
@@ -89,10 +89,6 @@ public class ClubMember {
         return this.role == role;
     }
 
-    public boolean checkRoleIsNot(ClubRole role) {
-        return this.role != role;
-    }
-
     public void changeRole(ClubRole role) {
         this.role = role;
     }
@@ -103,9 +99,12 @@ public class ClubMember {
 
     public boolean hasAuthority(ClubAuthorityType authority) {
         return this.checkRoleIs(ADMIN)
-                || (this.checkRoleIs(MANAGER) && this.club.hasAuthority(authority));
+                || (this.checkRoleIs(MANAGER) && this.clubAuthority != null && this.clubAuthority.hasAuthority(authority));
     }
-
+    public boolean hasRole(ClubRole role) {
+        return this.checkRoleIs(ADMIN)
+        || this.checkRoleIs(role);
+    }
     public boolean isSameClub(Long clubId) {
         return this.club.getId().equals(clubId);
     }
@@ -124,5 +123,8 @@ public class ClubMember {
     public void update(String name, String info) {
         this.name = name;
         this.info = info;
+    }
+    public void updateClubAuthority(ClubAuthority clubAuthority) {
+        this.clubAuthority = clubAuthority;
     }
 }
