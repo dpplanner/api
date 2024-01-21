@@ -30,8 +30,7 @@ public class LockService {
     private final ClubMemberRepository clubMemberRepository;
 
 
-
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional
     public Response createLock(Long clubMemberId, Create createDto) {
 
@@ -53,7 +52,7 @@ public class LockService {
         return Response.of(lock);
 
     }
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional
     public void deleteLock(Long clubMemberId, Long lockId) {
         Lock lock = getLock(lockId);
@@ -65,7 +64,7 @@ public class LockService {
         lockRepository.delete(lock);
     }
 
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional
     public Response updateLock(Long clubMemberId, Update updateDto) {
 

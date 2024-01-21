@@ -25,7 +25,7 @@ public class ResourceService {
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
 
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public Response createResource(Long clubMemberId, Create createDto) {
 
         Club club = getClub(createDto.getClubId());
@@ -36,7 +36,7 @@ public class ResourceService {
         return Response.of(resource);
     }
 
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public Response updateResource(Long clubMemberId, Update updateDto) {
 
         Resource resource = getResource(updateDto.getId());
@@ -47,7 +47,7 @@ public class ResourceService {
         return Response.of(resource);
     }
 
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public void deleteResource(Long clubMemberId, Long resourceId) {
 
         Resource resource = getResource(resourceId);

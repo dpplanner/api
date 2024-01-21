@@ -6,7 +6,6 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.ReservationException;
 import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
@@ -118,7 +117,7 @@ public class ReservationService {
     }
 
     @Transactional
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
@@ -135,7 +134,7 @@ public class ReservationService {
     }
 
     @Transactional
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public void confirmAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
@@ -157,7 +156,7 @@ public class ReservationService {
     }
 
     @Transactional
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public void rejectAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
@@ -211,7 +210,7 @@ public class ReservationService {
         return ReservationDto.Response.ofList(reservations);
     }
 
-    @RequiredAuthority(SCHEDULE_ALL)
+    @RequiredAuthority(authority = SCHEDULE_ALL)
     public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)

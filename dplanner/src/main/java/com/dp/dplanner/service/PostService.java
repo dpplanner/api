@@ -160,7 +160,7 @@ public class PostService {
     }
 
     @Transactional
-    @RequiredAuthority(POST_ALL)
+    @RequiredAuthority(authority = POST_ALL)
     public Response toggleIsFixed(Long clubMemberId, Long postId) {
 
         Post post = getPost(postId);

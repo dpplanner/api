@@ -26,6 +26,9 @@ public class RequiredAuthorityAspectTests {
     TestAopTargetClass targetClass; //RequiredAuthority 어노테이션이 붙은 메소드를 가진 클래스를 주입
 
     @Autowired
+    TestAopTargetClass2 targetClass2; //RequiredAuthority 어노테이션이 붙은 메소드를 가진 클래스를 주입
+
+    @Autowired
     EntityManager entityManager;
 
 
@@ -59,14 +62,17 @@ public class RequiredAuthorityAspectTests {
     @DisplayName("권한이 있는 매니저가 요청하면 예외가 발생하지 않음")
     public void requestByAuthorizedManager() throws Exception {
         //given
-        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL));
 
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
         manager.setManager();
+        manager.updateClubAuthority(clubAuthority);
+
+        entityManager.persist(clubAuthority);
         entityManager.persist(manager);
 
         assert manager.checkRoleIs(ClubRole.MANAGER)
-                && manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
+                && manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
 
         //when
         //then
@@ -82,7 +88,7 @@ public class RequiredAuthorityAspectTests {
         entityManager.persist(manager);
 
         assert manager.checkRoleIs(ClubRole.MANAGER)
-                && !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
+                && !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
 
         //when
         //then
@@ -104,14 +110,80 @@ public class RequiredAuthorityAspectTests {
         assertThatThrownBy(() -> targetClass.targetMethod(clubMember.getId()))
                 .isInstanceOf(ClubMemberException.class);
     }
+
+    @Test
+    @DisplayName("관리자 역할만 접근할 수 있음")
+    public void requestRoleByAdmin() throws Exception
+    {
+        //given
+        ClubMember admin = ClubMember.builder().club(club).member(member).build();
+        admin.setAdmin();
+        entityManager.persist(admin);
+
+        assert admin.getRole().equals(ClubRole.ADMIN);
+
+        //when
+        //then
+        assertDoesNotThrow(() -> targetClass2.targetMethod(admin.getId()));
+
+    }
+
+    @Test
+    @DisplayName("관리자 역할이 아니면 ClubMemberException")
+    public void requestRoleByManagerUser() throws Exception
+    {
+        //given
+        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
+        entityManager.persist(clubMember);
+
+        ClubMember manager = ClubMember.builder().club(club).member(member).build();
+        manager.setManager();
+        entityManager.persist(manager);
+
+        assert clubMember.getRole().equals(ClubRole.USER);
+        assert manager.getRole().equals(ClubRole.MANAGER);
+
+
+        //when
+        //then
+        assertThatThrownBy(() -> targetClass2.targetMethod(clubMember.getId()))
+                .isInstanceOf(ClubMemberException.class);
+
+        assertThatThrownBy(() -> targetClass2.targetMethod(manager.getId()))
+                .isInstanceOf(ClubMemberException.class);
+    }
+
+    private static ClubAuthority createClubAuthority(Club club, String name, String description, List<ClubAuthorityType> clubAuthorityTypes) {
+
+        return ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(clubAuthorityTypes)
+                .name(name)
+                .description(description)
+                .build();
+
+    }
 }
 
 /**
- * 테스트 대상 클래스
+ * 권한 검증 테스트 대상 클래스
  */
 @Component
 class TestAopTargetClass {
-    @RequiredAuthority(ClubAuthorityType.MEMBER_ALL)
-    public void targetMethod(Long clubMemberId) throws IllegalStateException{
+    @RequiredAuthority(authority = ClubAuthorityType.MEMBER_ALL)
+    public void targetMethod(Long clubMemberId) throws IllegalStateException {
+
+    }
+}
+
+
+/**
+ * 역할 검증 테스트 대상 클래스
+ */
+@Component
+class TestAopTargetClass2 {
+    @RequiredAuthority(role = ClubRole.ADMIN)
+    public void targetMethod(Long clubMemberId) throws IllegalStateException {
+
     }
 }
