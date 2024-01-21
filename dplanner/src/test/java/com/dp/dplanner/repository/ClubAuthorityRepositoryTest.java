@@ -24,21 +24,23 @@ public class ClubAuthorityRepositoryTest {
 
 
     @Test
-    @DisplayName("ClubAuthority 전체 저장")
-    public void saveAll() throws Exception {
+    @DisplayName("ClubAuthority 저장")
+    public void save() throws Exception {
         //given
         Club club = Club.builder().build();
         testEntityManager.persist(club);
 
         //when
-        List<ClubAuthority> authorities = ClubAuthority.createAuthorities(
-                club, List.of(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.MEMBER_ALL));
-        clubAuthorityRepository.saveAll(authorities);
+        ClubAuthority clubAuthority = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(List.of(ClubAuthorityType.MESSAGE_ALL,ClubAuthorityType.MEMBER_ALL))
+                .build();
+
+        clubAuthorityRepository.save(clubAuthority);
 
         //then
         List<ClubAuthority> findAuthorities = clubAuthorityRepository.findAllByClub(club);
-        List<ClubAuthorityType> authorityTypes = findAuthorities.stream()
-                .map(ClubAuthority::getClubAuthorityType).toList();
+        List<ClubAuthorityType> authorityTypes = findAuthorities.get(0).getClubAuthorityTypes();
 
         assertThat(authorityTypes).as("메세지 권한과 회원 권한을 포함해야 함")
                 .contains(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.MEMBER_ALL);
@@ -53,9 +55,12 @@ public class ClubAuthorityRepositoryTest {
         Club club = Club.builder().build();
         testEntityManager.persist(club);
 
-        List<ClubAuthority> authorities = ClubAuthority.createAuthorities(
-                club, List.of(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.MEMBER_ALL));
-        clubAuthorityRepository.saveAll(authorities);
+        ClubAuthority clubAuthority = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(List.of(ClubAuthorityType.MESSAGE_ALL,ClubAuthorityType.MEMBER_ALL))
+                .build();
+
+        clubAuthorityRepository.save(clubAuthority);
 
         //when
         clubAuthorityRepository.deleteAllByClub(club);
