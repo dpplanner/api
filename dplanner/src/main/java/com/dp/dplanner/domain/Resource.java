@@ -19,7 +19,6 @@ public class Resource extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "resource_id")
     private Long id;
 
     private String name;

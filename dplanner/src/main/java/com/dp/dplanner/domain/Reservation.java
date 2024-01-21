@@ -19,7 +19,6 @@ public class Reservation extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "reservation_id")
     private Long id;
 
     @ManyToOne(fetch = LAZY)
