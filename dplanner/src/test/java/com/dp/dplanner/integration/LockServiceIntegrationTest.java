@@ -7,7 +7,12 @@ import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthority;
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.exception.BaseException;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.LockException;
 import com.dp.dplanner.service.LockService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,13 +22,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
-import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.dto.LockDto.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Transactional
@@ -40,6 +43,7 @@ public class LockServiceIntegrationTest {
     Club club;
     ClubMember clubMember;
     Resource resource;
+    ClubAuthority clubAuthority;
     @BeforeEach
     public void setUp() {
 
@@ -56,10 +60,16 @@ public class LockServiceIntegrationTest {
                 .club(club)
                 .build();
 
+        clubAuthority = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(List.of(ClubAuthorityType.SCHEDULE_ALL))
+                .build();
+
         entityManager.persist(member);
         entityManager.persist(club);
         entityManager.persist(clubMember);
         entityManager.persist(resource);
+        entityManager.persist(clubAuthority);
 
     }
 
@@ -90,7 +100,7 @@ public class LockServiceIntegrationTest {
     @Test
     public void LockService_CreateLock_ReturnResponse_ManagerHasAuthority() {
         clubMember.setManager();
-        ClubAuthority.createAuthorities(club, Arrays.asList(SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
@@ -122,7 +132,9 @@ public class LockServiceIntegrationTest {
                 .resourceId(resource.getId())
                 .build();
 
-        assertThatThrownBy(() -> lockService.createLock(clubMember.getId(), createDto)).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> lockService.createLock(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.AUTHORIZATION_DENIED);
     }
 
     @Test
@@ -138,7 +150,9 @@ public class LockServiceIntegrationTest {
                 .resourceId(resource.getId())
                 .build();
 
-        assertThatThrownBy(() -> lockService.createLock(clubMember.getId(), createDto)).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> lockService.createLock(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.AUTHORIZATION_DENIED);
     }
 
     @Test
@@ -159,7 +173,7 @@ public class LockServiceIntegrationTest {
 
 
         clubMember.setManager();
-        ClubAuthority.createAuthorities(club, Arrays.asList(SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
 
         LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
@@ -179,7 +193,9 @@ public class LockServiceIntegrationTest {
                 .build();
         entityManager.persist(lock);
 
-        assertThatThrownBy(() -> lockService.deleteLock(clubMember.getId(), lock.getId())).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> lockService.deleteLock(clubMember.getId(), lock.getId()));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.AUTHORIZATION_DENIED);
     }
 
 
@@ -194,7 +210,9 @@ public class LockServiceIntegrationTest {
                 .build();
         entityManager.persist(lock);
 
-        assertThatThrownBy(() -> lockService.deleteLock(clubMember.getId(), lock.getId())).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> lockService.deleteLock(clubMember.getId(), lock.getId()));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.AUTHORIZATION_DENIED);
 
     }
 
@@ -230,7 +248,7 @@ public class LockServiceIntegrationTest {
     @Test
     public void LockService_UpdateLock_ReturnResponse_ManagerHasAuthority() {
         clubMember.setManager();
-        ClubAuthority.createAuthorities(club, Arrays.asList(SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
@@ -276,7 +294,9 @@ public class LockServiceIntegrationTest {
                 .endDateTime(end.plusDays(1))
                 .build();
 
-        assertThatThrownBy(()-> lockService.updateLock(clubMember.getId(), updateDto)).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> lockService.updateLock(clubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.AUTHORIZATION_DENIED);
 
     }
     @Test
@@ -298,7 +318,9 @@ public class LockServiceIntegrationTest {
                 .endDateTime(end.plusDays(1))
                 .build();
 
-        assertThatThrownBy(()-> lockService.updateLock(clubMember.getId(), updateDto)).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(ClubMemberException.class,
+                () -> lockService.updateLock(clubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.AUTHORIZATION_DENIED);
     }
 
     @Test
@@ -329,7 +351,9 @@ public class LockServiceIntegrationTest {
                 .endDateTime(end.plusDays(1))
                 .build();
 
-        assertThatThrownBy(()-> lockService.updateLock(clubMember.getId(), updateDto)).isInstanceOf(RuntimeException.class);
+        BaseException exception = assertThrows(LockException.class,
+                () -> lockService.updateLock(clubMember.getId(), updateDto));
+        assertThat(exception.getErrorResult()).isEqualTo(ErrorResult.PERIOD_OVERLAPPED_EXCEPTION);
     }
 
     @Test

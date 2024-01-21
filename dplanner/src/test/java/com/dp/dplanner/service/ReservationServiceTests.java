@@ -24,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.ReservationStatus.*;
@@ -52,6 +51,7 @@ public class ReservationServiceTests {
     ClubMember clubMember;
     ClubMember sameClubMember;
     Resource resource;
+    ClubAuthority clubAuthority;
 
     ClubMember otherClubMember;
     Resource otherClubResource;
@@ -66,6 +66,12 @@ public class ReservationServiceTests {
         Club otherClub = Club.builder().build();
         otherClubResource = createResource(otherClub, 2L);
         otherClubMember = createClubMember(otherClub, 3L);
+
+        clubAuthority = ClubAuthority.builder()
+                .club(clubMember.getClub())
+                .clubAuthorityTypes(List.of(ClubAuthorityType.SCHEDULE_ALL))
+                .build();
+
     }
 
 
@@ -124,8 +130,8 @@ public class ReservationServiceTests {
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
         given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
         clubMember.setManager();
+        clubMember.updateClubAuthority(clubAuthority);
 
         //when
         ReservationDto.Create createDto = getCreateDto(
@@ -322,8 +328,8 @@ public class ReservationServiceTests {
     @DisplayName("권한이 있는 매니저가 승인된 예약을 수정시 승인대기를 하지 않는다")
     public void updateReservationByManagerHasSCHEDULE_ALLThenConfirmed() throws Exception {
         //given
-        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
         clubMember.setManager();
+        clubMember.updateClubAuthority(clubAuthority);
 
         Long reservationId = 1L;
         Reservation reservation = createDefaultReservation(resource, clubMember);
@@ -526,7 +532,7 @@ public class ReservationServiceTests {
     public void deleteReservationByManagerHasSCHEDULE_ALL() throws Exception {
         //given
         clubMember.setManager();
-        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
@@ -657,7 +663,7 @@ public class ReservationServiceTests {
     public void confirmAllReservationsByManagerHasSCHEDULE_ALL() throws Exception {
         //given
         clubMember.setManager();
-        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
@@ -784,7 +790,7 @@ public class ReservationServiceTests {
     public void rejectAllByManagerHasSCHEDULE_ALL() throws Exception {
         //given
         clubMember.setManager();
-        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
@@ -1075,7 +1081,7 @@ public class ReservationServiceTests {
     public void findAllNotConfirmedReservationsByManagerHasSCHEDULE_ALL() throws Exception {
         //given
         clubMember.setManager();
-        ClubAuthority.createAuthorities(clubMember.getClub(), List.of(ClubAuthorityType.SCHEDULE_ALL));
+        clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Reservation unconfirmed1 = createReservation(
