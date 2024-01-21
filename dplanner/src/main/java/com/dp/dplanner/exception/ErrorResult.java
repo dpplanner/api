@@ -43,6 +43,7 @@ public enum ErrorResult {
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND,"resource is not found, request is invalid" ),
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND,"reservation is not found, request is invalid" ),
     LOCK_NOT_FOUND(HttpStatus.NOT_FOUND,"lock is not found, request is invalid" ),
+    CLUB_AUTHORITY_NOT_FOUND(HttpStatus.NOT_FOUND,"club authority is not found, request is invalid" ),
 
     /**
      * 500 - 서버 에러

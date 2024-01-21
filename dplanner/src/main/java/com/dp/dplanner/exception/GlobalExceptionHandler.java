@@ -30,65 +30,70 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({PostException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final PostException exception) {
-        log.warn("PostException occurs : ", exception);
+        log.warn("PostException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({ClubMemberException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final ClubMemberException exception) {
-        log.warn("ClubMemberException occurs : ", exception);
+        log.warn("ClubMemberException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({MemberException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final MemberException exception) {
-        log.warn("MemberException occurs : ", exception);
+        log.warn("MemberException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({ClubException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final ClubException exception) {
-        log.warn("ClubException occurs : ", exception);
+        log.warn("ClubException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({CommentException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final CommentException exception) {
-        log.warn("CommentException occurs : ", exception);
+        log.warn("CommentException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({ResourceException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final ResourceException exception) {
-        log.warn("ResourceException occurs : ", exception);
+        log.warn("ResourceException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
     @ExceptionHandler({LockException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final LockException exception) {
-        log.warn("LockException occurs : ", exception);
+        log.warn("LockException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
     @ExceptionHandler({ReservationException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final ReservationException exception) {
-        log.warn("ReservationException occurs : ", exception);
+        log.warn("ReservationException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({InviteCodeException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final InviteCodeException exception) {
-        log.warn("InviteCodeException occurs : ", exception);
+        log.warn("InviteCodeException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
     @ExceptionHandler({AuthenticationException.class})
     public ResponseEntity<ErrorResponse> handleRestApiException(final AuthenticationException exception) {
-        log.warn("AuthenticationException occurs : ", exception);
+        log.warn("AuthenticationException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception);
     }
 
+    @ExceptionHandler({ClubAuthorityException.class})
+    public ResponseEntity<ErrorResponse> handleRestApiException(final ClubAuthorityException exception) {
+        log.warn("ClubAuthorityException occurs : {}", exception.getErrorResult().getMessage());
+        return this.makeErrorResponseEntity(exception);
+    }
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
-        log.warn("Exception occur: ", exception);
+        log.warn("Exception occur: {}", exception.getMessage());
         return this.makeErrorResponseEntity(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
