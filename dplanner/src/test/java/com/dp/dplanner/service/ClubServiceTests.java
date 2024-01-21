@@ -50,6 +50,7 @@ public class ClubServiceTests {
 
     static Long memberId;
     static Member member;
+
     @BeforeEach
     void setUp() {
         //레포지토리에 미리 저장된 member
@@ -134,7 +135,7 @@ public class ClubServiceTests {
 
         //when
         ClubDto.Response responseDto = clubService.findClubById(clubId);
-        
+
         //then
         assertThat(responseDto).as("반환된 DTO가 존재해야 함").isNotNull();
         assertThat(responseDto.getClubName()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽이름)").isEqualTo("newClub");
@@ -220,11 +221,11 @@ public class ClubServiceTests {
         Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
-        
+
         //when
         ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
         ClubDto.Response responseDto = clubService.updateClubInfo(memberId, updateDto);
-        
+
         //then
         assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
         assertThat(responseDto.getInfo()).as("클럽 정보가 요청한대로 변경되어야 함").isEqualTo("updatedClubInfo");
@@ -311,7 +312,7 @@ public class ClubServiceTests {
 
 
     /**
-     * setManagerAuthority
+     * createClubAuthority
      */
     @Test
     @DisplayName("일반 회원이 매니저의 권한을 설정하려 하면 UPDATE_AUTHORIZATION_DENIED")
@@ -328,8 +329,8 @@ public class ClubServiceTests {
 
         //when
         //then
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.setManagerAuthority(clubMemberId, updateDto));
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId,"name","description", ClubAuthorityType.MEMBER_ALL.name());
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.createClubAuthority(clubMemberId, createDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
@@ -350,98 +351,101 @@ public class ClubServiceTests {
 
         //when
         //then
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.setManagerAuthority(clubMemberId, updateDto));
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId,"name","description", ClubAuthorityType.MEMBER_ALL.name());
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.createClubAuthority(clubMemberId, createDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
     @Test
-    @DisplayName("관리자는 매니저에게 클럽회원 관리 권한을 설정할 수 있다.")
+    @DisplayName("관리자는 매니저의 클럽 권한을 생성할 수 있다.")
     public void setManageMemberAuthorityByAdmin() throws Exception {
         //given
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL));
 
         Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubAuthorityRepository.save(any(ClubAuthority.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         //when
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MEMBER_ALL.name());
-        clubService.setManagerAuthority(clubMemberId, updateDto);
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId,"name","description", ClubAuthorityType.MEMBER_ALL.name());
+        ClubAuthorityDto.Response responseDto = clubService.createClubAuthority(clubMemberId, createDto);
 
-        //then
-        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+        assertThat(responseDto.getAuthorities()).as("매니저는 관리 권한을 가져야 한다.")
+                .containsExactly(ClubAuthorityType.MEMBER_ALL.name());
 
-        assertThat(authorityTypes).as("매니저는 클럽 회원 관리 권한을 가져야 한다.")
-                .containsExactly(ClubAuthorityType.MEMBER_ALL);
+        assertThat(responseDto.getClubId()).as("저장된 클럽 권한의 클럽 id과 요청한 클럽 권한의 클럽 id 같아야 한다.")
+                .isEqualTo(clubId);
+
     }
-
-    @Test
-    @DisplayName("관리자는 매니저에게 스케줄 관리 권한을 설정할 수 있다.")
-    public void setManageScheduleAuthorityByAdmin() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.SCHEDULE_ALL.name());
-        clubService.setManagerAuthority(clubMemberId, updateDto);
-
-        //then
-        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
-
-        assertThat(authorityTypes).as("매니저는 스케줄 관리 권한을 가져야 한다.")
-                .containsExactly(ClubAuthorityType.SCHEDULE_ALL);
-    }
-
-    @Test
-    @DisplayName("관리자는 매니저에게 게시판 관리 권한을 설정할 수 있다.")
-    public void setManagePostAuthorityByAdmin() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.POST_ALL.name());
-        clubService.setManagerAuthority(clubMemberId, updateDto);
-
-        //then
-        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
-        assertThat(authorityTypes).as("매니저는 게시판 관리 권한을 가져야 한다.")
-                .containsExactly(ClubAuthorityType.POST_ALL);
-    }
-
-    @Test
-    @DisplayName("관리자는 매니저에게 메세지 관리 권한을 설정할 수 있다.")
-    public void setManageMessageAuthorityByAdmin() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MESSAGE_ALL.name());
-        clubService.setManagerAuthority(clubMemberId, updateDto);
-
-        //then
-        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
-
-        assertThat(authorityTypes).as("매니저는 메세지 관리 권한을 가져야 한다.")
-                .containsExactly(ClubAuthorityType.MESSAGE_ALL);
-    }
+//
+//    @Test
+//    @DisplayName("관리자는 매니저에게 스케줄 관리 권한을 설정할 수 있다.")
+//    public void setManageScheduleAuthorityByAdmin() throws Exception {
+//        //given
+//        Long clubId = 1L;
+//        Club club = createClub(clubId, "club", null);
+//
+//        Long clubMemberId = 1L;
+//        ClubMember clubMember = createClubMemberAsAdmin(club);
+//        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+//
+//        //when
+//        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.SCHEDULE_ALL.name());
+//        clubService.setManagerAuthority(clubMemberId, updateDto);
+//
+//        //then
+//        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+//
+//        assertThat(authorityTypes).as("매니저는 스케줄 관리 권한을 가져야 한다.")
+//                .containsExactly(ClubAuthorityType.SCHEDULE_ALL);
+//    }
+//
+//    @Test
+//    @DisplayName("관리자는 매니저에게 게시판 관리 권한을 설정할 수 있다.")
+//    public void setManagePostAuthorityByAdmin() throws Exception {
+//        //given
+//        Long clubId = 1L;
+//        Club club = createClub(clubId, "club", null);
+//
+//        Long clubMemberId = 1L;
+//        ClubMember clubMember = createClubMemberAsAdmin(club);
+//        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+//
+//        //when
+//        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.POST_ALL.name());
+//        clubService.setManagerAuthority(clubMemberId, updateDto);
+//
+//        //then
+//        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+//        assertThat(authorityTypes).as("매니저는 게시판 관리 권한을 가져야 한다.")
+//                .containsExactly(ClubAuthorityType.POST_ALL);
+//    }
+//
+//    @Test
+//    @DisplayName("관리자는 매니저에게 메세지 관리 권한을 설정할 수 있다.")
+//    public void setManageMessageAuthorityByAdmin() throws Exception {
+//        //given
+//        Long clubId = 1L;
+//        Club club = createClub(clubId, "club", null);
+//
+//        Long clubMemberId = 1L;
+//        ClubMember clubMember = createClubMemberAsAdmin(club);
+//        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+//
+//        //when
+//        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(clubId, ClubAuthorityType.MESSAGE_ALL.name());
+//        clubService.setManagerAuthority(clubMemberId, updateDto);
+//
+//        //then
+//        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
+//
+//        assertThat(authorityTypes).as("매니저는 메세지 관리 권한을 가져야 한다.")
+//                .containsExactly(ClubAuthorityType.MESSAGE_ALL);
+//    }
 
     @Test
     @DisplayName("관리자는 매니저에게 복수개의 권한을 설정할 수 있다.")
@@ -455,21 +459,18 @@ public class ClubServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
-        ClubAuthorityDto.Update updateDto =
-                new ClubAuthorityDto.Update(
-                        clubId,
-                        ClubAuthorityType.SCHEDULE_ALL.name(),
-                        ClubAuthorityType.MESSAGE_ALL.name());
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId, "name", "description", ClubAuthorityType.SCHEDULE_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name());
 
-        clubService.setManagerAuthority(clubMemberId, updateDto);
+        ClubAuthorityDto.Response responseDto = clubService.createClubAuthority(clubMemberId, createDto);
 
         //then
-        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
 
-        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
-                .containsExactly(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.MESSAGE_ALL);
-        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
-                .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL);
+        assertThat(responseDto.getAuthorities()).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
+                .containsExactlyInAnyOrder(ClubAuthorityType.SCHEDULE_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name());
+
+        assertThat(responseDto.getAuthorities()).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
+                .doesNotContain(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+
     }
 
     @Test
@@ -481,26 +482,35 @@ public class ClubServiceTests {
 
         Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
+
+        Long clubAuthorityId = 1L;
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MESSAGE_ALL));
+
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubAuthorityRepository.findById(clubAuthorityId)).willReturn(Optional.ofNullable(clubAuthority));
         
-        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
 
         //when
         ClubAuthorityDto.Update updateDto =
                 new ClubAuthorityDto.Update(
+                        clubAuthorityId,
                         clubId,
+                        "updateName",
+                        "updateDescription",
                         ClubAuthorityType.SCHEDULE_ALL.name(),
                         ClubAuthorityType.MESSAGE_ALL.name());
-        
-        clubService.setManagerAuthority(clubMemberId, updateDto);
+
+        clubService.updateClubAuthority(clubMemberId, updateDto);
 
         //then
-        List<ClubAuthorityType> authorityTypes = getClubAuthorityTypes(club);
-
-        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
+        assertThat(clubAuthority.getClubAuthorityTypes()).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
                 .contains(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.MESSAGE_ALL);
-        assertThat(authorityTypes).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
+        assertThat(clubAuthority.getClubAuthorityTypes()).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
                 .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL);
+        assertThat(clubAuthority.getName()).as("요청한 이름으로 변경되어야 한다.")
+                .isEqualTo("updateName");
+        assertThat(clubAuthority.getDescription()).as("요청한 설명으로 변경되어야 한다.")
+                .isEqualTo("updateDescription");
     }
 
     @Test
@@ -516,8 +526,8 @@ public class ClubServiceTests {
 
         //when
         //then
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(2L, ClubAuthorityType.SCHEDULE_ALL.name());
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.setManagerAuthority(memberId, updateDto));
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(2L,"name","description", ClubAuthorityType.SCHEDULE_ALL.name());
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.createClubAuthority(memberId, createDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 정보를 수정하려 하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
@@ -531,8 +541,8 @@ public class ClubServiceTests {
 
         //when
         //then
-        ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(1L, ClubAuthorityType.MESSAGE_ALL.name());
-        BaseException exception = assertThrows(ClubMemberException.class, () -> clubService.setManagerAuthority(clubMemberId, updateDto));
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(1L,"name","description", ClubAuthorityType.SCHEDULE_ALL.name());
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubService.createClubAuthority(clubMemberId, createDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
@@ -550,18 +560,22 @@ public class ClubServiceTests {
 
         Long clubMemberId = 1L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
-        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+        ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.SCHEDULE_ALL));
+
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubAuthorityRepository.findAllByClub(club)).willReturn(List.of(clubAuthority, clubAuthority2));
 
         //when
-        ClubAuthorityDto.Response responseDto =
-                clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
-        
+        List<ClubAuthorityDto.Response> responseList = clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
+
         //then
-        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
-        assertThat(responseDto.getAuthorities()).as("반환된 결과의 매니저 권한은 실제 클럽의 매니저 권한과 일치해아 한다.")
-                .containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+        assertThat(responseList).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseList.size()).isEqualTo(2);
+        assertThat(responseList).extracting(ClubAuthorityDto.Response::getClubId).containsOnly(clubId);
+        assertThat(responseList.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+        assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MESSAGE_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
     }
 
     @Test
@@ -574,18 +588,22 @@ public class ClubServiceTests {
         Long clubMemberId = 1L;
         ClubMember clubMember = createClubMember(club, member);
         clubMember.setManager();
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
-        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
+        ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.SCHEDULE_ALL));
+
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        given(clubAuthorityRepository.findAllByClub(club)).willReturn(List.of(clubAuthority, clubAuthority2));
 
         //when
-        ClubAuthorityDto.Response responseDto =
-                clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
+        List<ClubAuthorityDto.Response> responseList = clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
 
         //then
-        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
-        assertThat(responseDto.getAuthorities()).as("반환된 결과의 매니저 권한은 실제 클럽의 매니저 권한과 일치해아 한다.")
-                .containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+        assertThat(responseList).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseList.size()).isEqualTo(2);
+        assertThat(responseList).extracting(ClubAuthorityDto.Response::getClubId).containsOnly(clubId);
+        assertThat(responseList.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
+        assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MESSAGE_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
     }
 
     @Test
@@ -659,7 +677,7 @@ public class ClubServiceTests {
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
 
         //when
-        InviteDto inviteDto = clubService.inviteClub(adminId);
+        InviteDto inviteDto = clubService.inviteClub(adminId, clubId);
 
         //then
         assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
@@ -673,15 +691,17 @@ public class ClubServiceTests {
         //given
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
-        ClubAuthority.createAuthorities(club, List.of(ClubAuthorityType.MEMBER_ALL));
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL));
 
         Long managerId = 1L;
         ClubMember manager = createClubMember(club, member);
         manager.setManager();
+        manager.updateClubAuthority(clubAuthority);
+
         given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
 
         //when
-        InviteDto inviteDto = clubService.inviteClub(managerId);
+        InviteDto inviteDto = clubService.inviteClub(managerId, clubId);
 
         //then
         assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
@@ -702,10 +722,10 @@ public class ClubServiceTests {
         manager.setManager();
         given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
 
-        assert !manager.getClub().hasAuthority(ClubAuthorityType.MEMBER_ALL);
+        assert !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
         //when
         //then
-        assertThatThrownBy(() -> clubService.inviteClub(managerId))
+        assertThatThrownBy(() -> clubService.inviteClub(managerId, clubId))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -723,7 +743,7 @@ public class ClubServiceTests {
 
         //when
         //then
-        assertThatThrownBy(() -> clubService.inviteClub(clubMemberId))
+        assertThatThrownBy(() -> clubService.inviteClub(clubMemberId, clubId))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -736,9 +756,28 @@ public class ClubServiceTests {
 
         //when
         //then
-        BaseException exception = assertThrows(ClubMemberException.class, () -> clubService.inviteClub(adminId));
+        BaseException exception = assertThrows(ClubMemberException.class, () -> clubService.inviteClub(adminId, any(Long.class)));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("초대코드 생성 시 본인의 데이터와 요청한 클럽이 다르면 DIFFERENT_CLUB_EXCEPTION")
+    public void inviteClubByNotSameClubMemberThenException() throws Exception {
+        //given
+        Long adminId = 1L;
+        Long clubId = 1L;
+        Long differentClubId = 2L;
+        Club club = createClub(clubId, "club", null);
+        ClubMember clubMember = createClubMember(club, member);
+
+        given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        //then
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.inviteClub(adminId,  differentClubId));
+        assertThat(exception.getErrorResult()).as("클럽 회원 데이터와 본인의 데이터가 다르면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
 
@@ -767,6 +806,7 @@ public class ClubServiceTests {
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
         assertThat(responseDto.getName()).as("닉네임은 이름으로 초기회된다").isEqualTo(member.getName());
+        assertThat(member.getRecentClub()).as("클럽에 가입하면 최근 클럽이 갱신된다").isEqualTo(club);
     }
 
     @Test
@@ -866,11 +906,6 @@ public class ClubServiceTests {
         myClubs.forEach(this::createClubMemberAsAdmin);
     }
 
-    private static List<ClubAuthorityType> getClubAuthorityTypes(Club club) {
-        return club.getManagerAuthorities().stream()
-                .map(ClubAuthority::getClubAuthorityType)
-                .toList();
-    }
 
 
     /**
@@ -884,6 +919,16 @@ public class ClubServiceTests {
 
         clubMember.confirm();
         return clubMember;
+    }
+
+    private static ClubAuthority createClubAuthority(Club club, String name, String description, List<ClubAuthorityType> clubAuthorityTypes) {
+        return ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(clubAuthorityTypes)
+                .name(name)
+                .description(description)
+                .build();
+
     }
 
     private ClubMember createClubMemberAsAdmin(Club club) {

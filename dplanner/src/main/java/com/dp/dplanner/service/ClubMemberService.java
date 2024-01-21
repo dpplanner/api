@@ -4,9 +4,11 @@ import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.dto.ClubMemberDto;
+import com.dp.dplanner.exception.ClubAuthorityException;
 import com.dp.dplanner.exception.ClubException;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.MemberException;
+import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
@@ -30,6 +32,7 @@ public class ClubMemberService {
     private final MemberRepository memberRepository;
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
+    private final ClubAuthorityRepository clubAuthorityRepository;
 
     @Transactional
     public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto) {
@@ -73,10 +76,14 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(requestClubMember);
     }
 
-    public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId) {
+    public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId,Long clubId) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(clubId)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         if (!clubMember.isConfirmed()) {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
@@ -94,11 +101,15 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(clubMembers);
     }
 
-    @RequiredAuthority(MEMBER_ALL)
-    public List<ClubMemberDto.Response> findMyClubMembers(Long managerId, boolean confirmed) {
+    @RequiredAuthority(authority = MEMBER_ALL)
+    public List<ClubMemberDto.Response> findMyClubMembers(Long managerId, Long clubId, boolean confirmed) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!manager.isSameClub(clubId)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         List<ClubMember> clubMembers;
         if (confirmed) {
@@ -128,64 +139,59 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(clubMember);
     }
 
-    @Transactional
-    public ClubMemberDto.Response updateClubMemberRole(Long adminId, ClubMemberDto.Update updateDto) {
 
-        if (adminId.equals(updateDto.getId())) {
-            throw new ClubMemberException(UPDATE_AUTHORIZATION_DENIED);
-        }
+    @Transactional
+    @RequiredAuthority(role = ADMIN)
+    public ClubMemberDto.Response updateClubMemberClubAuthority(Long adminId, Long clubId, ClubMemberDto.Update updateDto) {
+
 
         ClubMember admin = clubMemberRepository.findById(adminId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (admin.checkRoleIs(ADMIN)) { //TODO aop로 분리?
-
-            Long clubMemberId = updateDto.getId();
-            ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                    .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-
-            if (!clubMember.isSameClub(admin)) {
-                throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
-            }
-
-            if (!clubMember.isConfirmed()) {
-                throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
-            }
-
-            clubMember.changeRole(ClubRole.valueOf(updateDto.getRole()));
-
-            return ClubMemberDto.Response.of(clubMember);
-        } else {
-            throw new ClubMemberException(UPDATE_AUTHORIZATION_DENIED);
-        }
-    }
-
-    @Transactional
-    @RequiredAuthority(MEMBER_ALL)
-    public void confirm(Long managerId, ClubMemberDto.Request requestDto) {
-        ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-
-        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-
-        if (!clubMember.isSameClub(manager)) {
+        if (!admin.isSameClub(clubId)) {
             throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
 
-        clubMember.confirm();
+        Long clubMemberId = updateDto.getId();
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(admin)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
+
+        if (!clubMember.isConfirmed()) {
+            throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
+        }
+
+        if (updateDto.getClubAuthorityId() != null) {
+            ClubAuthority clubAuthority = clubAuthorityRepository.findById(updateDto.getClubAuthorityId())
+                    .orElseThrow(() -> new ClubAuthorityException(CLUB_AUTHORITY_NOT_FOUND));
+            if (!admin.isSameClub(clubAuthority.getClub().getId())) {
+                throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+            }
+            clubMember.updateClubAuthority(clubAuthority);
+        }
+
+        if (updateDto.getRole() != null) {
+            if (updateDto.getRole().equals(USER.name())) {
+                clubMember.updateClubAuthority(null);
+            }
+            clubMember.changeRole(ClubRole.valueOf(updateDto.getRole()));
+        }
+
+        return ClubMemberDto.Response.of(clubMember);
     }
 
     @Transactional
-    @RequiredAuthority(MEMBER_ALL)
+    @RequiredAuthority(authority = MEMBER_ALL)
     public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
-
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-
         List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
 
+        //TODO unconfirmedClubMembers 빈 리스트 일 때 응답 구분
         unconfirmedClubMembers.forEach(clubMember -> {
             if (!clubMember.isSameClub(manager)) {
                 throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
@@ -196,9 +202,13 @@ public class ClubMemberService {
     }
 
     @Transactional
-    public void leaveClub(Long clubMemberId) {
+    public void leaveClub(Long clubMemberId, ClubMemberDto.Request requestDto) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(requestDto.getId())) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         if (clubMember.checkRoleIs(ADMIN)) {
             throw new ClubMemberException(DELETE_AUTHORIZATION_DENIED);
@@ -208,16 +218,20 @@ public class ClubMemberService {
     }
 
     @Transactional
-    @RequiredAuthority(MEMBER_ALL)
-    public void kickOut(Long managerId, ClubMemberDto.Request requestDto) {
+    @RequiredAuthority(role = ADMIN)
+    public void kickOut(Long managerId, Long clubId, ClubMemberDto.Request requestDto) {
 
-        ClubMember manager = clubMemberRepository.findById(managerId)
+        ClubMember admin = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!admin.isSameClub(clubId)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (invalidKickOutRequest(manager, clubMember)) {
+        if (invalidKickOutRequest(admin, clubMember)) {
             throw new ClubMemberException(DELETE_AUTHORIZATION_DENIED);
         }
 
@@ -225,24 +239,26 @@ public class ClubMemberService {
     }
 
     @Transactional
-    @RequiredAuthority(MEMBER_ALL)
-    public List<ClubMemberDto.Response> kickOutAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
+    @RequiredAuthority(role = ADMIN)
+    public List<ClubMemberDto.Response> kickOutAll(Long adminId, Long clubId, List<ClubMemberDto.Request> requestDto) {
 
-        ClubMember manager = clubMemberRepository.findById(managerId)
+        ClubMember admin = clubMemberRepository.findById(adminId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!admin.isSameClub(clubId)) {
+            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         List<Long> requestIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
 
         List<ClubMember> deletedClubMembers = clubMembers.stream()
-                .filter(clubMember -> !invalidKickOutRequest(manager, clubMember))
+                .filter(clubMember -> !invalidKickOutRequest(admin, clubMember))
                 .toList();
 
         clubMemberRepository.deleteAll(deletedClubMembers);
 
-        clubMembers.removeAll(deletedClubMembers);
-
-        return ClubMemberDto.Response.ofList(clubMembers);
+        return ClubMemberDto.Response.ofList(deletedClubMembers);
     }
 
 
@@ -256,6 +272,15 @@ public class ClubMemberService {
 
         return clubMember.hasAuthority(authority);
     }
+
+    public boolean hasRole(Long clubMemberId, ClubRole role) {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        return clubMember.hasRole(role);
+    }
+
 
 
     /**

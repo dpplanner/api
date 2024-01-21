@@ -52,30 +52,28 @@ public class ClubServiceIntegrationTests {
         Member member = clubMember.getMember();
         Club club = clubMember.getClub();
 
-        ClubAuthority memberAuthority = new ClubAuthority(club, ClubAuthorityType.MEMBER_ALL);
-        ClubAuthority scheduleAuthority = new ClubAuthority(club, ClubAuthorityType.SCHEDULE_ALL);
-        entityManager.persist(memberAuthority);
-        entityManager.persist(scheduleAuthority);
+        ClubAuthority clubAuthority = new ClubAuthority(club, List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.SCHEDULE_ALL), "name", "description");
 
-        club.getManagerAuthorities().addAll(List.of(memberAuthority, scheduleAuthority));
+        entityManager.persist(clubAuthority);
 
         //when
         ClubAuthorityDto.Update updateDto = new ClubAuthorityDto.Update(
+                clubAuthority.getId(),
                 club.getId(),
-                ClubAuthorityType.MESSAGE_ALL.name(),
-                ClubAuthorityType.POST_ALL.name());
+                "updateName",
+                "updateDescription",
+                List.of(ClubAuthorityType.POST_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name()));
 
-        clubService.setManagerAuthority(member.getId(), updateDto);
+        clubService.updateClubAuthority(member.getId(), updateDto);
 
         //then
         List<ClubAuthority> authorities = clubAuthorityRepository.findAllByClub(club);
-        List<ClubAuthorityType> authorityTypes = authorities.stream().map(ClubAuthority::getClubAuthorityType).toList();
+        List<ClubAuthorityType> authorityTypes = authorities.get(0).getClubAuthorityTypes();
 
         assertThat(authorityTypes).as("메세지 권한과 게시판 권한이 포함되어야 함")
                 .contains(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.POST_ALL);
         assertThat(authorityTypes).as("회원 권한과 스케줄 권한이 포함되지 않아야 함")
                 .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.SCHEDULE_ALL);
     }
-
 
 }

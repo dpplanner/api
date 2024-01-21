@@ -7,6 +7,7 @@ import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.InviteDto;
+import com.dp.dplanner.exception.ClubAuthorityException;
 import com.dp.dplanner.exception.ClubException;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.MemberException;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Map;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -32,8 +33,8 @@ import static com.dp.dplanner.util.InviteCodeGenerator.*;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ClubService {
-
     private final MemberRepository memberRepository;
+
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubAuthorityRepository clubAuthorityRepository;
@@ -55,6 +56,12 @@ public class ClubService {
         clubMemberRepository.save(clubMember);
 
         return ClubDto.Response.of(club);
+    }
+
+    public List<ClubDto.Response> findClubs(Map<String, String> param) {
+
+        List<Club> clubs = clubRepository.findAll();
+        return ClubDto.Response.ofList(clubs);
     }
 
     public ClubDto.Response findClubById(Long clubId) {
@@ -90,38 +97,61 @@ public class ClubService {
     }
 
     @Transactional
-    public ClubAuthorityDto.Response setManagerAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
+    @RequiredAuthority(role = ADMIN)
+    public ClubAuthorityDto.Response createClubAuthority(Long clubMemberId, ClubAuthorityDto.Create createDto) {
 
-        List<ClubAuthorityType> authorities = updateDto.toClubAuthorityTypeList();
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        checkUpdatable(clubMember, createDto.getClubId());
+
+        ClubAuthority createdClubAuthority = createDto.toEntity(clubMember.getClub());
+        clubAuthorityRepository.save(createdClubAuthority);
+
+        return ClubAuthorityDto.Response.of(clubMember.getClub().getId(), createdClubAuthority);
+
+
+    }
+
+    @Transactional
+    @RequiredAuthority(role = ADMIN)
+    public ClubAuthorityDto.Response updateClubAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         checkUpdatable(clubMember, updateDto.getClubId());
 
-        clubAuthorityRepository.deleteAllByClub(clubMember.getClub());
+        ClubAuthority authority = clubAuthorityRepository.findById(updateDto.getId())
+                .orElseThrow(() -> new ClubAuthorityException(CLUB_AUTHORITY_NOT_FOUND));
 
-        List<ClubAuthority> clubAuthorities = ClubAuthority.createAuthorities(clubMember.getClub(), authorities);
-        clubAuthorityRepository.saveAll(clubAuthorities);
+        authority.update(updateDto.toClubAuthorityTypeList(), updateDto.getName(), updateDto.getDescription());
 
-        return ClubAuthorityDto.Response.of(clubMember.getClub());
+        return ClubAuthorityDto.Response.of(clubMember.getClub().getId(), authority);
+
     }
 
-    public ClubAuthorityDto.Response findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto) {
+    @RequiredAuthority(role = ADMIN)
+    public List<ClubAuthorityDto.Response> findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         checkReadable(clubMember, requestDto.getClubId());
 
-        return ClubAuthorityDto.Response.of(clubMember.getClub());
+        List<ClubAuthority> clubAuthorities = clubAuthorityRepository.findAllByClub(clubMember.getClub());
+
+        return ClubAuthorityDto.Response.ofList(clubMember.getClub().getId(),clubAuthorities);
     }
 
-    @RequiredAuthority(MEMBER_ALL)
-    public InviteDto inviteClub(Long managerId) {
+    @RequiredAuthority(authority = MEMBER_ALL)
+    public InviteDto inviteClub(Long managerId,Long clubId) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        if (!manager.isSameClub(clubId)) {
+            throw new ClubException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         Club club = manager.getClub();
         String seed = club.getClubName();
@@ -131,8 +161,8 @@ public class ClubService {
         return new InviteDto(club.getId(), inviteCode);
     }
 
-
     //TODO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
+
     @Transactional
     public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
 
@@ -148,6 +178,7 @@ public class ClubService {
                     .clubId(inviteDto.getClubId())
                     .name(member.getName())
                     .build();
+            member.updateRecentClub(club);
 
             return clubMemberService.create(memberId, createDto);
         } else {
@@ -163,7 +194,7 @@ public class ClubService {
     private static void checkUpdatable(ClubMember clubMember, Long clubId) {
         checkSameClub(clubMember, clubId);
 
-        if (clubMember.checkRoleIsNot(ADMIN)) {
+        if (!clubMember.checkRoleIs(ADMIN)) {
             throw new ClubException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
@@ -181,5 +212,4 @@ public class ClubService {
             throw new ClubException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
-
 }
