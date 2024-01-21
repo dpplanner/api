@@ -6,6 +6,7 @@ import com.dp.dplanner.domain.club.ClubAuthorityType;
 import lombok.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -25,12 +26,50 @@ public class ClubAuthorityDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Update {
+    public static class Create {
         private Long clubId;
+        private String name;
+        private String description;
         private List<String> authorities;
 
-        public Update(Long clubId, String... authorities) {
+        public Create(Long clubId, String name, String description, String... authorities) {
             this.clubId = clubId;
+            this.name = name;
+            this.description = description;
+            this.authorities = List.of(authorities);
+        }
+
+        public ClubAuthority toEntity(Club club) {
+            return ClubAuthority.builder()
+                    .club(club)
+                    .clubAuthorityTypes(toClubAuthorityTypeList())
+                    .name(name)
+                    .description(description)
+                    .build();
+        }
+
+        private List<ClubAuthorityType> toClubAuthorityTypeList() {
+            return authorities.stream().map(ClubAuthorityType::valueOf).toList();
+        }
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Update {
+        private Long id;
+        private Long clubId;
+        private String name;
+        private String description;
+        private List<String> authorities;
+
+        public Update(Long id, Long clubId, String name, String description, String... authorities) {
+            this.id = id;
+            this.clubId = clubId;
+            this.name = name;
+            this.description = description;
             this.authorities = List.of(authorities);
         }
 
@@ -44,20 +83,24 @@ public class ClubAuthorityDto {
     @Builder
     @AllArgsConstructor
     public static class Response {
+        private Long id;
         private Long clubId;
+        private String name;
+        private String description;
         private List<String> authorities;
 
-        public static ClubAuthorityDto.Response of(Club club) {
-            List<String> authorities = club.getManagerAuthorities()
-                    .stream()
-                    .map(ClubAuthority::getClubAuthorityType)
-                    .map(ClubAuthorityType::name)
-                    .toList();
-
+        public static ClubAuthorityDto.Response of(Long clubId,ClubAuthority clubAuthority) {
             return Response.builder()
-                    .clubId(club.getId())
-                    .authorities(authorities)
+                    .id(clubAuthority.getId())
+                    .clubId(clubId)
+                    .name(clubAuthority.getName())
+                    .description(clubAuthority.getDescription())
+                    .authorities(clubAuthority.clubAuthorityTypeToString())
                     .build();
+        }
+
+        public static List<Response> ofList(Long clubId, List<ClubAuthority> clubAuthorities) {
+            return clubAuthorities.stream().map(clubAuthority -> Response.of(clubId, clubAuthority)).collect(Collectors.toList());
         }
     }
 }

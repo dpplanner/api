@@ -3,11 +3,10 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubAuthority;
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.ClubAuthorityDto;
-import com.dp.dplanner.dto.ClubDto;
-import com.dp.dplanner.dto.ClubMemberDto;
-import com.dp.dplanner.dto.InviteDto;
+import com.dp.dplanner.dto.*;
 import com.dp.dplanner.exception.ClubException;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
@@ -28,6 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
@@ -288,7 +288,7 @@ public class ClubControllerTest {
     public void inviteClub_OK() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubService.inviteClub(any(Long.class)))
+        given(clubService.inviteClub(any(Long.class), any(Long.class)))
                 .willReturn(InviteDto.builder()
                         .clubId(clubId)
                         .inviteCode("inviteCode")
@@ -311,7 +311,7 @@ public class ClubControllerTest {
     public void inviteClub_FORBIDDEN() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubService.inviteClub(any(Long.class))).willThrow(new ClubMemberException(AUTHORIZATION_DENIED));
+        given(clubService.inviteClub(any(Long.class),any(Long.class))).willThrow(new ClubMemberException(AUTHORIZATION_DENIED));
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/invite", clubId));
@@ -325,7 +325,7 @@ public class ClubControllerTest {
     public void inviteClub_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubService.inviteClub(any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        given(clubService.inviteClub(any(Long.class),any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/invite", clubId));
@@ -428,10 +428,18 @@ public class ClubControllerTest {
     public void findManagerAuthorities_OK() throws Throwable {
         //given
         Long clubId = 1L;
-        ClubAuthorityDto.Response responseDto = ClubAuthorityDto.Response.builder()
-                .clubId(clubId)
-                .authorities(List.of(MEMBER_ALL.name(), SCHEDULE_ALL.name()))
+        Club club = Club.builder().build();
+
+        ClubAuthority clubAuthority = ClubAuthority.builder()
+                .club(club)
+                .name("name")
+                .description("description")
+                .clubAuthorityTypes(List.of(MEMBER_ALL, MESSAGE_ALL))
                 .build();
+
+        List<ClubAuthorityDto.Response> responseDto = ClubAuthorityDto.Response.ofList(clubId, List.of(clubAuthority));
+
+
         given(clubService.findClubManagerAuthorities(any(Long.class), any(ClubAuthorityDto.Request.class)))
                 .willReturn(responseDto);
 
@@ -440,10 +448,13 @@ public class ClubControllerTest {
 
         //then
         resultActions.andExpect(status().isOk());
-        ClubAuthorityDto.Response response = getResponse(resultActions, ClubAuthorityDto.Response.class);
+        List<ClubAuthorityDto.Response> response = Arrays.asList(getResponse(resultActions, ClubAuthorityDto.Response[].class));
 
-        assertThat(response.getClubId()).isEqualTo(clubId);
-        assertThat(response.getAuthorities()).containsExactly(MEMBER_ALL.name(), SCHEDULE_ALL.name());
+        assertThat(response.get(0).getClubId()).isEqualTo(clubId);
+        assertThat(response.get(0).getName()).isEqualTo("name");
+        assertThat(response.get(0).getDescription()).isEqualTo("description");
+        assertThat(response.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name());
+
     }
 
     @Test
@@ -478,27 +489,29 @@ public class ClubControllerTest {
 
 
     /**
-     * PUT /clubs/{clubId}/authorities
+         * POST /clubs/{clubId}/authorities
      */
     @Test
     @DisplayName("매니저 권한 설정시 200 OK")
     public void setManagerAuthorities_OK() throws Throwable {
         //given
         Long clubId = 1L;
+        Long clubAuthorityId = 1L;
         ClubAuthorityDto.Response responseDto = ClubAuthorityDto.Response.builder()
                 .clubId(clubId)
+                .id(clubAuthorityId)
                 .authorities(List.of(MEMBER_ALL.name(), SCHEDULE_ALL.name()))
                 .build();
-        given(clubService.setManagerAuthority(any(Long.class), any(ClubAuthorityDto.Update.class)))
+        given(clubService.createClubAuthority(any(Long.class), any(ClubAuthorityDto.Create.class)))
                 .willReturn(responseDto);
 
         //when
-        ClubAuthorityDto.Update updateDto = ClubAuthorityDto.Update.builder()
+        ClubAuthorityDto.Create createDto = ClubAuthorityDto.Create.builder()
                 .clubId(clubId)
                 .authorities(List.of(MEMBER_ALL.name(), SCHEDULE_ALL.name()))
                 .build();
-        ResultActions resultActions = mockMvc.perform(put("/clubs/{clubId}/authorities", clubId)
-                .content(gson.toJson(updateDto))
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/authorities", clubId)
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON));
 
         //then
@@ -507,6 +520,9 @@ public class ClubControllerTest {
 
         assertThat(response.getClubId()).isEqualTo(clubId);
         assertThat(response.getAuthorities()).containsExactly(MEMBER_ALL.name(), SCHEDULE_ALL.name());
+        verify(clubService, times(1)).createClubAuthority(anyLong(), any(ClubAuthorityDto.Create.class));
+
+
     }
 
     @Test
@@ -514,20 +530,21 @@ public class ClubControllerTest {
     public void setManagerAuthorities_FORBIDDEN() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubService.setManagerAuthority(any(Long.class), any(ClubAuthorityDto.Update.class)))
+        given(clubService.createClubAuthority(any(Long.class), any(ClubAuthorityDto.Create.class)))
                 .willThrow(new ClubException(UPDATE_AUTHORIZATION_DENIED));
 
         //when
-        ClubAuthorityDto.Update updateDto = ClubAuthorityDto.Update.builder()
+        ClubAuthorityDto.Create createDto = ClubAuthorityDto.Create.builder()
                 .clubId(clubId)
                 .authorities(List.of(MEMBER_ALL.name(), SCHEDULE_ALL.name()))
                 .build();
-        ResultActions resultActions = mockMvc.perform(put("/clubs/{clubId}/authorities", clubId)
-                .content(gson.toJson(updateDto))
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/authorities", clubId)
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON));
 
         //then
         resultActions.andExpect(status().isForbidden());
+        verify(clubService, times(1)).createClubAuthority(anyLong(), any(ClubAuthorityDto.Create.class));
     }
 
     @Test
@@ -535,20 +552,21 @@ public class ClubControllerTest {
     public void setManagerAuthorities_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubService.setManagerAuthority(any(Long.class), any(ClubAuthorityDto.Update.class)))
+        given(clubService.createClubAuthority(any(Long.class), any(ClubAuthorityDto.Create.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
-        ClubAuthorityDto.Update updateDto = ClubAuthorityDto.Update.builder()
+        ClubAuthorityDto.Create createDto = ClubAuthorityDto.Create.builder()
                 .clubId(clubId)
                 .authorities(List.of(MEMBER_ALL.name(), SCHEDULE_ALL.name()))
                 .build();
-        ResultActions resultActions = mockMvc.perform(put("/clubs/{clubId}/authorities", clubId)
-                .content(gson.toJson(updateDto))
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/authorities", clubId)
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON));
 
         //then
         resultActions.andExpect(status().isNotFound());
+        verify(clubService, times(1)).createClubAuthority(anyLong(), any(ClubAuthorityDto.Create.class));
     }
 
 
@@ -559,16 +577,6 @@ public class ClubControllerTest {
         return gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), responseType);
     }
 
-//    private void answerClubMemberId() throws Throwable {
-//        Long clubMemberId = 1L;
-//        given(aspect.generateClubMemberId(any(ProceedingJoinPoint.class)))
-//                .willAnswer(invocation -> {
-//                    ProceedingJoinPoint joinPoint = invocation.getArgument(0);
-//                    Object[] args = joinPoint.getArgs();
-//                    args[0] = clubMemberId;
-//                    return joinPoint.proceed(args);
-//                } );
-//    }
 
 
 }

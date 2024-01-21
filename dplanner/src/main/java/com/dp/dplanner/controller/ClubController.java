@@ -8,13 +8,13 @@ import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,20 +33,27 @@ public class ClubController {
                 .body(responseDto);
     }
 
-    @GetMapping(value = "", params = "memberId")
-    public ResponseEntity<List<ClubDto.Response>> findMyClubs(@AuthenticationPrincipal PrincipalDetails principal,
-                                                              @RequestParam Long memberId) {
-        if (!memberId.equals(principal.getId())) {
-            memberId = principal.getId();
+    @GetMapping(value = "")
+    public ResponseEntity<List<ClubDto.Response>> findClubs(@RequestParam Map<String, String> param) {
+
+        List<ClubDto.Response> responseDto;
+
+        if (param.get("memberId") != null) {
+            Long memberId = Long.valueOf(param.get("memberId"));
+            responseDto = clubService.findMyClubs(memberId);
+        }else{
+            //todo param에 따라 정렬 및 검색 기능 추가
+            responseDto = clubService.findClubs(param);
         }
-        List<ClubDto.Response> myClubs = clubService.findMyClubs(memberId);
+
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(myClubs);
+                .body(responseDto);
     }
 
     @GetMapping("/{clubId}")
     public ResponseEntity<ClubDto.Response> findClubById(@PathVariable("clubId") Long clubId) {
+
         ClubDto.Response responseDto = clubService.findClubById(clubId);
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -58,7 +65,7 @@ public class ClubController {
                                                 @PathVariable("clubId") Long clubId) {
 
         Long clubMemberId = principal.getClubMemberId();
-        InviteDto response = clubService.inviteClub(clubMemberId);
+        InviteDto response = clubService.inviteClub(clubMemberId,clubId);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -91,26 +98,40 @@ public class ClubController {
                 .body(response);
     }
 
+    @PostMapping("/{clubId}/authorities")
+    public ResponseEntity<ClubAuthorityDto.Response> createManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                              @PathVariable("clubId") Long clubId,
+                                                                              @RequestBody @Valid ClubAuthorityDto.Create createDto) {
+        Long clubMemberId = principal.getClubMemberId();
+
+        createDto.setClubId(clubId);
+        ClubAuthorityDto.Response authorities = clubService.createClubAuthority(clubMemberId, createDto);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(authorities);
+    }
+
     @GetMapping("/{clubId}/authorities")
-    public ResponseEntity<ClubAuthorityDto.Response> findManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                            @PathVariable("clubId") Long clubId) {
+    public ResponseEntity<List<ClubAuthorityDto.Response>> findManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                                  @PathVariable("clubId") Long clubId) {
 
         Long clubMemberId = principal.getClubMemberId();
-        ClubAuthorityDto.Response authorities =
-                clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
+        List<ClubAuthorityDto.Response> authorities = clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
+
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(authorities);
     }
 
     @PutMapping("/{clubId}/authorities")
-    public ResponseEntity<ClubAuthorityDto.Response> setManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                           @PathVariable("clubId") Long clubId,
-                                                                           @RequestBody @Valid ClubAuthorityDto.Update updateDto) {
+    public ResponseEntity<ClubAuthorityDto.Response> updateManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                              @PathVariable("clubId") Long clubId,
+                                                                              @RequestBody @Valid ClubAuthorityDto.Update updateDto) {
         Long clubMemberId = principal.getClubMemberId();
 
         updateDto.setClubId(clubId);
-        ClubAuthorityDto.Response authorities = clubService.setManagerAuthority(clubMemberId, updateDto);
+        ClubAuthorityDto.Response authorities = clubService.updateClubAuthority(clubMemberId, updateDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

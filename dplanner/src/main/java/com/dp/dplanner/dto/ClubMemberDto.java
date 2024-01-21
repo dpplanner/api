@@ -51,6 +51,7 @@ public class ClubMemberDto {
     @NoArgsConstructor
     public static class Update {
         private Long id;
+        private Long clubAuthorityId;
         private String name;
         private String info;
         private String role;

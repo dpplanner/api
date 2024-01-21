@@ -15,30 +15,37 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/clubs/{clubId}/club-members")
+
 public class ClubMemberController {
 
     private final ClubMemberService clubMemberService;
 
-    @GetMapping("")
-    public ResponseEntity<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                          @PathVariable("clubId") Long clubId) {
+//    @GetMapping("")
+//    public ResponseEntity<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
+//                                                                          @PathVariable("clubId") Long clubId) {
+//
+//        Long clubMemberId = principal.getClubMemberId();
+//        List<ClubMemberDto.Response> response = clubMemberService.findMyClubMembers(clubMemberId,clubId);
+//
+//        return ResponseEntity
+//                .status(HttpStatus.OK)
+//                .body(response);
+//    }
 
-        Long clubMemberId = principal.getClubMemberId();
-        List<ClubMemberDto.Response> response = clubMemberService.findMyClubMembers(clubMemberId);
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(response);
-    }
-
-    @GetMapping(value = "", params = "confirmed")
+    @GetMapping(value = "")
     public ResponseEntity<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
                                                                           @PathVariable("clubId") Long clubId,
-                                                                          @RequestParam(defaultValue = "true") boolean confirmed) {
+                                                                          @RequestParam(required = false) Boolean confirmed) {
         Long clubMemberId = principal.getClubMemberId();
+        List<ClubMemberDto.Response> response;
 
-        List<ClubMemberDto.Response> response = clubMemberService.findMyClubMembers(clubMemberId, confirmed);
+        if (confirmed == null) {
+            // ToDo 리팩토링 필요
+            response = clubMemberService.findMyClubMembers(clubMemberId,clubId);
+        }else{
+            response = clubMemberService.findMyClubMembers(clubMemberId,clubId, confirmed);
 
+        }
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
@@ -50,7 +57,7 @@ public class ClubMemberController {
                                                                           @RequestBody @Valid List<ClubMemberDto.Request> requestDto) {
         Long clubMemberId = principal.getClubMemberId();
 
-        List<ClubMemberDto.Response> response = clubMemberService.kickOutAll(clubMemberId, requestDto);
+        List<ClubMemberDto.Response> response = clubMemberService.kickOutAll(clubMemberId, clubId, requestDto);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
@@ -107,9 +114,9 @@ public class ClubMemberController {
         Long clubMemberId = principal.getClubMemberId();
 
         if (force) {
-            clubMemberService.kickOut(clubMemberId, new ClubMemberDto.Request(requestClubMemberId));
+            clubMemberService.kickOut(clubMemberId, clubId, new ClubMemberDto.Request(requestClubMemberId));
         } else {
-            clubMemberService.leaveClub(clubMemberId);
+            clubMemberService.leaveClub(clubMemberId,new ClubMemberDto.Request(requestClubMemberId));
         }
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
@@ -124,24 +131,10 @@ public class ClubMemberController {
         Long clubMemberId = principal.getClubMemberId();
 
         updateDto.setId(requestClubMemberId);
-        ClubMemberDto.Response response = clubMemberService.updateClubMemberRole(clubMemberId, updateDto);
+        ClubMemberDto.Response response = clubMemberService.updateClubMemberClubAuthority(clubMemberId, clubId, updateDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
-    }
-
-    @PatchMapping("/{clubMemberId}/confirm")
-    public ResponseEntity confirmClubMember(@AuthenticationPrincipal PrincipalDetails principal,
-                                            @PathVariable("clubId") Long clubId,
-                                            @PathVariable("clubMemberId") Long requestClubMemberId) {
-
-        Long clubMemberId = principal.getClubMemberId();
-
-        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(requestClubMemberId);
-        clubMemberService.confirm(clubMemberId, requestDto);
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 }

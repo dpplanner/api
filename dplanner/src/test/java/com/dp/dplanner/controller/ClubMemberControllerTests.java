@@ -75,7 +75,7 @@ public class ClubMemberControllerTests {
 
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
-        given(clubMemberService.findMyClubMembers(any(Long.class))).willReturn(responseDto);
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class))).willReturn(responseDto);
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId));
@@ -92,7 +92,7 @@ public class ClubMemberControllerTests {
     public void findMyClubMembers_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubMemberService.findMyClubMembers(any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId));
@@ -114,7 +114,7 @@ public class ClubMemberControllerTests {
         List<ClubMember> clubMembers = getConfirmedClubMembers(Club.builder().build(), 5);
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
-        given(clubMemberService.findMyClubMembers(any(Long.class), eq(true))).willReturn(responseDto);
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class), eq(true))).willReturn(responseDto);
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
@@ -135,7 +135,7 @@ public class ClubMemberControllerTests {
         List<ClubMember> clubMembers = getUnconfirmedClubMembers(Club.builder().build(), 5);
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
-        given(clubMemberService.findMyClubMembers(any(Long.class), eq(false))).willReturn(responseDto);
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class), eq(false))).willReturn(responseDto);
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
@@ -153,7 +153,7 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
 
-        given(clubMemberService.findMyClubMembers(any(Long.class), any(Boolean.class)))
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class), any(Boolean.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
@@ -174,9 +174,9 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
 
-        List<ClubMember> notDeletedClubMembers = getConfirmedClubMembers(Club.builder().build(), 2); // 삭제되지 않은 회원을 반환
+        List<ClubMember> notDeletedClubMembers = getConfirmedClubMembers(Club.builder().build(), 2); // 삭제된 회원을 반환
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(notDeletedClubMembers);
-        given(clubMemberService.kickOutAll(any(Long.class), any(List.class))).willReturn(responseDto);
+        given(clubMemberService.kickOutAll(any(Long.class), any(Long.class), any(List.class))).willReturn(responseDto);
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -197,7 +197,7 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
 
-        given(clubMemberService.kickOutAll(any(Long.class), any(List.class)))
+        given(clubMemberService.kickOutAll(any(Long.class), any(Long.class), any(List.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
@@ -473,7 +473,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         ClubMemberDto.Response responseDto = ClubMemberDto.Response.builder().role("MANAGER").build();
-        given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
+        given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
                 .willReturn(responseDto);
 
 
@@ -496,7 +496,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
+        given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
 
 
@@ -517,7 +517,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
+        given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(UPDATE_AUTHORIZATION_DENIED));
 
 
@@ -538,7 +538,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
+        given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION));
 
 
@@ -559,7 +559,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        given(clubMemberService.updateClubMemberRole(any(Long.class), any(ClubMemberDto.Update.class)))
+        given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
                 .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
 
@@ -574,61 +574,6 @@ public class ClubMemberControllerTests {
     }
 
 
-    /**
-     * PATCH /clubs/{clubId}/club-members/{clubMemberId}/confirm
-     */
-    @Test
-    @DisplayName("클럽 회원을 승인하면 204 NO CONTENT")
-    public void confirmClubMember_NOCONTENT() throws Throwable {
-        //given
-        Long clubId = 1L;
-        Long clubMemberId = 2L;
-
-        doNothing().when(clubMemberService).confirm(any(Long.class), any(ClubMemberDto.Request.class));
-
-        //when
-        ResultActions resultActions = mockMvc.perform(
-                patch("/clubs/{clubId}/club-members/{clubMemberId}/confirm", clubId, clubMemberId));
-
-        //then
-        resultActions.andExpect(status().isNoContent());
-    }
-
-    @Test
-    @DisplayName("다른 클럽 회원을 승인하면 403 FORBIDDEN")
-    public void confirmClubMember_FORBIDDEN() throws Throwable {
-        //given
-        Long clubId = 1L;
-        Long clubMemberId = 2L;
-
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION))
-                .when(clubMemberService).confirm(any(Long.class), any(ClubMemberDto.Request.class));
-
-        //when
-        ResultActions resultActions = mockMvc.perform(
-                patch("/clubs/{clubId}/club-members/{clubMemberId}/confirm", clubId, clubMemberId));
-
-        //then
-        resultActions.andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("데이터가 없는 클럽 회원을 승인하면 404 NOT FOUND")
-    public void confirmClubMember_NOTFOUND() throws Throwable {
-        //given
-        Long clubId = 1L;
-        Long clubMemberId = 2L;
-
-        doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
-                .when(clubMemberService).confirm(any(Long.class), any(ClubMemberDto.Request.class));
-
-        //when
-        ResultActions resultActions = mockMvc.perform(
-                patch("/clubs/{clubId}/club-members/{clubMemberId}/confirm", clubId, clubMemberId));
-
-        //then
-        resultActions.andExpect(status().isNotFound());
-    }
 
 
     /**
@@ -641,7 +586,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doNothing().when(clubMemberService).leaveClub(any(Long.class));
+        doNothing().when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -660,7 +605,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         doThrow(new ClubMemberException(DELETE_AUTHORIZATION_DENIED))
-                .when(clubMemberService).leaveClub(any(Long.class));
+                .when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -679,7 +624,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
-                .when(clubMemberService).leaveClub(any(Long.class));
+                .when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -689,6 +634,27 @@ public class ClubMemberControllerTests {
         //then
         resultActions.andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("클럽 탈퇴시 클럽 회원 데이터 요청 데이터가 다르면 403")
+    public void deleteDifferentClubMember_NOTFOUND() throws Throwable {
+        //given
+        Long clubId = 1L;
+        Long clubMemberId = 1L;
+
+        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION))
+                .when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
+
+        //when
+        ResultActions resultActions = mockMvc.perform(
+                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
+                        .param("force", "false"));
+
+        //then
+        resultActions.andExpect(status().isForbidden());
+
+    }
+
 
 
     /**
@@ -701,7 +667,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doNothing().when(clubMemberService).kickOut(any(Long.class), any(ClubMemberDto.Request.class));
+        doNothing().when(clubMemberService).kickOut(any(Long.class), any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -720,7 +686,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         doThrow(new ClubMemberException(DELETE_AUTHORIZATION_DENIED))
-                .when(clubMemberService).kickOut(any(Long.class), any(ClubMemberDto.Request.class));
+                .when(clubMemberService).kickOut(any(Long.class), any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -739,7 +705,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
-                .when(clubMemberService).kickOut(any(Long.class), any(ClubMemberDto.Request.class));
+                .when(clubMemberService).kickOut(any(Long.class), any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
         ResultActions resultActions = mockMvc.perform(
