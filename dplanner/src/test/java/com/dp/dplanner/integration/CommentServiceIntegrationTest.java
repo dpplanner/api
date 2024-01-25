@@ -1,5 +1,6 @@
 package com.dp.dplanner.integration;
 
+import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Member;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -21,6 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@Import({TestConfig.class})
 @Transactional
 public class CommentServiceIntegrationTest {
 

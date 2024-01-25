@@ -23,6 +23,7 @@ public class Attachment extends BaseEntity {
 
     @Column(unique = true)
     String url;
+    @Enumerated(EnumType.STRING)
     FileType type;
 
     @Builder

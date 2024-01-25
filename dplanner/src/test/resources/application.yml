@@ -16,6 +16,21 @@ spring:
             scope:
               - profile
               - email
+  profiles:
+    active: test
+
+cloud:
+  aws:
+    stack:
+      auto: false
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: test_access_key
+      secret-key: test_secret_key
+
+    s3:
+      bucket : test_bucket
 
 logging.level:
   org.hibernate.SQL: debug

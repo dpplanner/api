@@ -242,11 +242,11 @@ public class PostServiceTest {
 
 
         assertThat(responseSlice).isNotNull();
-        assertThat(responseSlice.getNumberOfElements()).isEqualTo(5); // # of elements
-        assertThat(responseSlice.getNumber()).isEqualTo(0); // current page
-        assertThat(responseSlice.getSize()).isEqualTo(10); // size
+        assertThat(responseSlice.getContent().size()).isEqualTo(5); // # of elements
+        assertThat(responseSlice.getPageable().getPageNumber()).isEqualTo(0); // current page
+        assertThat(responseSlice.getPageable().getPageSize()).isEqualTo(10); // size
+        assertThat(responseSlice.isHasNext()).isFalse();
         assertThat(responseSlice.getContent()).extracting(Response::getClubId).containsOnly(clubId);
-        assertThat(responseSlice.hasNext()).isFalse();
         responseSlice.getContent().forEach(response -> assertResponse(response, "test"));
 
         verify(postMemberLikeRepository, times(5)).countDistinctByPostId(anyLong());

@@ -28,13 +28,17 @@ public class AttachmentService {
     public List<Response> createAttachment(Create createDto) {
 
         Post post = postRepository.findById(createDto.getPostId()).orElseThrow(() -> new PostException(POST_NOT_FOUND));
+
         List<Attachment> attachments = new ArrayList<>();
         createDto.getFiles().stream().forEach(file -> {
             try {
-                String url = uploadService.uploadFile(file);
-                FileType fileType = uploadService.getFileType(url);
-                attachments.add(attachmentRepository.save(createDto.toEntity(post, url, fileType)));
+                if (file.getSize() > 0) {
+                    String url = uploadService.uploadFile(file);
+                    FileType fileType = uploadService.getFileType(file.getContentType());
+                    attachments.add(attachmentRepository.save(createDto.toEntity(post, url, fileType)));
+                }
             } catch (RuntimeException e) {
+                System.out.println(e.getMessage());
                 throw new FileException(FILE_EXCEPTION);
             }
         });
@@ -47,9 +51,7 @@ public class AttachmentService {
 
         List<Attachment> attachments = attachmentRepository.findAttachmentsByPostId(postId);
 
-        /**
-         * 각 attachment에 있는 url이 유효한가?
-         */
+        // TODO 각 attachment에 있는 url이 유효한가?
         return Response.ofList(attachments);
 
     }

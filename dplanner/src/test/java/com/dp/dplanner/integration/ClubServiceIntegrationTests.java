@@ -1,5 +1,6 @@
 package com.dp.dplanner.integration;
 
+import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthority;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
+@Import({TestConfig.class})
 @Transactional
 public class ClubServiceIntegrationTests {
 
@@ -32,6 +35,7 @@ public class ClubServiceIntegrationTests {
     EntityManager entityManager;
 
     ClubMember clubMember;
+
     @BeforeEach
     void setup() {
         Member member = Member.builder().build();
@@ -75,5 +79,7 @@ public class ClubServiceIntegrationTests {
         assertThat(authorityTypes).as("회원 권한과 스케줄 권한이 포함되지 않아야 함")
                 .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.SCHEDULE_ALL);
     }
-
 }
+
+
+

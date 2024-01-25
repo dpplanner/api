@@ -1,5 +1,6 @@
 package com.dp.dplanner.integration;
 
+import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@Import({TestConfig.class})
 @Transactional
 public class RequiredAuthorityAspectTests {
 

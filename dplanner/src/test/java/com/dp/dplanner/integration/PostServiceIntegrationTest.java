@@ -1,5 +1,6 @@
 package com.dp.dplanner.integration;
 
+import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Member;
@@ -13,18 +14,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.dp.dplanner.dto.PostDto.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@Import({TestConfig.class})
 @Transactional
 public class PostServiceIntegrationTest {
 
@@ -66,7 +68,7 @@ public class PostServiceIntegrationTest {
         Create createDto = Create.builder()
                 .clubId(club.getId())
                 .content("test")
-                .files(Arrays.asList(multipartFile))
+                .files(List.of(multipartFile))
                 .build();
 
 
@@ -99,7 +101,7 @@ public class PostServiceIntegrationTest {
         Create createDto = Create.builder()
                 .clubId(club.getId())
                 .content("test")
-                .files(Arrays.asList(multipartFile))
+                .files(List.of(multipartFile))
                 .build();
 
         Response post = postService.createPost(clubMember.getId(), createDto);

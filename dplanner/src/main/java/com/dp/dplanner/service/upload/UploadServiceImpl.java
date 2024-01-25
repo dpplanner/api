@@ -1,6 +1,5 @@
 package com.dp.dplanner.service.upload;
 
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -9,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@Service
 public class UploadServiceImpl implements UploadService {
     String DIR = "src/main/resources/test/save/";
 
@@ -28,7 +26,7 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public String uploadFile(MultipartFile multipartFile) {
-        String pathName = DIR + multipartFile.getName() + "." + multipartFile.getContentType();
+        String pathName = DIR + multipartFile.getOriginalFilename();
         try {
             multipartFile.transferTo(new File(pathName));
         } catch (IOException e) {

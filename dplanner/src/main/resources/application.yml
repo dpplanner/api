@@ -1,6 +1,7 @@
 spring:
   profiles:
     include: oauth
+    active: production
   datasource:
     driver-class-name: org.postgresql.Driver
     url: ${DB_URL}
@@ -17,6 +18,19 @@ spring:
         format_sql: true
         show-sql: true
         default_batch_fetch_size: 500
+
+cloud:
+  aws:
+    stack:
+      auto: false
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: ${AWS_S3_ACCESSKEY}
+      secret-key: ${AWS_S3_SECRETKEY}
+
+    s3:
+      bucket : dplanner-resource-server
 
 logging.level:
   org.hibernate.SQL: debug
