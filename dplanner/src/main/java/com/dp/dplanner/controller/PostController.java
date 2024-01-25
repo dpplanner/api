@@ -7,26 +7,32 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static com.dp.dplanner.dto.PostDto.*;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping("/posts")
 public class PostController {
 
     private final PostService postService;
 
-    @PostMapping(value = "/posts")
+    @PostMapping(value = "")
     public ResponseEntity<Response> createPost(@AuthenticationPrincipal PrincipalDetails principal,
-                                               @RequestBody @Valid final Create create) {
+                                               @RequestPart @Valid final Create create,
+                                               @RequestPart(required = false) final List<MultipartFile> files) {
+
         Long clubMemberId = principal.getClubMemberId();
+        create.setFiles(files);
 
         Response response = postService.createPost(clubMemberId, create);
 
@@ -34,8 +40,8 @@ public class PostController {
                 .body(response);
     }
 
-    @GetMapping(value = "/posts")
-    public ResponseEntity<Slice> getClubPosts(@AuthenticationPrincipal PrincipalDetails principal,
+    @GetMapping(value = "")
+    public ResponseEntity<SliceResponse> getClubPosts(@AuthenticationPrincipal PrincipalDetails principal,
                                               @PageableDefault final Pageable pageable) {
 
         Long clubMemberId = principal.getClubMemberId();
@@ -48,7 +54,7 @@ public class PostController {
     }
 
 
-    @GetMapping(value = "/members/{memberId}/posts")
+    @GetMapping(value = "/members/{memberId}")
     public ResponseEntity<SliceResponse> getMyPosts(@AuthenticationPrincipal PrincipalDetails principal,
                                             @PathVariable final Long memberId,
                                             @PageableDefault final Pageable pageable) {
@@ -61,7 +67,7 @@ public class PostController {
                 .body(response);
     }
 
-    @GetMapping(value = "/posts/{postId}")
+    @GetMapping(value = "/{postId}")
     public ResponseEntity<Response> getPost(@AuthenticationPrincipal PrincipalDetails principal,
                                             @PathVariable final Long postId) {
         Long clubMemberId = principal.getClubMemberId();
@@ -72,7 +78,7 @@ public class PostController {
                 .body(response);
     }
 
-    @DeleteMapping(value = "/posts/{postId}")
+    @DeleteMapping(value = "/{postId}")
     public ResponseEntity deletePost(@AuthenticationPrincipal PrincipalDetails principal,
                                      @PathVariable final Long postId) {
         Long clubMemberId = principal.getClubMemberId();
@@ -82,19 +88,21 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping(value = "/posts/{postId}")
+    @PutMapping(value = "/{postId}")
     public ResponseEntity<Response> updatePost(@AuthenticationPrincipal PrincipalDetails principal,
                                                @PathVariable final Long postId,
-                                               @RequestBody final Update updateDto) {
+                                               @RequestPart final Update update,
+                                               @RequestPart(required = false) final List<MultipartFile> files) {
         Long clubMemberId = principal.getClubMemberId();
+        update.setFiles(files);
 
-        Response response = postService.updatePost(clubMemberId, updateDto);
+        Response response = postService.updatePost(clubMemberId, update);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 
-    @PutMapping(value = "/posts/{postId}/like")
+    @PutMapping(value = "/{postId}/like")
     public ResponseEntity<PostMemberLikeDto.Response> likePost(@AuthenticationPrincipal PrincipalDetails principal,
                                                                @PathVariable final Long postId) {
         Long clubMemberId = principal.getClubMemberId();
@@ -105,7 +113,7 @@ public class PostController {
                 .body(response);
     }
 
-    @PutMapping(value = "/posts/{postId}/fix")
+    @PutMapping(value = "/{postId}/fix")
     public ResponseEntity<Response> fixPost(@AuthenticationPrincipal PrincipalDetails principal,
                                             @PathVariable final Long postId) {
 

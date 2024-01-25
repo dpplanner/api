@@ -47,12 +47,13 @@ public class PostService {
         checkIsSameClub(clubMemberId,club.getId());
 
         Post post = postRepository.save(create.toEntity(clubMember,club));
-
-        attachmentService.createAttachment(
-                AttachmentDto.Create.builder()
-                        .postId(post.getId())
-                        .files(create.getFiles())
-                        .build());
+        if (create.getFiles() != null && create.getFiles().size() != 0) {
+            attachmentService.createAttachment(
+                    AttachmentDto.Create.builder()
+                            .postId(post.getId())
+                            .files(create.getFiles())
+                            .build());
+        }
 
         return Response.of(post,0,0);
     }
@@ -89,6 +90,7 @@ public class PostService {
 
     private SliceResponse getSliceResponse(Pageable pageable, Slice<Post> postSlice) {
         List<Integer> likeCounts = postSlice.getContent().stream().map(post -> postMemberLikeRepository.countDistinctByPostId(post.getId())).toList();
+        // toDO 배치 단위로 구하기
         List<Integer> commentCounts = postSlice.getContent().stream().map(post -> commentRepository.countDistinctByPostId(post.getId())).toList();
         return new SliceResponse(Response.ofList(postSlice.getContent(), likeCounts, commentCounts), pageable, postSlice.hasNext());
     }
@@ -106,11 +108,14 @@ public class PostService {
 
         attachmentService.deleteAttachmentsByUrl(post, deletedAttachmentUrl);
 
-        attachmentService.createAttachment(
-                AttachmentDto.Create.builder()
-                        .postId(post.getId())
-                        .files(update.getFiles())
-                        .build());
+        if (update.getFiles() != null && update.getFiles().size() != 0) {
+            attachmentService.createAttachment(
+                    AttachmentDto.Create.builder()
+                            .postId(post.getId())
+                            .files(update.getFiles())
+                            .build());
+        }
+
 
         post.updateContent(update.getContent());
 

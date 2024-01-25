@@ -7,10 +7,10 @@ import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.SliceImpl;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -88,10 +88,12 @@ public class PostDto {
 
     @Getter
     @Setter
-    public static class SliceResponse extends SliceImpl<Response> {
-        public SliceResponse(List content, Pageable pageable, boolean hasNext) {
-            super(content, pageable, hasNext);
-        }
+    @Builder
+    @AllArgsConstructor
+    public static class SliceResponse {
+        private List<Response> content;
+        private Pageable pageable;
+        private boolean hasNext;
     }
 
 
@@ -103,8 +105,8 @@ public class PostDto {
     public static class Update {
         private Long id;
         private String content;
-        private List<String> attachmentUrl;
-        private List<MultipartFile> files;
+        private List<String> attachmentUrl = new ArrayList<>();
+        private List<MultipartFile> files = new ArrayList<>();
 
     }
 }

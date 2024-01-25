@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -96,12 +97,14 @@ public class PostControllerTest {
 
     private ResultActions mockCreatePost(Create createDto) throws Exception {
         return mockMvc.perform(
-                MockMvcRequestBuilders.post("/posts")
-                        .content(gson.toJson(createDto))
-                        .contentType(MediaType.APPLICATION_JSON)
+                MockMvcRequestBuilders.multipart("/posts")
+                        .file(new MockMultipartFile("create","",MediaType.APPLICATION_JSON_VALUE,"{\"clubId\": -1, \"content\":\"hello\"}".getBytes()))
+                        .file(new MockMultipartFile("files", "fileName" + "." + "jpg", "jpg", "image".getBytes()))
+                        .file(new MockMultipartFile("files", "fileName2" + "." + "jpg", "jpg", "image2".getBytes()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+
         );
     }
-
     @Test
     public void PostController_CreatePost_CREATED() throws Throwable {
 
@@ -170,7 +173,12 @@ public class PostControllerTest {
                 .content("test")
                 .build();
 
-        final ResultActions resultActions = mockCreatePost(createDto);
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.multipart("/posts")
+                        .file(new MockMultipartFile("create", "", MediaType.APPLICATION_JSON_VALUE, "{\"content\":\"hello\"}" .getBytes()))
+                        .file(new MockMultipartFile("files", "fileName" + "." + "jpg", "jpg", "image" .getBytes()))
+                        .file(new MockMultipartFile("files", "fileName2" + "." + "jpg", "jpg", "image2" .getBytes()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE));
 
         resultActions.andExpect(status().isBadRequest());
         verify(postService, times(0)).createPost(anyLong(),any(Create.class));
@@ -217,7 +225,7 @@ public class PostControllerTest {
 
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/members/{memberId}/posts", memberId)
+                MockMvcRequestBuilders.get("/posts/members/{memberId}", memberId)
         );
 
         resultActions.andExpect(status().isOk());
@@ -231,7 +239,7 @@ public class PostControllerTest {
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/members/{memberId}/posts", memberId)
+                MockMvcRequestBuilders.get("/posts/members/{memberId}", memberId)
         );
 
         resultActions.andExpect(status().isForbidden());
