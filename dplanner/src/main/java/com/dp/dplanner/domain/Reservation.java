@@ -26,7 +26,7 @@ public class Reservation extends BaseEntity{
     private Resource resource;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "club_member_id")
     private ClubMember clubMember;
 
     @Embedded
@@ -64,6 +64,14 @@ public class Reservation extends BaseEntity{
         this.period = new Period(startDateTime, endDateTime);
         this.status = UPDATE;
     }
+
+    public void updateNotChangeStatus(String title, String usage, LocalDateTime startDateTime, LocalDateTime endDateTime, boolean sharing) {
+        this.title = title;
+        this.usage = usage;
+        this.sharing = sharing;
+        this.period = new Period(startDateTime, endDateTime);
+    }
+
 
     public void cancel() {
         this.status = CANCEL;

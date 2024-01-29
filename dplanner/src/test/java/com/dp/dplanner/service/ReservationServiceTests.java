@@ -43,6 +43,8 @@ public class ReservationServiceTests {
     LockRepository lockRepository;
     @Mock
     ReservationRepository reservationRepository;
+    @Mock
+    MessageService messageService;
 
     @InjectMocks
     ReservationService reservationService;
@@ -300,6 +302,28 @@ public class ReservationServiceTests {
         //then
         assertThat(responseDto.getStatus()).as("예약은 UPDATE 상태여야 한다").isEqualTo(UPDATE.name());
     }
+
+    @Test
+    @DisplayName("사용자가 승인된 예약을 수정 시 예약 시간 변경이 없으면 그대로 승인 상태가 유지된다..")
+    public void updateConfirmedReservationByUserThenConfirmed() throws Exception {
+        //given
+        Long reservationId = 1L;
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        reservation.confirm();
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        ReservationDto.Update updateDtoSameTime = getUpdateDto(
+                reservationId, resource.getId(), "newTitle", "newUsage",
+                false, getTime(20), getTime(21)
+        );
+
+        ReservationDto.Response responseDto = reservationService.updateReservation(clubMember.getId(), updateDtoSameTime);
+
+        //then
+        assertThat(responseDto.getStatus()).as("예약은 Confirmed 상태여야 한다").isEqualTo(CONFIRMED.name());
+    }
+
 
     @Test
     @DisplayName("관리자가 승인된 예약을 수정시 승인대기를 하지 않는다")

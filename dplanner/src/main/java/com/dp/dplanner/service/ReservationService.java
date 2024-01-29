@@ -1,9 +1,12 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.message.Message;
+import com.dp.dplanner.domain.message.MessageConst;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ReservationException;
@@ -29,6 +32,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 @RequiredArgsConstructor
 public class ReservationService {
 
+    private final MessageService messageService;
     private final ClubMemberRepository clubMemberRepository;
     private final ResourceRepository resourceRepository;
     private final ReservationRepository reservationRepository;
@@ -86,13 +90,23 @@ public class ReservationService {
             throw new ReservationException(UPDATE_AUTHORIZATION_DENIED);
         }
 
-        reservation.update(
-                updateDto.getTitle(),
-                updateDto.getUsage(),
-                updateDto.getStartDateTime(),
-                updateDto.getEndDateTime(),
-                updateDto.isSharing()
-        );
+        if (reservation.getStatus().equals(CONFIRMED) && reservation.getPeriod().equals(new Period(start, end))) {
+                reservation.updateNotChangeStatus(
+                        updateDto.getTitle(),
+                        updateDto.getUsage(),
+                        updateDto.getStartDateTime(),
+                        updateDto.getEndDateTime(),
+                        updateDto.isSharing()
+                );
+        }else{
+            reservation.update(
+                    updateDto.getTitle(),
+                    updateDto.getUsage(),
+                    updateDto.getStartDateTime(),
+                    updateDto.getEndDateTime(),
+                    updateDto.isSharing()
+            );
+        }
 
         confirmIfAuthorized(reservation.getClubMember(), reservation);
 
@@ -109,9 +123,12 @@ public class ReservationService {
             throw new ReservationException(DELETE_AUTHORIZATION_DENIED);
         }
 
-        if (reservation.isConfirmed()) {
+
+    // todo cancel 상태에서 한번 더 요청 보냉면 삭제됨. -> CANCEL 상태에도 그냥 그대로 CANCEL 추가
+        if (reservation.isConfirmed() || reservation.getStatus().equals(CANCEL)) {
             reservation.cancel();
-        } else {
+        }
+        else {
             reservationRepository.delete(reservation);
         }
     }
@@ -175,6 +192,7 @@ public class ReservationService {
         });
 
         confirmReservations(reservations, false);
+        // todo 취소 사유 보내기
     }
 
     public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {

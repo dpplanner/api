@@ -28,4 +28,11 @@ public class Period{
             throw new RuntimeException();
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        Period period = (Period) obj;
+        return this.startDateTime.isEqual(period.startDateTime) && this.endDateTime.isEqual(period.endDateTime);
+    }
+
 }

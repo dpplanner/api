@@ -31,7 +31,7 @@ public class ReservationController {
                 .body(response);
     }
 
-    @PutMapping(value = "/reservations/{reservationId}/update", name = "update")
+    @PatchMapping(value = "/reservations/{reservationId}/update", name = "update")
     public ResponseEntity<Response> updateReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                                        @PathVariable Long reservationId,
                                                        @RequestBody Update updateDto) {
@@ -98,6 +98,8 @@ public class ReservationController {
                 .body(response);
     }
 
+
+    // todo status 따라 조회 부분 수정 및 통합 필요
     @GetMapping(value = "/reservations", params = {"resourceId", "start", "end"})
     public ResponseEntity<List<Response>> getAllReservationsByPeriod(@AuthenticationPrincipal PrincipalDetails principal,
                                                                      @RequestParam Long resourceId,
@@ -118,6 +120,7 @@ public class ReservationController {
                 .body(response);
     }
 
+
     @GetMapping(value = "/reservations", params = {"resourceId","status"})
     public ResponseEntity<List<Response>> getAllReservationsNotConfirmed(@AuthenticationPrincipal PrincipalDetails principal,
                                                                          @RequestParam String status,
@@ -125,7 +128,11 @@ public class ReservationController {
         Long clubMemberId = principal.getClubMemberId();
 
         Request requestDto = Request.builder().resourceId(resourceId).build();
-        List<Response> response = reservationService.findAllNotConfirmedReservations(clubMemberId, requestDto);
+        List<Response> response = null;
+        if(status.equals("NOT CONFIRMED")){
+            response = reservationService.findAllNotConfirmedReservations(clubMemberId, requestDto);
+
+        }
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(response);

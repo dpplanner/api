@@ -159,7 +159,7 @@ public class ReservationControllerTest {
         doReturn(Response.of(reservation)).when(reservationService).updateReservation(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/reservations/{reservationId}/update", reservationId)
+                MockMvcRequestBuilders.patch("/reservations/{reservationId}/update", reservationId)
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
@@ -192,7 +192,7 @@ public class ReservationControllerTest {
         doThrow(exception).when(reservationService).updateReservation(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/reservations/{reservationId}/update", reservationId)
+                MockMvcRequestBuilders.patch("/reservations/{reservationId}/update", reservationId)
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
