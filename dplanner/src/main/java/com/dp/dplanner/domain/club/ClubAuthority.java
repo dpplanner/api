@@ -25,6 +25,7 @@ public class ClubAuthority {
     @JoinColumn(name="club_id")
     private Club club;
 
+    @ElementCollection(targetClass = ClubAuthorityType.class)
     @Enumerated(EnumType.STRING)
     private List<ClubAuthorityType> clubAuthorityTypes = new ArrayList<>();
     private String name;

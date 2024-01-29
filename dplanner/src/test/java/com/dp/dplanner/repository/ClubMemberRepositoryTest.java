@@ -1,9 +1,7 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.domain.club.ClubRole;
+import com.dp.dplanner.domain.club.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -21,6 +20,8 @@ class ClubMemberRepositoryTest {
     @Autowired
     ClubMemberRepository clubMemberRepository;
 
+    @Autowired
+    ClubAuthorityRepository clubAuthorityRepository;
     @Autowired
     TestEntityManager testEntityManager;
 
@@ -204,5 +205,129 @@ class ClubMemberRepositoryTest {
         ClubMember findClubMember2 = testEntityManager.find(ClubMember.class, savedClubMember2.getId());
         assertThat(findClubMember1).as("영속성 컨텍스트에 삭제된 회원이 없어야 함").isNull();
         assertThat(findClubMember2).as("영속성 컨텍스트에 삭제된 회원이 없어야 함").isNull();
+    }
+
+
+    @Test
+    @DisplayName("클럽에서 특정 권한을 가지고 있는 클럽 맴버 조회 성공")
+    public void testFindByClubIdAndClubAuthority_ClubAuthorityTypesContaining() {
+        // Given: 테스트를 위한 클럽 멤버, 클럽, 권한 설정
+        Member member2 = Member.builder().build();
+        testEntityManager.persist(member2);
+
+        ClubMember clubMember1 = ClubMember.builder().club(club).member(member).name("Member1").build();
+        ClubMember clubMember2 = ClubMember.builder().club(club).member(member2).name("Member2").build();
+
+        ClubAuthority authority1 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL))
+                .name("Authority1")
+                .build();
+
+        ClubAuthority authority2 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.POST_ALL))
+                .name("Authority2")
+                .build();
+
+        clubMember1.updateClubAuthority(authority1);
+        clubMember2.updateClubAuthority(authority2);
+
+        clubAuthorityRepository.save(authority1);
+        clubAuthorityRepository.save(authority2);
+
+        clubMemberRepository.save(clubMember1);
+        clubMemberRepository.save(clubMember2);
+
+        // When: 특정 클럽에서 특정 권한을 가진 회원 조회
+        List<ClubMember> membersWithAuthority = clubMemberRepository
+                .findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), ClubAuthorityType.SCHEDULE_ALL);
+
+        // Then: 결과 검증
+        assertThat(2).isEqualTo(membersWithAuthority.size());
+
+    }
+
+    @Test
+    @DisplayName("클럽에서 특정 권한을 가지고 있는 클럽 맴버 조회 성공 - test2 다른 권한 조회")
+    public void testFindByClubIdAndClubAuthority_ClubAuthorityTypesContaining_test2() {
+        // Given: 테스트를 위한 클럽 멤버, 클럽, 권한 설정
+        Member member2 = Member.builder().build();
+        testEntityManager.persist(member2);
+
+        ClubMember clubMember1 = ClubMember.builder().club(club).member(member).name("Member1").build();
+        ClubMember clubMember2 = ClubMember.builder().club(club).member(member2).name("Member2").build();
+
+        ClubAuthority authority1 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL))
+                .name("Authority1")
+                .build();
+
+        ClubAuthority authority2 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.POST_ALL))
+                .name("Authority2")
+                .build();
+
+        clubMember1.updateClubAuthority(authority1);
+        clubMember2.updateClubAuthority(authority2);
+
+        clubAuthorityRepository.save(authority1);
+        clubAuthorityRepository.save(authority2);
+
+        clubMemberRepository.save(clubMember1);
+        clubMemberRepository.save(clubMember2);
+
+        // When: 특정 클럽에서 특정 권한을 가진 회원 조회
+        List<ClubMember> membersWithAuthority = clubMemberRepository
+                .findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), ClubAuthorityType.POST_ALL);
+
+        // Then: 결과 검증
+        assertThat(1).isEqualTo(membersWithAuthority.size());
+        assertThat(membersWithAuthority.get(0).getClubAuthority().getClubAuthorityTypes()).containsExactlyInAnyOrder(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.POST_ALL);
+
+    }
+
+    @Test
+    @DisplayName("클럽에서 특정 권한을 가지고 있는 클럽 맴버 조회 성공 - test3 다른 Club Id로 조회")
+    public void testFindByClubIdAndClubAuthority_ClubAuthorityTypesContaining_test3() {
+        // Given: 테스트를 위한 클럽 멤버, 클럽, 권한 설정
+
+        Long wrongClubId = 999L;
+        Member member2 = Member.builder().build();
+        testEntityManager.persist(member2);
+
+        ClubMember clubMember1 = ClubMember.builder().club(club).member(member).name("Member1").build();
+        ClubMember clubMember2 = ClubMember.builder().club(club).member(member2).name("Member2").build();
+
+        ClubAuthority authority1 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL))
+                .name("Authority1")
+                .build();
+
+        ClubAuthority authority2 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.POST_ALL))
+                .name("Authority2")
+                .build();
+
+        clubMember1.updateClubAuthority(authority1);
+        clubMember2.updateClubAuthority(authority2);
+
+        clubAuthorityRepository.save(authority1);
+        clubAuthorityRepository.save(authority2);
+
+        clubMemberRepository.save(clubMember1);
+        clubMemberRepository.save(clubMember2);
+
+        // When: 특정 클럽에서 특정 권한을 가진 회원 조회
+        List<ClubMember> membersWithAuthority = clubMemberRepository
+                .findClubMemberByClubIdAndClubAuthorityTypesContaining(wrongClubId, ClubAuthorityType.SCHEDULE_ALL);
+
+        // Then: 결과 검증
+        assertThat(0).isEqualTo(membersWithAuthority.size());
+
     }
 }

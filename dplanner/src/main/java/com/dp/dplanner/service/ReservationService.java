@@ -68,6 +68,15 @@ public class ReservationService {
 
         confirmIfAuthorized(clubMember, reservation);
 
+        // todo Message 보내기
+        //  -> ClubMember 중 Schedule 권한 가지고 있는 멤버에게, 인앱 메시지
+        if (!reservation.getStatus().equals(CONFIRMED)){
+            List<Long> clubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
+                    .stream().map(ClubMember::getId).toList();
+
+            messageService.createPrivateMessage(clubMemberIds, new Message(MessageConst.RESERVATION_REQUEST, MessageConst.RESERVATION_REQUEST, "redirect_url"));
+        }
+
         return ReservationDto.Response.of(reservation);
     }
 
@@ -148,6 +157,9 @@ public class ReservationService {
         }
 
         reservationRepository.delete(reservation);
+
+        messageService.createPrivateMessage(List.of(reservation.getClubMember().getId()), new Message(MessageConst.RESERVATION_DISCARD, MessageConst.RESERVATION_DISCARD, "redirectUrl"));
+
     }
 
     @Transactional
@@ -170,6 +182,9 @@ public class ReservationService {
         });
 
         confirmReservations(reservations, true);
+
+        messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
+                new Message(MessageConst.RESERVATION_REQUEST_APPROVED, MessageConst.RESERVATION_REQUEST_APPROVED, "redirectUrl"));
     }
 
     @Transactional
@@ -192,6 +207,8 @@ public class ReservationService {
         });
 
         confirmReservations(reservations, false);
+        messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
+                new Message(MessageConst.RESERVATION_DISCARD, MessageConst.RESERVATION_DISCARD, "redirectUrl"));
         // todo 취소 사유 보내기
     }
 

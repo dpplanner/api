@@ -1,6 +1,7 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -24,4 +25,11 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = false")
     List<ClubMember> findAllUnconfirmedClubMemberByClub(@Param("club") Club club);
 
+    @Query("SELECT cm FROM ClubMember cm " +
+            "LEFT JOIN ClubAuthority ca ON cm.clubAuthority.id = ca.id " +
+            "WHERE cm.club.id = :clubId AND :authorityType MEMBER OF ca.clubAuthorityTypes")
+    List<ClubMember> findClubMemberByClubIdAndClubAuthorityTypesContaining(
+            @Param("clubId") Long clubId,
+            @Param("authorityType") ClubAuthorityType authorityType
+    );
 }
