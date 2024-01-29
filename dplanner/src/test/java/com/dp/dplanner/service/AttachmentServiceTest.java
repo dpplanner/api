@@ -64,7 +64,7 @@ public class AttachmentServiceTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(uploadService.uploadFile(multipartFile)).thenReturn(savedPath);
-        when(uploadService.getFileType(savedPath)).thenReturn(FileType.IMAGE);
+        when(uploadService.getFileType(contentType)).thenReturn(FileType.IMAGE);
         when(attachmentRepository.save(Mockito.any(Attachment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<Response> responseList = attachmentService.createAttachment(createDto);

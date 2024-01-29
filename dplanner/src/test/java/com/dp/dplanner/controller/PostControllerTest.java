@@ -320,10 +320,11 @@ public class PostControllerTest {
                 .build();
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/posts/{postId}", postId)
-                        .content(gson.toJson(updateDto))
-                        .contentType(MediaType.APPLICATION_JSON)
-        );
+                MockMvcRequestBuilders.multipart("/posts/{postId}", postId)
+                        .file(new MockMultipartFile("update", "", MediaType.APPLICATION_JSON_VALUE, "{\"id\" : 1, \"content\":\"hello\"}".getBytes()))
+                        .file(new MockMultipartFile("files", "fileName" + "." + "jpg", "jpg", "image".getBytes()))
+                        .file(new MockMultipartFile("files", "fileName2" + "." + "jpg", "jpg", "image2".getBytes()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE));
 
         resultActions.andExpect(status().isOk());
     }
