@@ -1,4 +1,4 @@
-package com.dp.dplanner.controller;
+package com.dp.dplanner.controller.Reservation;
 
 
 import com.dp.dplanner.security.PrincipalDetails;
@@ -20,16 +20,16 @@ import static com.dp.dplanner.dto.ReservationDto.*;
 public class ReservationController {
     private final ReservationService reservationService;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    @PostMapping(value = "/reservations")
-    public ResponseEntity<Response> createReservation(@AuthenticationPrincipal PrincipalDetails principal,
-                                                      @RequestBody Create createDto) {
-        Long clubMemberId = principal.getClubMemberId();
-
-        Response response = reservationService.createReservation(clubMemberId, createDto);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(response);
-    }
+//    @PostMapping(value = "/reservations")
+//    public ResponseEntity<Response> createReservation(@AuthenticationPrincipal PrincipalDetails principal,
+//                                                      @RequestBody Create createDto) {
+//        Long clubMemberId = principal.getClubMemberId();
+//
+//        Response response = reservationService.createReservation(clubMemberId, createDto);
+//
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(response);
+//    }
 
     @PatchMapping(value = "/reservations/{reservationId}/update", name = "update")
     public ResponseEntity<Response> updateReservations(@AuthenticationPrincipal PrincipalDetails principal,

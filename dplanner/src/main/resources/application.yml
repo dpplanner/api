@@ -1,6 +1,6 @@
 spring:
   profiles:
-    include: oauth
+    include: oauth, rabbitMq
     active: production
   datasource:
     driver-class-name: org.postgresql.Driver

@@ -1,5 +1,6 @@
 package com.dp.dplanner.controller;
 
+import com.dp.dplanner.controller.Reservation.ReservationController;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;
@@ -13,6 +14,7 @@ import com.dp.dplanner.service.ReservationService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -83,6 +85,7 @@ public class ReservationControllerTest {
     }
 
     @Test
+    @Disabled("메시지 큐로 API 이동")
     public void ReservationController_createReservation_CREATED() throws Throwable {
 
         Create createDto = Create.builder()
@@ -116,6 +119,7 @@ public class ReservationControllerTest {
 
     @ParameterizedTest
     @MethodSource("throwException")
+    @Disabled("메시지 큐로 API 이동")
     public void ReservationController_createReservation_ThrowException(BaseException exception, ResultMatcher matcher) throws Throwable
     {
         Create createDto = Create.builder()
@@ -344,7 +348,7 @@ public class ReservationControllerTest {
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/reservations")
-                        .param("status","non-confirmed")
+                        .param("status","NOT CONFIRMED")
                         .param("resourceId", resourceId.toString())
         );
 

@@ -1,0 +1,27 @@
+# Service Post 설정
+server:
+  port: 8080
+
+# Log Level 설정
+logging:
+  level:
+    root: info
+
+# RabbitMQ 연결 정보
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# RabbitMQ queue, exchange, routing-key 정보
+rabbitmq:
+  exchange.name: reservation.exchange
+  queue.name.1: club.1
+  queue.name.2: club.2
+  queue.name.3: club.3
+  routing.key.1: club.key.1
+  routing.key.2: club.key.2
+  routing.key.3: club.key.3
+
