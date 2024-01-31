@@ -314,10 +314,6 @@ public class PostControllerTest {
     @Test
     public void PostController_UpdatePost_OK() throws Throwable
     {
-        Update updateDto = Update.builder()
-                .id(postId)
-                .content("update")
-                .build();
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.multipart("/posts/{postId}", postId)
@@ -332,18 +328,13 @@ public class PostControllerTest {
     @Test
     public void PostController_updatePost_FORBIDDEN() throws Throwable {
 
-        Update updateDto = Update.builder()
-                .id(postId)
-                .content("update")
-                .build();
 
         doThrow(new PostException(UPDATE_AUTHORIZATION_DENIED)).when(postService).updatePost(anyLong(), any(Update.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/posts/{postId}", postId)
-                        .content(gson.toJson(updateDto))
-                        .contentType(MediaType.APPLICATION_JSON)
-        );
+                MockMvcRequestBuilders.multipart("/posts/{postId}", postId)
+                        .file(new MockMultipartFile("update", "", MediaType.APPLICATION_JSON_VALUE, "{\"id\" : 1, \"content\":\"hello\"}".getBytes()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE));
 
         resultActions.andExpect(status().isForbidden());
 

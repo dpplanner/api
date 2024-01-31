@@ -88,10 +88,10 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping(value = "/{postId}")
+    @PostMapping(value = "/{postId}") // Post? Put? 해당 동작은 멱등하지 않는데.. 그럼 POST?
     public ResponseEntity<Response> updatePost(@AuthenticationPrincipal PrincipalDetails principal,
                                                @PathVariable final Long postId,
-                                               @RequestPart final Update update,
+                                               @Valid @RequestPart final Update update,
                                                @RequestPart(required = false) final List<MultipartFile> files) {
         Long clubMemberId = principal.getClubMemberId();
         update.setFiles(files);
