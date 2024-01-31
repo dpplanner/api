@@ -1,6 +1,5 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.controller.Reservation.ReservationController;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;

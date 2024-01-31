@@ -1,4 +1,4 @@
-package com.dp.dplanner.controller.Reservation;
+package com.dp.dplanner.controller;
 
 
 import com.dp.dplanner.security.PrincipalDetails;
