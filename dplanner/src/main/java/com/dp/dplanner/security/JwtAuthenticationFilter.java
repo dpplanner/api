@@ -20,7 +20,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         String accessToken = getToken((HttpServletRequest) request);
-        String allowedUri = "/|/login|/logout|/auth/.*";  // ToDo 컨트롤러 요청 중에 이것 말고 또 허용해야 하는 요청 파악하기
+        String allowedUri = "/|/login|/logout|/auth/.*|/swagger-ui/.*|/v3/.*";  // ToDo 컨트롤러 요청 중에 이것 말고 또 허용해야 하는 요청 파악하기
 
         if (accessToken != null && tokenProvider.verify(accessToken)) {
             Authentication authentication = tokenProvider.getAuthentication(accessToken);
