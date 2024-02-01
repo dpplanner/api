@@ -1,6 +1,6 @@
 spring:
   profiles:
-    include: oauth, rabbitMq
+    include: oauth, rabbitMQ
     active: production
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -18,6 +18,13 @@ spring:
         format_sql: true
         show-sql: true
         default_batch_fetch_size: 500
+# RabbitMQ 연결 정보
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
 
 cloud:
   aws:
@@ -35,3 +42,7 @@ cloud:
 logging.level:
   org.hibernate.SQL: debug
   org.hibernate.type: trace
+
+# Service Post 설정
+server:
+  port: 8080
