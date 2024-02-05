@@ -13,6 +13,7 @@ import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.service.ClubService;
 import com.nimbusds.jose.shaded.gson.Gson;
+import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,7 +140,6 @@ public class ClubControllerTest {
 
         //then
         resultActions.andExpect(status().isOk());
-
         List<ClubDto.Response> responses = getResponse(resultActions, List.class);
         assertThat(responses.size()).isEqualTo(responseNum);
     }
@@ -574,9 +575,9 @@ public class ClubControllerTest {
      * utility methods
      */
     private <T> T getResponse(ResultActions resultActions, Class<T> responseType) throws UnsupportedEncodingException {
-        return gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), responseType);
+        Type type = TypeToken.getParameterized(CommonResponse.class, responseType).getType();
+        return ((CommonResponse<T>) gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), type)).getData();
     }
-
 
 
 }

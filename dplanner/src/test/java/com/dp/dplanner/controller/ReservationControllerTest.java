@@ -6,12 +6,14 @@ import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.dto.ReservationDto.Request;
 import com.dp.dplanner.exception.*;
 import com.dp.dplanner.service.ReservationService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
+import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,9 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -170,7 +175,7 @@ public class ReservationControllerTest {
         resultActions.andExpect(status().isOk());
         verify(reservationService, times(1)).updateReservation(anyLong(), any(Update.class));
 
-        Response response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(), Response.class);
+        Response response = getResponse(resultActions, Response.class);
         assertThat(response.getReservationId()).isEqualTo(reservationId);
         assertThat(response.getStartDateTime()).isEqualTo(start);
         assertThat(response.getEndDateTime()).isEqualTo(end);
@@ -391,4 +396,13 @@ public class ReservationControllerTest {
                 Arguments.of(new ReservationException(UPDATE_AUTHORIZATION_DENIED),status().isForbidden())
         );
     }
+
+    /**
+     * utility methods
+     */
+    private <T> T getResponse(ResultActions resultActions, Class<T> responseType) throws UnsupportedEncodingException {
+        Type type = TypeToken.getParameterized(CommonResponse.class, responseType).getType();
+        return ((CommonResponse<T>) gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), type)).getData();
+    }
+
 }

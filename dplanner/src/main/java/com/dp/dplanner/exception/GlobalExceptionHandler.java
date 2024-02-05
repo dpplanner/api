@@ -1,5 +1,7 @@
 package com.dp.dplanner.exception;
 
+import com.dp.dplanner.dto.CommonResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
@@ -29,67 +31,67 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({PostException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final PostException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final PostException exception, HttpServletResponse response) {
         log.warn("PostException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({ClubMemberException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final ClubMemberException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final ClubMemberException exception, HttpServletResponse response) {
         log.warn("ClubMemberException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({MemberException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final MemberException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final MemberException exception, HttpServletResponse response) {
         log.warn("MemberException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({ClubException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final ClubException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final ClubException exception,HttpServletResponse response) {
         log.warn("ClubException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({CommentException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final CommentException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final CommentException exception,HttpServletResponse response) {
         log.warn("CommentException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({ResourceException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final ResourceException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final ResourceException exception,HttpServletResponse response) {
         log.warn("ResourceException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
     @ExceptionHandler({LockException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final LockException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final LockException exception,HttpServletResponse response) {
         log.warn("LockException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
     @ExceptionHandler({ReservationException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final ReservationException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final ReservationException exception,HttpServletResponse response) {
         log.warn("ReservationException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({InviteCodeException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final InviteCodeException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final InviteCodeException exception,HttpServletResponse response) {
         log.warn("InviteCodeException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({AuthenticationException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final AuthenticationException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final AuthenticationException exception,HttpServletResponse response) {
         log.warn("AuthenticationException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
 
     @ExceptionHandler({ClubAuthorityException.class})
-    public ResponseEntity<ErrorResponse> handleRestApiException(final ClubAuthorityException exception) {
+    public CommonResponse<ErrorResponse> handleRestApiException(final ClubAuthorityException exception,HttpServletResponse response) {
         log.warn("ClubAuthorityException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception);
+        return this.makeErrorResponseEntity(exception,response);
     }
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
@@ -98,10 +100,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return this.makeErrorResponseEntity(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private ResponseEntity<ErrorResponse> makeErrorResponseEntity(BaseException baseException) {
-        return ResponseEntity.status(baseException.getErrorResult().getHttpStatus())
-                .body(new ErrorResponse(baseException.getErrorResult().toString(),
-                        baseException.getErrorResult().getMessage()));
+    private CommonResponse<ErrorResponse> makeErrorResponseEntity(BaseException baseException, HttpServletResponse response) {
+        response.setStatus(baseException.getErrorResult().getHttpStatus().value());
+        return CommonResponse.createFail(baseException.getMessage());
     }
 
     private ResponseEntity<Object> makeErrorResponseEntity(String errorDescription, HttpStatus httpStatus) {

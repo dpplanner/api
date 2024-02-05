@@ -2,11 +2,13 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.service.ResourceService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
+import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +23,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static com.dp.dplanner.dto.ResourceDto.*;
@@ -103,7 +108,7 @@ public class ResourceControllerTest {
         resultActions.andExpect(status().isCreated());
 
 
-        Response response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(), Response.class);
+        Response response = getResponse(resultActions, Response.class);
         assertThat(response.getClubId()).isEqualTo(clubId);
         assertThat(response.getId()).isEqualTo(1L);
 
@@ -226,7 +231,7 @@ public class ResourceControllerTest {
         );
 
         resultActions.andExpect(status().isOk());
-        Response response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(), Response.class);
+        Response response = getResponse(resultActions, Response.class);
 
         assertThat(response.getId()).isEqualTo(resourceId);
         assertThat(response.getClubId()).isEqualTo(clubId);
@@ -290,5 +295,13 @@ public class ResourceControllerTest {
 
         verify(resourceService, times(1)).deleteResource(clubMemberId, resourceId);
 
+    }
+
+    /**
+     * utility methods
+     */
+    private <T> T getResponse(ResultActions resultActions, Class<T> responseType) throws UnsupportedEncodingException {
+        Type type = TypeToken.getParameterized(CommonResponse.class, responseType).getType();
+        return ((CommonResponse<T>) gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), type)).getData();
     }
 }

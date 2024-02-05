@@ -1,12 +1,14 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommentDto.Create;
+import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.service.CommentService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
+import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static com.dp.dplanner.dto.CommentDto.*;
@@ -155,7 +160,7 @@ public class CommentControllerTest {
 
         resultActions.andExpect(status().isOk());
 
-        Response response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(), Response.class);
+        Response response = getResponse(resultActions, Response.class);
 
         Assertions.assertThat(response.getContent()).isEqualTo("update");
 
@@ -225,7 +230,13 @@ public class CommentControllerTest {
 
     }
 
-
+    /**
+     * utility methods
+     */
+    private <T> T getResponse(ResultActions resultActions, Class<T> responseType) throws UnsupportedEncodingException {
+        Type type = TypeToken.getParameterized(CommonResponse.class, responseType).getType();
+        return ((CommonResponse<T>) gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), type)).getData();
+    }
 
 
 }

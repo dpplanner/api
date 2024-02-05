@@ -4,11 +4,13 @@ import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
 import com.dp.dplanner.exception.LockException;
 import com.dp.dplanner.service.LockService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
+import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static com.dp.dplanner.dto.LockDto.*;
@@ -112,7 +117,7 @@ public class LockControllerTest {
 
         resultActions.andExpect(status().isCreated());
 
-        Response response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(), Response.class);
+        Response response = getResponse(resultActions, Response.class);
 
         assertThat(response.getId()).isEqualTo(lockId);
         assertThat(response.getStartDateTime()).isEqualTo(start);
@@ -186,7 +191,7 @@ public class LockControllerTest {
 
         resultActions.andExpect(status().isOk());
 
-        Response response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(), Response.class);
+        Response response = getResponse(resultActions, Response.class);
         assertThat(response.getId()).isEqualTo(lockId);
         assertThat(response.getResourceId()).isEqualTo(resourceId);
         assertThat(response.getStartDateTime()).isEqualTo(updateDto.getStartDateTime());
@@ -294,8 +299,8 @@ public class LockControllerTest {
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/locks/resources/{resourceId}", resourceId)
-                        .param("start", "2023-08-25 12:00:00")
-                        .param("end","2023-08-25 14:00:00")
+                        .param("startDateTime", "2023-08-25 12:00:00")
+                        .param("endDateTime","2023-08-25 14:00:00")
 
         );
 
@@ -303,6 +308,14 @@ public class LockControllerTest {
 
         verify(lockService, times(1)).getLocks(anyLong(), anyLong(), any(Period.class));
 
+    }
+
+    /**
+     * utility methods
+     */
+    private <T> T getResponse(ResultActions resultActions, Class<T> responseType) throws UnsupportedEncodingException {
+        Type type = TypeToken.getParameterized(CommonResponse.class, responseType).getType();
+        return ((CommonResponse<T>) gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), type)).getData();
     }
 
 }

@@ -1,11 +1,11 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.domain.Period;
+import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.LockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,52 +23,50 @@ public class LockController {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @PostMapping(value = "/locks/resources/{resourceId}")
-    public ResponseEntity<Response> createLock(@AuthenticationPrincipal PrincipalDetails principal,
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommonResponse<Response> createLock(@AuthenticationPrincipal PrincipalDetails principal,
                                                @PathVariable Long resourceId,
                                                @RequestBody Create createDto) {
         Long clubMemberId = principal.getClubMemberId();
 
         Response response = lockService.createLock(clubMemberId, createDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(response);
+        return CommonResponse.createSuccess(response);
 
     }
 
-    @GetMapping(value = "/locks/resources/{resourceId}", params = {"start","end"})
-    public ResponseEntity<List<Response>> getLocks(@AuthenticationPrincipal PrincipalDetails principal,
-                                                   @RequestParam String start,
-                                                   @RequestParam String end,
+    @GetMapping(value = "/locks/resources/{resourceId}", params = {"startDateTime","endDateTime"})
+    public CommonResponse<List<Response>> getLocks(@AuthenticationPrincipal PrincipalDetails principal,
+                                                   @RequestParam String startDateTime,
+                                                   @RequestParam String endDateTime,
                                                    @PathVariable Long resourceId) {
 
         Long clubMemberId = principal.getClubMemberId();
 
         Request request = Request.builder()
-                .startDateTime(LocalDateTime.parse(start, formatter))
-                .endDateTime(LocalDateTime.parse(end, formatter))
+                .startDateTime(LocalDateTime.parse(startDateTime, formatter))
+                .endDateTime(LocalDateTime.parse(endDateTime, formatter))
                 .build();
 
         List<Response> response = lockService.getLocks(clubMemberId, resourceId, new Period(request.getStartDateTime(),request.getEndDateTime()));
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
     }
 
     @GetMapping(value = "/locks/{lockId}")
-    public ResponseEntity<Response> getLock(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse<Response> getLock(@AuthenticationPrincipal PrincipalDetails principal,
                                             @PathVariable Long lockId) {
 
         Long clubMemberId = principal.getClubMemberId();
 
         Response response = lockService.getLock(clubMemberId, lockId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
 
     }
 
     @PutMapping(value = "/locks/{lockId}")
-    public ResponseEntity<Response> updateLock(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse<Response> updateLock(@AuthenticationPrincipal PrincipalDetails principal,
                                                @PathVariable Long lockId,
                                                @RequestBody Update updateDto) {
 
@@ -76,18 +74,18 @@ public class LockController {
 
         Response response = lockService.updateLock(clubMemberId, updateDto);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
 
     }
 
     @DeleteMapping(value = "/locks/{lockId}")
-    public ResponseEntity deleteLock(@AuthenticationPrincipal PrincipalDetails principal,
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse deleteLock(@AuthenticationPrincipal PrincipalDetails principal,
                                      @PathVariable Long lockId) {
         Long clubMemberId = principal.getClubMemberId();
 
         lockService.deleteLock(clubMemberId, lockId);
 
-        return ResponseEntity.noContent().build();
+        return CommonResponse.createSuccessWithNoContent();
     }
 }

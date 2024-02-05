@@ -11,10 +11,7 @@ import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ReservationException;
 import com.dp.dplanner.exception.ResourceException;
-import com.dp.dplanner.repository.ClubMemberRepository;
-import com.dp.dplanner.repository.LockRepository;
-import com.dp.dplanner.repository.ReservationRepository;
-import com.dp.dplanner.repository.ResourceRepository;
+import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +34,7 @@ public class ReservationService {
     private final ResourceRepository resourceRepository;
     private final ReservationRepository reservationRepository;
     private final LockRepository lockRepository;
+    private final ReservationInviteeRepository reservationInviteeRepository;
 
 
     @Transactional
@@ -98,7 +96,7 @@ public class ReservationService {
         if (!isReservationOwner(clubMemberId, reservation)) {
             throw new ReservationException(UPDATE_AUTHORIZATION_DENIED);
         }
-
+        // 이미 확정된 상태에서, 예약 시간이 동일하다면 확정 상태 유지
         if (reservation.getStatus().equals(CONFIRMED) && reservation.getPeriod().equals(new Period(start, end))) {
                 reservation.updateNotChangeStatus(
                         updateDto.getTitle(),
@@ -185,6 +183,8 @@ public class ReservationService {
 
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
                 new Message(MessageConst.RESERVATION_REQUEST_APPROVED, MessageConst.RESERVATION_REQUEST_APPROVED, "redirectUrl"));
+
+        // TODO Reservation Invitee에게 메시지 보내기
     }
 
     @Transactional

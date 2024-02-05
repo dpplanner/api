@@ -1,11 +1,11 @@
 package com.dp.dplanner.controller;
 
 
+import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +32,7 @@ public class ReservationController {
 //    }
 
     @PatchMapping(value = "/reservations/{reservationId}/update", name = "update")
-    public ResponseEntity<Response> updateReservations(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse<Response> updateReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                                        @PathVariable Long reservationId,
                                                        @RequestBody Update updateDto) {
 
@@ -40,13 +40,13 @@ public class ReservationController {
 
         Response response = reservationService.updateReservation(clubMemberId, updateDto);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
 
     }
 
     @PutMapping(value = "/reservations/{reservationId}/cancel", name = "delete")
-    public ResponseEntity cancelReservations(@AuthenticationPrincipal PrincipalDetails principal,
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse cancelReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                              @PathVariable Long reservationId,
                                              @RequestBody Delete deleteDto) {
 
@@ -54,23 +54,25 @@ public class ReservationController {
 
         reservationService.cancelReservation(clubMemberId, deleteDto);
 
-        return ResponseEntity.noContent().build();
+        return CommonResponse.createSuccessWithNoContent();
     }
 
 
     @DeleteMapping(value = "/reservations")
-    public ResponseEntity deleteReservation(@AuthenticationPrincipal PrincipalDetails principal,
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse deleteReservation(@AuthenticationPrincipal PrincipalDetails principal,
                                             @RequestBody Delete deleteDto) {
 
         Long clubMemberId = principal.getClubMemberId();
 
         reservationService.deleteReservation(clubMemberId, deleteDto);
 
-        return ResponseEntity.noContent().build();
+        return CommonResponse.createSuccessWithNoContent();
     }
 
     @PutMapping(value = "/reservations", params = "confirm")
-    public ResponseEntity confirmReservations(@AuthenticationPrincipal PrincipalDetails principal,
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse confirmReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                               @RequestParam Boolean confirm,
                                               @RequestBody List<Request> requestDto) {
 
@@ -82,11 +84,11 @@ public class ReservationController {
             reservationService.rejectAllReservations(clubMemberId, requestDto);
         }
 
-        return ResponseEntity.noContent().build();
+        return CommonResponse.createSuccessWithNoContent();
     }
 
     @GetMapping(value = "/reservations/{reservationId}")
-    public ResponseEntity<Response> getReservation(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse<Response> getReservation(@AuthenticationPrincipal PrincipalDetails principal,
                                                    @PathVariable Long reservationId) {
 
         Long clubMemberId = principal.getClubMemberId();
@@ -94,14 +96,13 @@ public class ReservationController {
         Request requestDto = new Request(reservationId);
         Response response = reservationService.findReservationById(clubMemberId, requestDto);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
     }
 
 
     // todo status 따라 조회 부분 수정 및 통합 필요
     @GetMapping(value = "/reservations", params = {"resourceId", "start", "end"})
-    public ResponseEntity<List<Response>> getAllReservationsByPeriod(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse<List<Response>> getAllReservationsByPeriod(@AuthenticationPrincipal PrincipalDetails principal,
                                                                      @RequestParam Long resourceId,
                                                                      @RequestParam String start,
                                                                      @RequestParam String end) {
@@ -116,13 +117,13 @@ public class ReservationController {
 
         List<Response> response = reservationService.findAllReservationsByPeriod(clubMemberId, requestDto);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
+
     }
 
 
     @GetMapping(value = "/reservations", params = {"resourceId","status"})
-    public ResponseEntity<List<Response>> getAllReservationsNotConfirmed(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse<List<Response>> getAllReservationsNotConfirmed(@AuthenticationPrincipal PrincipalDetails principal,
                                                                          @RequestParam String status,
                                                                          @RequestParam Long resourceId) {
         Long clubMemberId = principal.getClubMemberId();
@@ -134,7 +135,6 @@ public class ReservationController {
 
         }
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return CommonResponse.createSuccess(response);
     }
 }
