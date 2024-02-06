@@ -93,6 +93,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("ClubAuthorityException occurs : {}", exception.getErrorResult().getMessage());
         return this.makeErrorResponseEntity(exception,response);
     }
+
+    @ExceptionHandler({MessageException.class})
+    public CommonResponse<ErrorResponse> handleRestApiException(final MessageException exception,HttpServletResponse response) {
+        log.warn("MessageException occurs : {}", exception.getErrorResult().getMessage());
+        return this.makeErrorResponseEntity(exception,response);
+    }
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleException(final Exception exception) {
         log.warn("Exception occur");

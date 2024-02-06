@@ -1,7 +1,6 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.message.PrivateMessage;
-import com.dp.dplanner.domain.message.PublicMessage;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
@@ -9,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @Transactional
@@ -25,11 +25,6 @@ public class MessageRepository {
         return privateMessage;
     }
 
-    public PublicMessage save(PublicMessage publicMessage) {
-        entityManager.persist(publicMessage);
-        return publicMessage;
-
-    }
 
     public List<PrivateMessage> findAll(Long clubMemberId) {
         LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
@@ -47,6 +42,10 @@ public class MessageRepository {
         return query.getResultList();
     }
 
+    public Optional<PrivateMessage> findById(Long messageId) {
+
+        return Optional.ofNullable(entityManager.find(PrivateMessage.class, messageId));
+    }
 
 
 }

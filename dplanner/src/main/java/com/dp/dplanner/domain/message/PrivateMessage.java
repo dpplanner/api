@@ -37,4 +37,8 @@ public class PrivateMessage extends BaseEntity {
         this.redirectUrl = redirectUrl;
         this.isRead = false;
     }
+
+    public void read() {
+        this.isRead = true;
+    }
 }
