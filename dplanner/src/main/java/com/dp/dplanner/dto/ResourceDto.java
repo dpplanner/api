@@ -18,12 +18,14 @@ public class ResourceDto {
         private String name;
         private String info;
         private Long clubId;
+        private boolean returnMessageRequired;
 
         public Resource toEntity(Club club) {
             return Resource.builder()
                     .name(name)
                     .info(info)
                     .club(club)
+                    .returnMessageRequired(returnMessageRequired)
                     .build();
         }
     }
@@ -36,6 +38,7 @@ public class ResourceDto {
         private Long id;
         private String name;
         private String info;
+        private boolean returnMessageRequired;
 
     }
 
@@ -49,6 +52,7 @@ public class ResourceDto {
         private Long id;
         private String name;
         private String info;
+        private boolean returnMessageRequired;
         private Long clubId;
 
         public static Response of(Resource resource) {
@@ -57,6 +61,7 @@ public class ResourceDto {
                     .name(resource.getName())
                     .info(resource.getInfo())
                     .clubId(resource.getClub().getId())
+                    .returnMessageRequired(resource.isReturnMessageRequired())
                     .build();
         }
 

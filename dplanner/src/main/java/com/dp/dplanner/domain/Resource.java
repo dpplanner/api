@@ -23,6 +23,7 @@ public class Resource extends BaseEntity{
 
     private String name;
     private String info;
+    private boolean returnMessageRequired = false;
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "club_id")
@@ -35,14 +36,16 @@ public class Resource extends BaseEntity{
     private List<Reservation> reservations = new ArrayList<>();
 
     @Builder
-    public Resource(String name, String info, Club club) {
+    public Resource(String name, String info, Club club,boolean returnMessageRequired) {
         this.name = name;
         this.info = info;
         this.club = club; // 양방향 연관관계는 아니기 때문에 연관관계 메서드 사용 X
+        this.returnMessageRequired = returnMessageRequired;
     }
 
-    public void update(String name, String info) {
+    public void update(String name, String info, boolean returnMessageRequired) {
         this.name = name;
         this.info = info;
+        this.returnMessageRequired = returnMessageRequired;
     }
 }
