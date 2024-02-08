@@ -38,4 +38,5 @@ out/
 
 ### Secret Configuration ###
 src/main/resources/application-oauth.yml
+src/main/resources/dplanner-c2b9a-firebase-adminsdk-drga5-5c3beeb1bb.json
 /coverageReport/**

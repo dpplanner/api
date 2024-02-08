@@ -23,6 +23,7 @@ public class Member {
     private String email;
     private String name;
     private String refreshToken;
+    private String fcmToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recent_club_id")
@@ -41,5 +42,9 @@ public class Member {
 
     public void updateRecentClub(Club club) {
         this.recentClub = club;
+    }
+
+    public void updateFCMToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }
