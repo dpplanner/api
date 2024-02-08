@@ -21,7 +21,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +37,8 @@ import static org.mockito.BDDMockito.*;
 @ExtendWith(MockitoExtension.class)
 public class ReservationServiceTests {
 
+    @Mock
+    Clock clock;
     @Mock
     ClubMemberRepository clubMemberRepository;
     @Mock
@@ -57,6 +61,7 @@ public class ReservationServiceTests {
 
     ClubMember otherClubMember;
     Resource otherClubResource;
+    LocalDateTime fixedNow;
 
     @BeforeEach
     void setUp() {
@@ -74,6 +79,7 @@ public class ReservationServiceTests {
                 .clubAuthorityTypes(List.of(ClubAuthorityType.SCHEDULE_ALL))
                 .build();
 
+        fixedNow = LocalDateTime.of(2023, 8, 5, 0, 0);
     }
 
 
@@ -87,6 +93,8 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
         given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
+        given(clock.getZone()).willReturn(ZoneId.systemDefault());
 
         //when
         ReservationDto.Create createDto = getCreateDto(
@@ -166,7 +174,30 @@ public class ReservationServiceTests {
     public void createReservationWhenLockedThenException() throws Exception {
         //given
         given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
 
+        //when
+        //then
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
+                .isEqualTo(RESERVATION_UNAVAILABLE);
+    }
+
+    @Test
+    @DisplayName("일반 사용자는 현재로부터 7주일 밖 시간은 예약할 수 없다. RESERVATION_UNAVAILABLE")
+    public void createReservation7DaysAwayThenException() throws Exception {
+        //given
+        given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        LocalDateTime daysBefore7 = LocalDateTime.of(2023, 7, 5, 0, 0);
+        given(clock.instant()).willReturn(daysBefore7.atZone(ZoneId.systemDefault()).toInstant());
+        given(clock.getZone()).willReturn(ZoneId.systemDefault());
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
@@ -184,7 +215,6 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(otherClubMember.getId())).willReturn(Optional.ofNullable(otherClubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(

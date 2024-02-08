@@ -7,6 +7,7 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.domain.message.MessageConst;
+import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ReservationException;
@@ -16,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,8 +37,9 @@ public class ReservationService {
     private final ResourceRepository resourceRepository;
     private final ReservationRepository reservationRepository;
     private final LockRepository lockRepository;
+    private final AttachmentService attachmentService;
     private final ReservationInviteeRepository reservationInviteeRepository;
-
+    private final Clock clock;
 
     @Transactional
     public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
@@ -43,8 +47,8 @@ public class ReservationService {
         Long resourceId = createDto.getResourceId();
         LocalDateTime startDateTime = createDto.getStartDateTime();
         LocalDateTime endDateTime = createDto.getEndDateTime();
-
-        if (!isReservable(resourceId, startDateTime, endDateTime)) {
+        // 이미 예약이 있는지 검사
+        if (reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)) {
             throw new ReservationException(RESERVATION_UNAVAILABLE);
         }
 
@@ -55,24 +59,49 @@ public class ReservationService {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
 
+
+        Reservation reservation;
+
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ResourceException(RESOURCE_NOT_FOUND));
 
-        if (!clubMember.isSameClub(resource)) {
-            throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
-        }
+        if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
 
-        Reservation reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
+            if (!clubMember.isSameClub(resource)) {
+                throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
+            }
 
-        confirmIfAuthorized(clubMember, reservation);
+            // 락 여부 조사
+            if (isLocked(resourceId, startDateTime, endDateTime)) {
+                throw new ReservationException(RESERVATION_UNAVAILABLE);
+            }
 
-        // todo Message 보내기
-        //  -> ClubMember 중 Schedule 권한 가지고 있는 멤버에게, 인앱 메시지
-        if (!reservation.getStatus().equals(CONFIRMED)){
-            List<Long> clubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
-                    .stream().map(ClubMember::getId).toList();
+            // 현재 시간과 예약 시작 시간 사이의 차이를 계산합니다.
+            LocalDateTime now = LocalDateTime.now(clock);
+            long secondsDifference = ChronoUnit.SECONDS.between(now, startDateTime);
+            if (secondsDifference > 604800) { // 7 * 24 * 60 * 60 초
+                throw new ReservationException(RESERVATION_UNAVAILABLE);
+            }
 
-            messageService.createPrivateMessage(clubMemberIds, new Message(MessageConst.RESERVATION_REQUEST, MessageConst.RESERVATION_REQUEST, "redirect_url"));
+            // 예약을 생성합니다.
+            reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
+
+            // 관리자에게 메시지를 전송합니다.
+            if (!reservation.getStatus().equals(CONFIRMED)) {
+                List<Long> adminClubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
+                        .stream().map(ClubMember::getId).toList();
+
+                messageService.createPrivateMessage(adminClubMemberIds, new Message(MessageConst.RESERVATION_REQUEST, MessageConst.RESERVATION_REQUEST, "redirect_url"));
+            }
+        } else {
+            // 사용자가 예약 관리 권한을 가진 경우
+            if (!clubMember.isSameClub(resource)) {
+                throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
+            }
+
+            // 예약을 생성하고 승인합니다.
+            reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
+            confirmIfAuthorized(clubMember, reservation);
         }
 
         return ReservationDto.Response.of(reservation);
