@@ -111,10 +111,6 @@ public class AttachmentRepositoryTest {
         assertThat(attachments.get(0)).isEqualTo(attachment2);
     }
     private Attachment createAttachment(String url) {
-        return Attachment.builder()
-                .url(url)
-                .post(post)
-                .type(FileType.IMAGE)
-                .build();
+        return new Attachment(post, url, FileType.IMAGE);
     }
 }

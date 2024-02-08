@@ -2,7 +2,6 @@ package com.dp.dplanner.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -21,14 +20,23 @@ public class Attachment extends BaseEntity {
     @JoinColumn(name = "post_id")
     Post post;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reservation_id")
+    Reservation reservation;
+
+
     @Column(unique = true)
     String url;
     @Enumerated(EnumType.STRING)
     FileType type;
 
-    @Builder
     public Attachment(Post post, String url, FileType type) {
         setPost(post);
+        this.url = url;
+        this.type = type;
+    }
+    public Attachment(Reservation reservation, String url, FileType type) {
+        setReservation(reservation);
         this.url = url;
         this.type = type;
     }
@@ -36,6 +44,11 @@ public class Attachment extends BaseEntity {
     private void setPost(Post post) {
         this.post = post;
         post.getAttachments().add(this);
+    }
+
+    private void setReservation(Reservation reservation) {
+        this.reservation = reservation;
+        reservation.getAttachments().add(this);
     }
 
 }

@@ -129,21 +129,9 @@ public class PostServiceIntegrationTest {
         Post post = Post.builder().clubMember(clubMember).club(club).content("test").build();
         entityManager.persist(post);
 
-        Attachment attachment = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("testUrl").build();
-
-        Attachment attachment2 = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("testUrl2").build();
-
-        Attachment attachment3 = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("testUrl3").build();
-
+        Attachment attachment = new Attachment(post, "testUrl", FileType.IMAGE);
+        Attachment attachment2 = new Attachment(post, "testUrl2", FileType.IMAGE);
+        Attachment attachment3 = new Attachment(post, "testUrl3", FileType.IMAGE);
         entityManager.persist(attachment);
         entityManager.persist(attachment2);
         entityManager.persist(attachment3);
@@ -179,20 +167,9 @@ public class PostServiceIntegrationTest {
         Post post = Post.builder().clubMember(clubMember).club(club).content("test").build();
         entityManager.persist(post);
 
-        Attachment attachment = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("testUrl").build();
-
-        Attachment attachment2 = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("testUrl2").build();
-
-        Attachment attachment3 = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("testUrl3").build();
+        Attachment attachment = new Attachment(post, "testUrl", FileType.IMAGE);
+        Attachment attachment2 = new Attachment(post, "testUrl2", FileType.IMAGE);
+        Attachment attachment3 = new Attachment(post, "testUrl3", FileType.IMAGE);
 
         entityManager.persist(attachment);
         entityManager.persist(attachment2);

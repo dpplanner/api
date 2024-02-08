@@ -3,10 +3,13 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.exception.FileException;
 import com.dp.dplanner.exception.PostException;
+import com.dp.dplanner.exception.ReservationException;
 import com.dp.dplanner.repository.AttachmentRepository;
 import com.dp.dplanner.repository.PostRepository;
+import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.service.upload.UploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 public class AttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final PostRepository postRepository;
+    private final ReservationRepository reservationRepository;
     private final UploadService uploadService;
 
     public List<Response> createAttachment(Create createDto) {
@@ -38,12 +42,31 @@ public class AttachmentService {
                     attachments.add(attachmentRepository.save(createDto.toEntity(post, url, fileType)));
                 }
             } catch (RuntimeException e) {
-                System.out.println(e.getMessage());
                 throw new FileException(FILE_EXCEPTION);
             }
         });
 
         return Response.ofList(attachments);
+    }
+
+    public void createAttachmentReservation(Create createDto) {
+
+        Reservation reservation= reservationRepository.findById(createDto.getReservationId()).orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+
+        List<Attachment> attachments = new ArrayList<>();
+        createDto.getFiles().stream().forEach(file -> {
+            try {
+                if (file.getSize() > 0) {
+                    String url = uploadService.uploadFile(file);
+                    FileType fileType = uploadService.getFileType(file.getContentType());
+                    attachments.add(attachmentRepository.save(createDto.toEntity(reservation, url, fileType)));
+                }
+            } catch (RuntimeException e) {
+                throw new FileException(FILE_EXCEPTION);
+            }
+        });
+
+
     }
 
 
@@ -54,6 +77,16 @@ public class AttachmentService {
         // TODO 각 attachment에 있는 url이 유효한가?
         return Response.ofList(attachments);
 
+    }
+
+    public List<Response> getAttachmentsByReservationId(Long reservationId) {
+
+//        List<Attachment> attachments = attachmentRepository.findAttachmentsByPostId(postId);
+
+        // TODO 각 attachment에 있는 url이 유효한가?
+//        return Response.ofList(attachments);
+
+        return null;
     }
 
     public void deleteAttachmentsByUrl(Post post, List<String> urls) {

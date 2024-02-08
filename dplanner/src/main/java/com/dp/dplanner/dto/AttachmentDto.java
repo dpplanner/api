@@ -3,6 +3,7 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.Reservation;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,16 +20,16 @@ public class AttachmentDto {
     @AllArgsConstructor
     public static class Create{
         Long postId;
+        Long reservationId;
         List<MultipartFile> files;
 
         public Attachment toEntity(Post post, String url, FileType type) {
+            return new Attachment(post, url, type);
 
-            return Attachment.builder()
-                    .post(post)
-                    .url(url)
-                    .type(type)
-                    .build();
+        }
 
+        public Attachment toEntity(Reservation reservation, String url, FileType type) {
+            return new Attachment(reservation, url, type);
         }
     }
 

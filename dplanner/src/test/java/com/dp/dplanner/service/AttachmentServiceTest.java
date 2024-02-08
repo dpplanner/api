@@ -80,17 +80,8 @@ public class AttachmentServiceTest {
     @Test
     public void AttachmentService_getAttachmentsByPostId_ReturnListResponseDto() {
 
-        Attachment attachment = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("url1")
-                .build();
-
-        Attachment attachment2 = Attachment.builder()
-                .post(post)
-                .type(FileType.IMAGE)
-                .url("url2")
-                .build();
+        Attachment attachment = new Attachment(post, "testUrl", FileType.IMAGE);
+        Attachment attachment2 = new Attachment(post, "testUrl2", FileType.IMAGE);
 
         when(attachmentRepository.findAttachmentsByPostId(postId)).thenReturn(Arrays.asList(attachment, attachment2));
 
