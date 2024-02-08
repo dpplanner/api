@@ -2,12 +2,14 @@ package com.dp.dplanner.controller;
 
 
 import com.dp.dplanner.dto.CommonResponse;
+import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,7 +33,7 @@ public class ReservationController {
 //                .body(response);
 //    }
 
-    @PatchMapping(value = "/reservations/{reservationId}/update", name = "update")
+    @PutMapping(value = "/reservations/{reservationId}/update", name = "update")
     public CommonResponse<Response> updateReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                                        @PathVariable Long reservationId,
                                                        @RequestBody Update updateDto) {
@@ -44,7 +46,7 @@ public class ReservationController {
 
     }
 
-    @PutMapping(value = "/reservations/{reservationId}/cancel", name = "delete")
+    @PatchMapping(value = "/reservations/{reservationId}/cancel", name = "delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public CommonResponse cancelReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                              @PathVariable Long reservationId,
@@ -55,6 +57,21 @@ public class ReservationController {
         reservationService.cancelReservation(clubMemberId, deleteDto);
 
         return CommonResponse.createSuccessWithNoContent();
+    }
+
+    @PostMapping(value = "/reservations/{reservationId}/return", name = "return")
+    public CommonResponse returnReservation(@AuthenticationPrincipal PrincipalDetails principal,
+                                            @PathVariable Long reservationId,
+                                            @RequestPart ReservationDto.Return returnDto,
+                                            @RequestPart(required = false) final List<MultipartFile> files) {
+
+        Long clubMemberId = principal.getClubMemberId();
+        returnDto.setReservationId(reservationId);
+        returnDto.setFiles(files);
+
+        Response response = reservationService.returnReservation(clubMemberId, returnDto);
+
+        return CommonResponse.createSuccess(response);
     }
 
 
@@ -70,7 +87,7 @@ public class ReservationController {
         return CommonResponse.createSuccessWithNoContent();
     }
 
-    @PutMapping(value = "/reservations", params = "confirm")
+    @PatchMapping(value = "/reservations", params = "confirm")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public CommonResponse confirmReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                               @RequestParam Boolean confirm,

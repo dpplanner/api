@@ -167,7 +167,7 @@ public class ReservationControllerTest {
         doReturn(Response.of(reservation)).when(reservationService).updateReservation(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.patch("/reservations/{reservationId}/update", reservationId)
+                MockMvcRequestBuilders.put("/reservations/{reservationId}/update", reservationId)
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
@@ -200,7 +200,7 @@ public class ReservationControllerTest {
         doThrow(exception).when(reservationService).updateReservation(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.patch("/reservations/{reservationId}/update", reservationId)
+                MockMvcRequestBuilders.put("/reservations/{reservationId}/update", reservationId)
                         .content(gson.toJson(updateDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
@@ -219,7 +219,7 @@ public class ReservationControllerTest {
 
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/reservations/{reservationId}/cancel", reservationId)
+                MockMvcRequestBuilders.patch("/reservations/{reservationId}/cancel", reservationId)
                         .content(gson.toJson(deleteDto))
                         .contentType(MediaType.APPLICATION_JSON)
         );
@@ -280,7 +280,7 @@ public class ReservationControllerTest {
 
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/reservations")
+                MockMvcRequestBuilders.patch("/reservations")
                         .param("confirm","true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(requestDto))
@@ -299,7 +299,7 @@ public class ReservationControllerTest {
 
 
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.put("/reservations")
+                MockMvcRequestBuilders.patch("/reservations")
                         .param("confirm","false")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(requestDto))

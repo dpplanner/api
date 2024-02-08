@@ -290,6 +290,34 @@ public class ReservationService {
         return ReservationDto.Response.ofList(reservations);
     }
 
+    @Transactional
+    public ReservationDto.Response returnReservation(Long clubMemberId, ReservationDto.Return returnDto) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        Reservation reservation = reservationRepository.findById(returnDto.getReservationId())
+                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+
+        if (!reservation.isReturned()) {
+            if (!clubMember.isSameClub(reservation)) {
+                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            }
+
+            if (returnDto.getFiles() != null && returnDto.getFiles().size() != 0) {
+                attachmentService.createAttachmentReservation(
+                        AttachmentDto.Create.builder()
+                                .reservationId(reservation.getId())
+                                .files(returnDto.getFiles())
+                                .build());
+            }
+            reservation.returned(returnDto.getReturnMessage());
+
+        }
+
+        return ReservationDto.Response.of(reservation);
+
+    }
+
 
     /**
      * utility methods

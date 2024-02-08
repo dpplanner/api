@@ -1197,8 +1197,44 @@ public class ReservationServiceTests {
     }
 
 
+    /**
+     * returnReservation
+     */
+    @Test
+    @DisplayName("예약을 반환하면 예약의 반환 상태가 true가 된다.")
+    public void testReturnReservation_Success() {
+        // given
+        Reservation reservation = createReservation(
+                resource,clubMember, getPeriod(20, 21), "title1", "usage1", false);
+        when(reservationRepository.findById(any())).thenReturn(Optional.ofNullable(reservation));
+        when(clubMemberRepository.findById(clubMember.getId())).thenReturn(Optional.ofNullable(clubMember));
+        ReservationDto.Return returnDto = ReservationDto.Return.builder().reservationId(reservation.getId()).build();
+
+        // 실행
+        reservationService.returnReservation(clubMember.getId(), returnDto);
+
+        // 검증
+        assertThat(reservation.isReturned()).isTrue(); // 예약이 반환 상태로 변경되었는지 확인
+    }
+
+    @Test
+    @DisplayName("반환 요청자와 예약 정보의 클럽이 다르면 DIFFERENT_CLUB_EXCEPTION")
+    public void testReturnReservation_DIFFERENT_CLUB_EXCEPTION() {
+        // given
+        Reservation reservation = createReservation(
+                otherClubResource,otherClubMember, getPeriod(20, 21), "title1", "usage1", false);
+        when(reservationRepository.findById(any())).thenReturn(Optional.ofNullable(reservation));
+        when(clubMemberRepository.findById(clubMember.getId())).thenReturn(Optional.ofNullable(clubMember));
+        ReservationDto.Return returnDto = ReservationDto.Return.builder().reservationId(reservation.getId()).build();
 
 
+        // 실행
+        // 검증
+        BaseException exception = assertThrows(ReservationException.class,
+                () -> reservationService.returnReservation(clubMember.getId(), returnDto));
+        assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
+                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
+    }
 
     /**
      * Argument capture method
