@@ -4,14 +4,12 @@ import com.dp.dplanner.domain.message.PrivateMessage;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-@Transactional
 public class MessageRepository {
 
     private final EntityManager entityManager;

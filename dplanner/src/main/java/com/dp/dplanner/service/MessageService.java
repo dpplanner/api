@@ -50,7 +50,6 @@ public class MessageService {
     public void createPrivateMessage(List<Long> clubMemberIds, Message message) {
 
         clubMemberIds.forEach(clubMemberId -> {
-
             ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(ErrorResult.CLUBMEMBER_NOT_FOUND));
 
             PrivateMessage privateMessage = PrivateMessage.builder()
