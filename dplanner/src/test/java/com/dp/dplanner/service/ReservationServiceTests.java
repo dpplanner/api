@@ -7,10 +7,7 @@ import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.*;
-import com.dp.dplanner.repository.ClubMemberRepository;
-import com.dp.dplanner.repository.LockRepository;
-import com.dp.dplanner.repository.ReservationRepository;
-import com.dp.dplanner.repository.ResourceRepository;
+import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +46,8 @@ public class ReservationServiceTests {
     ReservationRepository reservationRepository;
     @Mock
     MessageService messageService;
+    @Mock
+    ReservationInviteeRepository reservationInviteeRepository;
 
     @InjectMocks
     ReservationService reservationService;
@@ -111,6 +110,37 @@ public class ReservationServiceTests {
         assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(createDto.getStartDateTime());
         assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(createDto.getEndDateTime());
         assertThat(responseDto.getStatus()).as("예약은 CREATE 상태여야 한다").isEqualTo(CREATE.name());
+    }
+
+    @Test
+    @DisplayName("예약시 invitee를 초대할 수 있다.")
+    public void createReservationRequestWithInvitee() throws Exception {
+
+        Reservation reservation = Reservation.builder().clubMember(clubMember).resource(resource).period(new Period(getTime(20), getTime(21))).build();
+        ClubMember invitee = sameClubMember;
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(invitee.getId())).willReturn(Optional.ofNullable(invitee));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(reservationRepository.save(any(Reservation.class))).willReturn(reservation);
+        given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
+        given(clock.getZone()).willReturn(ZoneId.systemDefault());
+
+
+
+        //when
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+        createDto.setReservationInvitees(List.of(invitee.getId()));
+
+        ReservationDto.Response responseDto = reservationService.createReservation(clubMember.getId(), createDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(createDto.getStartDateTime());
+        assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(createDto.getEndDateTime());
+        assertThat(responseDto.getInvitees().size()).as("초대한 맴버가 존재해야 한다").isEqualTo(1);
+        assertThat(responseDto.getInvitees().get(0).getClubMemberId()).as("초대한 맴버의 아이디가 일치해야 한다").isEqualTo(invitee.getId());
     }
 
     @Test
@@ -310,6 +340,35 @@ public class ReservationServiceTests {
         assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(updateDto.getStartDateTime());
         assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(updateDto.getEndDateTime());
         assertThat(responseDto.getStatus()).as("예약은 UPDATE 상태여야 한다").isEqualTo(UPDATE.name());
+    }
+
+    @Test
+    @DisplayName("사용자는 invtiee 정보를 수정할 수 있다.")
+    public void updateReservationWithInviteeByUser() throws Exception {
+
+        //given
+        ClubMember invitee = sameClubMember;
+        Long reservationId = 1L;
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        reservation.clearInvitee();
+        reservation.getReservationInvitees().add(new ReservationInvitee(reservation, null)); // 기존 Reservation에 등록된 invitee 있다고 가정
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+        given(clubMemberRepository.findById(invitee.getId())).willReturn(Optional.ofNullable(invitee));
+        //when
+        ReservationDto.Update updateDto = getUpdateDto(
+                reservationId, resource.getId(), "newTitle", "newUsage",
+                false, getTime(20), getTime(22)
+        );
+        updateDto.setReservationInvitees(List.of(invitee.getId()));
+
+        ReservationDto.Response responseDto = reservationService.updateReservation(clubMember.getId(), updateDto);
+
+        //then
+        assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(updateDto.getStartDateTime());
+        assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(updateDto.getEndDateTime());
+        assertThat(responseDto.getInvitees().size()).as("예약 invitee가 update 요청과 일치해야 한다").isEqualTo(1);
+        verify(reservationInviteeRepository, times(1)).deleteReservationInviteeByReservationId(reservationId);
     }
 
     @Test
