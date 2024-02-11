@@ -40,6 +40,7 @@ public class MessageDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class ResponseList{
+        @Builder.Default
         private List<Response> responseList = new ArrayList<>();
         private Long notRead;
 

@@ -30,7 +30,8 @@ public class ReservationDto {
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
-        private List<Long> reservationInvitees;
+        @Builder.Default
+        private List<Long> reservationInvitees = new ArrayList<>();
 
         public Reservation toEntity(ClubMember clubMember, Resource resource) {
             return Reservation.builder()
@@ -55,7 +56,8 @@ public class ReservationDto {
         private String title;
         private String usage;
         private boolean sharing;
-        private List<Long> reservationInvitees;
+        @Builder.Default
+        private List<Long> reservationInvitees = new ArrayList<>();
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -118,7 +120,8 @@ public class ReservationDto {
         private boolean isReturned;
         private String returnMessage;
         private List<String> attachmentsUrl;
-        private List<ReservationInviteeDto> invitees;
+        @Builder.Default
+        private List<ReservationInviteeDto> invitees = new ArrayList<>();
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -167,6 +170,7 @@ public class ReservationDto {
     public static class Return {
         private Long reservationId;
         private String returnMessage;
+        @Builder.Default
         private List<MultipartFile> files = new ArrayList<>();
 
     }

@@ -106,8 +106,8 @@ public class PostDto {
         @NotNull
         private Long id;
         private String content;
+        @Builder.Default
         private List<String> attachmentUrl = new ArrayList<>();
-        private List<MultipartFile> files = new ArrayList<>();
-
+        private List<MultipartFile> files;
     }
 }
