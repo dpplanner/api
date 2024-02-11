@@ -23,16 +23,18 @@ public class Reservation extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = LAZY,cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "resource_id")
     private Resource resource;
 
-    @ManyToOne(fetch = LAZY,cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "club_member_id")
     private ClubMember clubMember;
 
     @OneToMany(mappedBy = "reservation",cascade = CascadeType.REMOVE)
     private List<Attachment> attachments = new ArrayList();
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.REMOVE)
+    private List<ReservationInvitee> reservationInvitees = new ArrayList<>();
 
     private String returnMessage;
 
@@ -92,5 +94,9 @@ public class Reservation extends BaseEntity{
     public void returned(String returnMessage) {
         this.returnMessage = returnMessage;
         this.isReturned = true;
+    }
+
+    public void clearInvitee() {
+        this.reservationInvitees = new ArrayList<>();
     }
 }

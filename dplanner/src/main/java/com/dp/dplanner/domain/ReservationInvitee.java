@@ -10,9 +10,14 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SequenceGenerator(
+        name = "reservation_invitee_seq",
+        allocationSize = 1
+)
 public class ReservationInvitee {
 
     @Id
+    @GeneratedValue(generator = "reservation_invitee_seq")
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -27,5 +32,6 @@ public class ReservationInvitee {
     public ReservationInvitee(Reservation reservation, ClubMember clubMember) {
         this.reservation = reservation;
         this.clubMember = clubMember;
+        reservation.getReservationInvitees().add(this);
     }
 }

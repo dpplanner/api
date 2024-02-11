@@ -30,6 +30,7 @@ public class ReservationDto {
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
+        private List<Long> reservationInvitees;
 
         public Reservation toEntity(ClubMember clubMember, Resource resource) {
             return Reservation.builder()
@@ -54,6 +55,7 @@ public class ReservationDto {
         private String title;
         private String usage;
         private boolean sharing;
+        private List<Long> reservationInvitees;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -116,6 +118,7 @@ public class ReservationDto {
         private boolean isReturned;
         private String returnMessage;
         private List<String> attachmentsUrl;
+        private List<ReservationInviteeDto> invitees;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -139,6 +142,14 @@ public class ReservationDto {
                     .isReturned(reservation.isReturned())
                     .returnMessage(reservation.getReturnMessage())
                     .attachmentsUrl(reservation.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.toList()))
+                    .invitees(
+                            reservation.getReservationInvitees().stream().map(
+                                    reservationInvitee ->
+                                            ReservationInviteeDto.builder()
+                                                    .clubMemberId(reservationInvitee.getClubMember().getId())
+                                                    .clubMemberName(reservationInvitee.getClubMember().getName())
+                                                    .build()).collect(Collectors.toList())
+                    )
                     .build();
         }
 
