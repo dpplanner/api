@@ -47,9 +47,8 @@ public class ReservationRabbitMQController {
             rabbitTemplate.convertAndSend(exchangeName, routingKey3, messageDto);
         }
 
-        return ResponseEntity.ok("Message sent to RabbitMQ!");
+        return ResponseEntity.noContent().build();
     }
-
 
 
 

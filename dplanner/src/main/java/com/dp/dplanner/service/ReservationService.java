@@ -3,10 +3,10 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;
+import com.dp.dplanner.domain.ReservationInvitee;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
-import com.dp.dplanner.domain.message.MessageConst;
 import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.ClubMemberException;
@@ -91,19 +91,19 @@ public class ReservationService {
                 List<Long> adminClubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
                         .stream().map(ClubMember::getId).toList();
 
-                messageService.createPrivateMessage(adminClubMemberIds, new Message(MessageConst.RESERVATION_REQUEST, MessageConst.RESERVATION_REQUEST, "redirect_url"));
+                messageService.createPrivateMessage(adminClubMemberIds, Message.requestMessage());
             }
+            createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
         } else {
             // 사용자가 예약 관리 권한을 가진 경우
             if (!clubMember.isSameClub(resource)) {
                 throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
             }
-
             // 예약을 생성하고 승인합니다.
             reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
+            createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
             confirmIfAuthorized(clubMember, reservation);
         }
-
         return ReservationDto.Response.of(reservation);
     }
 
@@ -134,6 +134,10 @@ public class ReservationService {
                         updateDto.getEndDateTime(),
                         updateDto.isSharing()
                 );
+            // 양방향 관계 reservation.invitees clear 필요
+            reservation.clearInvitee();
+            reservationInviteeRepository.deleteReservationInviteeByReservationId(reservationId);
+            createReservationInvitee(updateDto.getReservationInvitees(), reservation.getClubMember(), reservation);
         }else{
             reservation.update(
                     updateDto.getTitle(),
@@ -142,13 +146,15 @@ public class ReservationService {
                     updateDto.getEndDateTime(),
                     updateDto.isSharing()
             );
+            reservation.clearInvitee();
+            reservationInviteeRepository.deleteReservationInviteeByReservationId(reservationId);
+            createReservationInvitee(updateDto.getReservationInvitees(), reservation.getClubMember(), reservation);
         }
 
         confirmIfAuthorized(reservation.getClubMember(), reservation);
 
         return ReservationDto.Response.of(reservation);
     }
-
     @Transactional
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
 
@@ -183,9 +189,9 @@ public class ReservationService {
             throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
         }
 
+        messageService.createPrivateMessage(List.of(reservation.getClubMember().getId()),
+                Message.discardMessage());
         reservationRepository.delete(reservation);
-
-        messageService.createPrivateMessage(List.of(reservation.getClubMember().getId()), new Message(MessageConst.RESERVATION_DISCARD, MessageConst.RESERVATION_DISCARD, "redirectUrl"));
 
     }
 
@@ -211,7 +217,7 @@ public class ReservationService {
         confirmReservations(reservations, true);
 
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
-                new Message(MessageConst.RESERVATION_REQUEST_APPROVED, MessageConst.RESERVATION_REQUEST_APPROVED, "redirectUrl"));
+               Message.confirmMessage());
 
         // TODO Reservation Invitee에게 메시지 보내기
     }
@@ -237,7 +243,7 @@ public class ReservationService {
 
         confirmReservations(reservations, false);
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
-                new Message(MessageConst.RESERVATION_DISCARD, MessageConst.RESERVATION_DISCARD, "redirectUrl"));
+                Message.discardMessage());
         // todo 취소 사유 보내기
     }
 
@@ -353,10 +359,10 @@ public class ReservationService {
     }
 
     //ToDO refactor
+
     private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
         return reservation.getClubMember().getId().equals(clubMemberId);
     }
-
 
     private boolean isReservable(Long resourceId, LocalDateTime start, LocalDateTime end) {
         return !(reservationRepository.existsBetween(start, end, resourceId)
@@ -370,5 +376,31 @@ public class ReservationService {
 
     private boolean isLocked(Long resourceId, LocalDateTime start, LocalDateTime end) {
         return lockRepository.existsBetween(start, end, resourceId);
+    }
+
+    /**
+     *
+     * @param clubMemberIds : invitee ids
+     * @param inviter : inviter
+     * @param reservation : reservation
+     */
+    private void createReservationInvitee(List<Long> clubMemberIds, ClubMember inviter, Reservation reservation) {
+        List<ReservationInvitee> reservationInvitees = new ArrayList<>();
+        clubMemberIds
+                .forEach(inviteeId -> {
+                    System.out.println(inviteeId);
+                    Optional<ClubMember> inviteeOptional = clubMemberRepository.findById(inviteeId);
+                    if(inviteeOptional.isPresent()){
+                        ClubMember invitee = inviteeOptional.get();
+                        if(invitee.isSameClub(inviter)){
+                            ReservationInvitee reservationInvitee = ReservationInvitee.builder()
+                                    .clubMember(invitee)
+                                    .reservation(reservation)
+                                    .build();
+                            reservationInvitees.add(reservationInvitee);
+                        }
+                    }
+                });
+        reservationInviteeRepository.saveAll(reservationInvitees);
     }
 }

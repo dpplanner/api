@@ -1,6 +1,8 @@
 package com.dp.dplanner.rabbitMQ;
 
+import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.ReservationDto;
+import com.dp.dplanner.service.MessageService;
 import com.dp.dplanner.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,12 +10,15 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Profile("production")
 @Slf4j
 @RequiredArgsConstructor
 public class RabbitMQConsumer {
     private final ReservationService reservationService;
+    private final MessageService messageService;
 
     @RabbitListener(queues = {"${rabbitmq.queue.name.1}"})
     public void consumeQueue1(RabbitMQDto messageDto) {
@@ -24,11 +29,15 @@ public class RabbitMQConsumer {
                 .title(messageDto.getTitle())
                 .usage(messageDto.getUsage())
                 .sharing(messageDto.isSharing())
+                .reservationInvitees(messageDto.getReservationInvitees())
                 .build();
 
         try {
             reservationService.createReservation(messageDto.getClubMemberId(), createDto);
         } catch (Exception e) {
+            messageService.createPrivateMessage(
+                    List.of(messageDto.getClubMemberId()),
+                    Message.discardMessage());
             log.error("error : {} , param : {}", e.getMessage(), messageDto);
         }
     }
@@ -42,11 +51,15 @@ public class RabbitMQConsumer {
                 .title(messageDto.getTitle())
                 .usage(messageDto.getUsage())
                 .sharing(messageDto.isSharing())
+                .reservationInvitees(messageDto.getReservationInvitees())
                 .build();
 
         try {
             reservationService.createReservation(messageDto.getClubMemberId(), createDto);
         } catch (Exception e) {
+            messageService.createPrivateMessage(
+                    List.of(messageDto.getClubMemberId()),
+                    Message.discardMessage());
             log.error("error : {} , param : {}", e.getMessage(), messageDto);
         }
     }
@@ -60,11 +73,15 @@ public class RabbitMQConsumer {
                 .title(messageDto.getTitle())
                 .usage(messageDto.getUsage())
                 .sharing(messageDto.isSharing())
+                .reservationInvitees(messageDto.getReservationInvitees())
                 .build();
 
         try {
             reservationService.createReservation(messageDto.getClubMemberId(), createDto);
         } catch (Exception e) {
+            messageService.createPrivateMessage(
+                    List.of(messageDto.getClubMemberId()),
+                    Message.discardMessage());
             log.error("error : {} , param : {}", e.getMessage(), messageDto);
         }
 
