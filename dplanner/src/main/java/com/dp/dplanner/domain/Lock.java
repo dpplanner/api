@@ -24,10 +24,13 @@ public class Lock extends BaseEntity{
     @Embedded
     private Period period;
 
+    private String message;
+
     @Builder
-    public Lock(Resource resource, Period period) {
+    public Lock(Resource resource, Period period, String message) {
         setResource(resource);
         this.period = period;
+        this.message = message;
     }
 
     private void setResource(Resource resource) {
@@ -35,7 +38,8 @@ public class Lock extends BaseEntity{
         resource.getLocks().add(this);
     }
 
-    public void update(Period period) {
+    public void update(Period period, String message) {
         this.period = period;
+        this.message = message;
     }
 }

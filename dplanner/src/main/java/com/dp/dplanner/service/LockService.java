@@ -74,8 +74,7 @@ public class LockService {
         Resource resource = lock.getResource();
         checkIsSameClub(clubMemberId, resource);
 
-        lock.update(new Period(updateDto.getStartDateTime(), updateDto.getEndDateTime()));
-
+        lock.update(new Period(updateDto.getStartDateTime(), updateDto.getEndDateTime()), updateDto.getMessage());
 
         return Response.of(lock);
     }

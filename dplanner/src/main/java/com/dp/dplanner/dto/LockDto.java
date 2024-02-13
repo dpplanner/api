@@ -20,6 +20,7 @@ public class LockDto{
     public static class Create{
 
         Long resourceId;
+        String message;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -30,6 +31,7 @@ public class LockDto{
             return Lock.builder()
                     .resource(resource)
                     .period(new Period(startDateTime,endDateTime))
+                    .message(message)
                     .build();
         }
     }
@@ -42,6 +44,7 @@ public class LockDto{
 
         Long id;
         Long resourceId;
+        String message;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -53,6 +56,7 @@ public class LockDto{
                     .startDateTime(lock.getPeriod().getStartDateTime())
                     .endDateTime(lock.getPeriod().getEndDateTime())
                     .resourceId(lock.getResource().getId())
+                    .message(lock.getMessage())
                     .build();
         }
 
@@ -69,6 +73,7 @@ public class LockDto{
     public static class Update{
         Long id;
         Long resourceId;
+        String message;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
