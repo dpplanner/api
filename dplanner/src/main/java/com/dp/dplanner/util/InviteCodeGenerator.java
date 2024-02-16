@@ -2,6 +2,7 @@ package com.dp.dplanner.util;
 
 import com.dp.dplanner.domain.InviteCode;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.dto.InviteDto;
 import com.dp.dplanner.repository.InviteCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,20 +30,25 @@ public class InviteCodeGenerator {
         return inviteCode;
     }
 
-    public boolean verify(Long clubId, String code) {
+    public InviteDto verify(String code) {
 
         Optional<InviteCode> inviteCodeOptional = inviteCodeRepository.findInviteCodeByCode(code);
 
         if (inviteCodeOptional.isPresent()) {
             InviteCode inviteCode = inviteCodeOptional.get();
-            if (inviteCode.getClub().getId().equals(clubId)) {
-                if (inviteCode.getCreatedDate().plusDays(7).isAfter(LocalDateTime.now())) {
-                    return true;
-                }
+            if (inviteCode.getCreatedDate().plusDays(7).isAfter(LocalDateTime.now())) {
+                return InviteDto.builder()
+                        .verify(true)
+                        .inviteCode(code)
+                        .clubId(inviteCode.getClub().getId())
+                        .build();
             }
         }
 
-        return false;
+        return  InviteDto.builder()
+                .verify(false)
+                .inviteCode(code)
+                .build();
     }
 
 }

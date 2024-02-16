@@ -3,6 +3,7 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.InviteCode;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.dto.InviteDto;
 import com.dp.dplanner.repository.InviteCodeRepository;
 import com.dp.dplanner.util.InviteCodeGenerator;
 import org.junit.jupiter.api.DisplayName;
@@ -47,9 +48,9 @@ public class InviteCodeGeneratorTest {
 
         given(inviteCodeRepository.findInviteCodeByCode(code)).willReturn(Optional.of(inviteCode));
 
-        boolean verify = inviteCodeGenerator.verify(clubId, code);
+        InviteDto inviteDto = inviteCodeGenerator.verify(code);
 
-        assertThat(verify).isTrue();
+        assertThat(inviteDto.getVerify()).isTrue();
     }
 
     @Test
@@ -71,9 +72,10 @@ public class InviteCodeGeneratorTest {
 
         given(inviteCodeRepository.findInviteCodeByCode(code)).willReturn(Optional.of(inviteCode));
 
-        boolean verify = inviteCodeGenerator.verify(clubId, code);
+        InviteDto inviteDto = inviteCodeGenerator.verify(code);
 
-        assertThat(verify).isFalse();
+        assertThat(inviteDto.getVerify()).isFalse();
+
     }
 
     @Test
@@ -88,33 +90,10 @@ public class InviteCodeGeneratorTest {
         String invalidCode = "invalid";
         given(inviteCodeRepository.findInviteCodeByCode(invalidCode)).willReturn(Optional.empty());
 
-        boolean verify = inviteCodeGenerator.verify(clubId, invalidCode);
+        InviteDto inviteDto = inviteCodeGenerator.verify(invalidCode);
 
-        assertThat(verify).isFalse();
+        assertThat(inviteDto.getVerify()).isFalse();
     }
 
-    @Test
-    @DisplayName("code의 클럽과 주어진 clubid가 다르면 유효하지 않다")
-    public void testInviteCodeDifferentClub() {
 
-        Long invalidClubId = 2L;
-        Long clubId = 1L;
-        Club club = Club.builder().clubName("clubName")
-                .build();
-        ReflectionTestUtils.setField(club, "id", clubId);
-
-        String code = "valid_code";
-        InviteCode inviteCode = InviteCode.builder()
-                .code(code)
-                .club(club)
-                .build();
-
-        ReflectionTestUtils.setField(inviteCode,"createdDate", LocalDateTime.now().minusDays(5));
-
-        given(inviteCodeRepository.findInviteCodeByCode(code)).willReturn(Optional.of(inviteCode));
-
-        boolean verify = inviteCodeGenerator.verify(invalidClubId, code);
-
-        assertThat(verify).isFalse();
-    }
 }
