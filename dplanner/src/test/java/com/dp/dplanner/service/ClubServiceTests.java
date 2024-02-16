@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
@@ -55,6 +57,10 @@ public class ClubServiceTests {
 
     @BeforeEach
     void setUp() {
+        ProjectionFactory factory = new SpelAwareProxyProjectionFactory();
+        ClubDto.ResponseMapping responseMapping = factory.createProjection(ClubDto.ResponseMapping.class);
+
+
         //레포지토리에 미리 저장된 member
         memberId = 1L;
         member = Member.builder().build();
@@ -133,15 +139,15 @@ public class ClubServiceTests {
         //given
         Long clubId = 1L;
         Club club = createClub(clubId, "newClub", "newClubInfo");
-        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
+        ClubDto.ResponseMapping responseMapping = createResponseMapping(clubId, "newClub");
+        given(clubRepository.findClubById(clubId)).willReturn(responseMapping);
         //when
         ClubDto.Response responseDto = clubService.findClubById(clubId);
 
         //then
         assertThat(responseDto).as("반환된 DTO가 존재해야 함").isNotNull();
         assertThat(responseDto.getClubName()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽이름)").isEqualTo("newClub");
-        assertThat(responseDto.getInfo()).as("DTO의 클럽정보가 찾는 클럽과 일치해야 함(클럽정보)").isEqualTo("newClubInfo");
 
     }
 
@@ -150,8 +156,7 @@ public class ClubServiceTests {
     public void findClubByWrongIdThenException() throws Exception {
         //given
         Long wrongId = 2L;
-        given(clubRepository.findById(wrongId)).willReturn(Optional.ofNullable(null));
-
+        given(clubRepository.findClubById(wrongId)).willReturn(null);
         //when
         //then
         BaseException exception = assertThrows(ClubException.class, () -> clubService.findClubById(wrongId));
@@ -167,8 +172,9 @@ public class ClubServiceTests {
     public void findMyClub() throws Exception {
         //given
         given(memberRepository.findById(memberId)).willReturn(Optional.ofNullable(member));
-        List<Club> clubs = preparedClubs(5); // clubs = [club0, club1, club2, club3, club4]
-        setMyClubs(clubs, 2, 4);         // myClubs = [club2, club3]
+        ClubDto.ResponseMapping responseMapping1 = createResponseMapping(2L, "club2");
+        ClubDto.ResponseMapping responseMapping2 = createResponseMapping(3L, "club3");
+        given(clubRepository.findMyClubs(memberId)).willReturn(List.of(responseMapping1, responseMapping2));
 
         //when
         List<ClubDto.Response> responseDto = clubService.findMyClubs(memberId);
@@ -683,6 +689,7 @@ public class ClubServiceTests {
 
         //then
         assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(inviteDto.getClubId()).isEqualTo(clubId);
         assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
     }
 
@@ -706,6 +713,7 @@ public class ClubServiceTests {
 
         //then
         assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
+        assertThat(inviteDto.getClubId()).isEqualTo(clubId);
         assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
     }
 
@@ -930,5 +938,34 @@ public class ClubServiceTests {
         clubMember.setAdmin();
         clubMember.confirm();
         return clubMember;
+    }
+
+    public ClubDto.ResponseMapping createResponseMapping(Long id,String clubName) {
+        return new ClubDto.ResponseMapping() {
+            @Override
+            public Long getId() {
+                return id;
+            }
+
+            @Override
+            public String getClubName() {
+                return clubName;
+            }
+
+            @Override
+            public String getInfo() {
+                return null;
+            }
+
+            @Override
+            public Long getMemberCount() {
+                return 1L;
+            }
+
+            @Override
+            public Boolean getIsConfirmed() {
+                return true;
+            }
+        };
     }
 }

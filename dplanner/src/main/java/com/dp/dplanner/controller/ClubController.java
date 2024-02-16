@@ -73,11 +73,10 @@ public class ClubController {
         return CommonResponse.createSuccess(responseDto);
     }
 
-    @GetMapping(value = "/{clubId}/join", params = "code")
-    public CommonResponse<InviteDto> verifyCode(@PathVariable("clubId") Long clubId,
-                                                @RequestParam(name = "code") String code) {
+    @GetMapping(value = "/join", params = "code")
+    public CommonResponse<InviteDto> verifyCode(@RequestParam(name = "code") String code) {
 
-        InviteDto responseDto = clubService.verifyInviteCode(clubId, code);
+        InviteDto responseDto = clubService.verifyInviteCode(code);
 
         return CommonResponse.createSuccess(responseDto);
     }

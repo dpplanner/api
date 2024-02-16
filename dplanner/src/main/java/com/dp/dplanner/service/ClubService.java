@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubRole.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
@@ -54,7 +55,9 @@ public class ClubService {
         ClubMember clubMember = ClubMember.createAdmin(member, club);
         clubMemberRepository.save(clubMember);
 
-        return ClubDto.Response.of(club);
+        ClubDto.Response response = ClubDto.Response.of(club);
+
+        return response;
     }
 
     public List<ClubDto.Response> findClubs(Map<String, String> param) {
@@ -65,9 +68,10 @@ public class ClubService {
 
     public ClubDto.Response findClubById(Long clubId) {
 
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
-
+        ClubDto.ResponseMapping club = clubRepository.findClubById(clubId);
+        if (club == null) {
+            throw new ClubException(CLUB_NOT_FOUND);
+        }
         return ClubDto.Response.of(club);
     }
 
@@ -76,16 +80,13 @@ public class ClubService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
 
-        List<Club> clubs = member.getClubMembers().stream()
-                .map(ClubMember::getClub)
-                .toList();
+        List<ClubDto.ResponseMapping> myClubs = clubRepository.findMyClubs(member.getId());
+        return myClubs.stream().map(ClubDto.Response::of).collect(Collectors.toList());
 
-        return ClubDto.Response.ofList(clubs);
     }
 
     @Transactional
     public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto) {
-
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
@@ -157,16 +158,16 @@ public class ClubService {
 
         String inviteCode = inviteCodeGenerator.generateInviteCode(club);
 
-        return InviteDto.builder().inviteCode(inviteCode).build();
+        return InviteDto.builder()
+                .clubId(club.getId())
+                .inviteCode(inviteCode)
+                .build();
     }
 
-    public InviteDto verifyInviteCode(Long clubId, String inviteCode) {
+    public InviteDto verifyInviteCode(String inviteCode) {
 
-        boolean verify = inviteCodeGenerator.verify(clubId, inviteCode);
+        return inviteCodeGenerator.verify(inviteCode);
 
-        return InviteDto.builder()
-                .verify(verify)
-                .build();
     }
     @Transactional
     public ClubMemberDto.Response joinClub(Long memberId, ClubMemberDto.Create createDto) {
