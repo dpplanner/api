@@ -39,7 +39,7 @@ public class Comment extends BaseEntity{
 
     private String content;
 
-    @OneToMany(mappedBy = "parent" , cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "parent")
     private List<Comment> children = new ArrayList<>();
 
 

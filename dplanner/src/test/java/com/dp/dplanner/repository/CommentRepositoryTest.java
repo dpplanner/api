@@ -6,6 +6,7 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -141,6 +142,7 @@ public class CommentRepositoryTest {
     }
 
     @Test
+    @Disabled("부모가 삭제되도 자식은 삭제X")
     public void CommentRepository_delete_ReturnVoid() {
 
         Comment comment = commentRepository.save(createComment(clubMember, post, null));
