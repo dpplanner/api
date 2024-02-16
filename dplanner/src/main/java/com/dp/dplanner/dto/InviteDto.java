@@ -11,5 +11,5 @@ public class InviteDto {
 
     private Long clubId;
     private String inviteCode;
-
+    private boolean verify;
 }

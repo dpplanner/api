@@ -1,38 +1,48 @@
 package com.dp.dplanner.util;
 
-import com.dp.dplanner.exception.InviteCodeException;
+import com.dp.dplanner.domain.InviteCode;
+import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.repository.InviteCodeRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import static com.dp.dplanner.exception.ErrorResult.*;
-
+@Service
+@RequiredArgsConstructor
 public class InviteCodeGenerator {
-    public static String generateInviteCode(String seed) {
-        return encrypt(seed);
+
+    private final InviteCodeRepository inviteCodeRepository;
+
+    public String generateInviteCode(Club club) {
+
+        String inviteCode = UUID.randomUUID().toString();
+
+        inviteCodeRepository.save(
+                InviteCode.builder()
+                        .club(club)
+                        .code(inviteCode)
+                        .build()
+        );
+
+        return inviteCode;
     }
 
-    public static boolean verify(String seed, String inviteCode) {
-        return inviteCode.equals(encrypt(seed));
-    }
+    public boolean verify(Long clubId, String code) {
 
-    private static String encrypt(String text) {
-        MessageDigest md = null;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new InviteCodeException(INVITE_CODE_EXCEPTION);
+        Optional<InviteCode> inviteCodeOptional = inviteCodeRepository.findInviteCodeByCode(code);
+
+        if (inviteCodeOptional.isPresent()) {
+            InviteCode inviteCode = inviteCodeOptional.get();
+            if (inviteCode.getClub().getId().equals(clubId)) {
+                if (inviteCode.getCreatedDate().plusDays(7).isAfter(LocalDateTime.now())) {
+                    return true;
+                }
+            }
         }
-        md.update(text.getBytes());
 
-        return bytesToHex(md.digest());
+        return false;
     }
 
-    private static String bytesToHex(byte[] bytes) {
-        StringBuilder builder = new StringBuilder();
-        for (byte b : bytes) {
-            builder.append(String.format("%02x", b));
-        }
-        return builder.toString();
-    }
 }
