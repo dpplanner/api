@@ -112,7 +112,9 @@ public class ReservationDto {
 
         private Long reservationId;
         private Long clubMemberId;
+        private String clubMemberName;
         private Long resourceId;
+        private String resourceName;
         private String title;
         private String usage;
         private boolean sharing;
@@ -133,7 +135,9 @@ public class ReservationDto {
             return Response.builder()
                     .reservationId(reservation.getId())
                     .clubMemberId(reservation.getClubMember().getId())
+                    .clubMemberName(reservation.getClubMember().getName())
                     .resourceId(reservation.getResource().getId())
+                    .resourceName(reservation.getResource().getName())
                     .title(reservation.getTitle())
                     .usage(reservation.getUsage())
                     .sharing(reservation.isSharing())
