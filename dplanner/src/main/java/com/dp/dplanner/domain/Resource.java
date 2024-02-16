@@ -24,6 +24,11 @@ public class Resource extends BaseEntity{
     private String name;
     private String info;
     private boolean returnMessageRequired = false;
+    @Column(length = 1024)
+    private String notice;
+    @Enumerated(EnumType.STRING)
+    private ResourceType resourceType;
+
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "club_id")
@@ -36,16 +41,20 @@ public class Resource extends BaseEntity{
     private List<Reservation> reservations = new ArrayList<>();
 
     @Builder
-    public Resource(String name, String info, Club club,boolean returnMessageRequired) {
+    public Resource(String name, String info, Club club,boolean returnMessageRequired,String notice,ResourceType resourceType) {
         this.name = name;
         this.info = info;
         this.club = club; // 양방향 연관관계는 아니기 때문에 연관관계 메서드 사용 X
         this.returnMessageRequired = returnMessageRequired;
+        this.notice = notice;
+        this.resourceType = resourceType;
     }
 
-    public void update(String name, String info, boolean returnMessageRequired) {
+    public void update(String name, String info, boolean returnMessageRequired,String notice, ResourceType resourceType) {
         this.name = name;
         this.info = info;
         this.returnMessageRequired = returnMessageRequired;
+        this.notice = notice;
+        this.resourceType = resourceType;
     }
 }

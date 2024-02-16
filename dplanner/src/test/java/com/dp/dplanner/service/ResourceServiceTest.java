@@ -2,6 +2,7 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.BaseException;
@@ -73,6 +74,7 @@ public class ResourceServiceTest {
         resourceId = 1L;
         resource = Resource.builder()
                 .club(club)
+                .resourceType(ResourceType.PLACE)
                 .build();
         ReflectionTestUtils.setField(resource, "id", resourceId);
 
@@ -85,10 +87,10 @@ public class ResourceServiceTest {
                 .name("test")
                 .info("test")
                 .clubId(clubId)
+                .resourceType("PLACE")
                 .build();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-//        clubMember.setAdmin();
 
         when(clubRepository.findById(clubId)).thenReturn(Optional.ofNullable(club));
         when(resourceRepository.save(any(Resource.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -176,6 +178,7 @@ public class ResourceServiceTest {
                 .id(resourceId)
                 .name("updateName")
                 .info("updateInfo")
+                .resourceType("PLACE")
                 .build();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
@@ -240,11 +243,13 @@ public class ResourceServiceTest {
 
         Resource resource1 = Resource.builder()
                 .club(club)
+                .resourceType(ResourceType.PLACE)
                 .build();
         ReflectionTestUtils.setField(resource1, "id", 1L);
 
         Resource resource2 = Resource.builder()
                 .club(club)
+                .resourceType(ResourceType.PLACE)
                 .build();
         ReflectionTestUtils.setField(resource2, "id", 2L);
 

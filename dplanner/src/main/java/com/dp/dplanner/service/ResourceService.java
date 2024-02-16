@@ -2,6 +2,7 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.club.ClubRole;
@@ -11,6 +12,7 @@ import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ResourceService {
 
     private final ResourceRepository resourceRepository;
@@ -26,6 +29,7 @@ public class ResourceService {
     private final ClubRepository clubRepository;
 
     @RequiredAuthority(role = ClubRole.ADMIN)
+    @Transactional
     public Response createResource(Long clubMemberId, Create createDto) {
 
         Club club = getClub(createDto.getClubId());
@@ -37,17 +41,19 @@ public class ResourceService {
     }
 
     @RequiredAuthority(role = ClubRole.ADMIN)
+    @Transactional
     public Response updateResource(Long clubMemberId, Update updateDto) {
 
         Resource resource = getResource(updateDto.getId());
         checkIfSameClub(clubMemberId, resource.getClub().getId());
 
-        resource.update(updateDto.getName(), updateDto.getInfo(),updateDto.isReturnMessageRequired());
+        resource.update(updateDto.getName(), updateDto.getInfo(),updateDto.isReturnMessageRequired(),updateDto.getNotice(), ResourceType.valueOf(updateDto.getResourceType()));
 
         return Response.of(resource);
     }
 
     @RequiredAuthority(role = ClubRole.ADMIN)
+    @Transactional
     public void deleteResource(Long clubMemberId, Long resourceId) {
 
         Resource resource = getResource(resourceId);

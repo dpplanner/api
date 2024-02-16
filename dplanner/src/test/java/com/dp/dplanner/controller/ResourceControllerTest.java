@@ -1,6 +1,7 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
@@ -94,6 +95,7 @@ public class ResourceControllerTest {
                 .club(club)
                 .name("test")
                 .info("test")
+                .resourceType(ResourceType.PLACE)
                 .build();
         ReflectionTestUtils.setField(resource, "id", 1L);
 
@@ -219,6 +221,7 @@ public class ResourceControllerTest {
                 .club(club)
                 .name("update")
                 .info("update")
+                .resourceType(ResourceType.PLACE)
                 .build();
         ReflectionTestUtils.setField(resource, "id", 1L);
 
