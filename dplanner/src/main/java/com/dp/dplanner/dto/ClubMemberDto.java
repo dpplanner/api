@@ -7,9 +7,6 @@ import lombok.*;
 
 import java.util.List;
 
-@Getter
-@Setter
-@AllArgsConstructor
 public class ClubMemberDto {
 
     @Getter
@@ -28,6 +25,7 @@ public class ClubMemberDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Create {
         private Long clubId;
         private String name;

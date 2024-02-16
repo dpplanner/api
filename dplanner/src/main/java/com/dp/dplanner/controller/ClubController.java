@@ -51,16 +51,6 @@ public class ClubController {
         return CommonResponse.createSuccess(responseDto);
     }
 
-    @GetMapping("/{clubId}/invite")
-    public CommonResponse<InviteDto> inviteClub(@AuthenticationPrincipal PrincipalDetails principal,
-                                                @PathVariable("clubId") Long clubId) {
-
-        Long clubMemberId = principal.getClubMemberId();
-        InviteDto responseDto = clubService.inviteClub(clubMemberId,clubId);
-
-        return CommonResponse.createSuccess(responseDto);
-    }
-
     @PatchMapping("/{clubId}")
     public CommonResponse<ClubDto.Response> updateClubInfo(@AuthenticationPrincipal PrincipalDetails principal,
                                                            @PathVariable("clubId") Long clubId,
@@ -73,16 +63,39 @@ public class ClubController {
         return CommonResponse.createSuccess(responseDto);
     }
 
-    @PostMapping("/{clubId}/join")
+    @PostMapping("/{clubId}/invite") // 초대 코드 생성
+    public CommonResponse<InviteDto> inviteClub(@AuthenticationPrincipal PrincipalDetails principal,
+                                                @PathVariable("clubId") Long clubId) {
+
+        Long clubMemberId = principal.getClubMemberId();
+        InviteDto responseDto = clubService.inviteClub(clubMemberId,clubId);
+
+        return CommonResponse.createSuccess(responseDto);
+    }
+
+    @GetMapping(value = "/{clubId}/join", params = "code")
+    public CommonResponse<InviteDto> verifyCode(@PathVariable("clubId") Long clubId,
+                                                @RequestParam(name = "code") String code) {
+
+        InviteDto responseDto = clubService.verifyInviteCode(clubId, code);
+
+        return CommonResponse.createSuccess(responseDto);
+    }
+
+    // todo 바로 여기로 inviteCode 검증 안 하고 요청 보내면?
+    @PostMapping(value = "/{clubId}/join")
     @ResponseStatus(HttpStatus.CREATED)
     public CommonResponse<ClubMemberDto.Response> joinClub(@AuthenticationPrincipal PrincipalDetails principal,
                                                            @PathVariable("clubId") Long clubId,
-                                                           @RequestBody @Valid InviteDto inviteDto) {
-        Long memberId = principal.getId();
+                                                           @RequestBody ClubMemberDto.Create create) {
 
-        ClubMemberDto.Response responseDto = clubService.joinClub(memberId, inviteDto);
+        Long memberId = principal.getId();
+        create.setClubId(clubId);
+        ClubMemberDto.Response responseDto = clubService.joinClub(memberId, create);
+
         return CommonResponse.createSuccess(responseDto);
     }
+
 
     @PostMapping("/{clubId}/authorities")
     public CommonResponse<ClubAuthorityDto.Response> createManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,

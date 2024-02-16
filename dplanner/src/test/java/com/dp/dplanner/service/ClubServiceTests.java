@@ -43,6 +43,8 @@ public class ClubServiceTests {
     ClubAuthorityRepository clubAuthorityRepository;
     @Mock
     ClubMemberService clubMemberService;
+    @Mock
+    InviteCodeGenerator inviteCodeGenerator;
 
     @InjectMocks
     ClubService clubService;
@@ -675,13 +677,12 @@ public class ClubServiceTests {
         Long adminId = 1L;
         ClubMember admin = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
-
+        given(inviteCodeGenerator.generateInviteCode(club)).willReturn("uuid");
         //when
         InviteDto inviteDto = clubService.inviteClub(adminId, clubId);
 
         //then
         assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
-        assertThat(inviteDto.getClubId()).as("초대하는 클럽의 id가 일치해야 한다").isEqualTo(clubId);
         assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
     }
 
@@ -699,13 +700,12 @@ public class ClubServiceTests {
         manager.updateClubAuthority(clubAuthority);
 
         given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
-
+        given(inviteCodeGenerator.generateInviteCode(club)).willReturn("uuid");
         //when
         InviteDto inviteDto = clubService.inviteClub(managerId, clubId);
 
         //then
         assertThat(inviteDto).as("결과가 존재해야 한다").isNotNull();
-        assertThat(inviteDto.getClubId()).as("초대하는 클럽의 id가 일치해야 한다").isEqualTo(clubId);
         assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
     }
 
@@ -797,33 +797,19 @@ public class ClubServiceTests {
         ClubMemberDto.Response response = ClubMemberDto.Response.of(ClubMember.createClubMember(member, club));
         given(clubMemberService.create(eq(memberId), any(ClubMemberDto.Create.class))).willReturn(response);
 
-        String inviteCode = InviteCodeGenerator.generateInviteCode("club"); // seed = clubName
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder()
+                .clubId(clubId)
+                .name("name")
+                .info("info")
+                .build();
 
         //when
-        InviteDto inviteDto = new InviteDto(clubId, inviteCode);
-        ClubMemberDto.Response responseDto = clubService.joinClub(memberId, inviteDto);
+        ClubMemberDto.Response responseDto = clubService.joinClub(memberId, createDto);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
-        assertThat(responseDto.getName()).as("닉네임은 이름으로 초기회된다").isEqualTo(member.getName());
+//        assertThat(responseDto.getName()).as("닉네임은 이름으로 초기회된다").isEqualTo(member.getName());
         assertThat(member.getRecentClub()).as("클럽에 가입하면 최근 클럽이 갱신된다").isEqualTo(club);
-    }
-
-    @Test
-    @DisplayName("초대코드가 일치하지 않으면 WRONG_INVITE_CODE")
-    public void joinClubWithInvalidInviteCodeThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
-
-        String inviteCode = InviteCodeGenerator.generateInviteCode("invalidSeed");
-
-        //when
-        InviteDto inviteDto = new InviteDto(clubId, inviteCode);
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.joinClub(memberId, inviteDto));
-        assertThat(exception.getErrorResult()).as("초대코드가 유효하지 않으면 WRONG_INVITE_CODE 예외를 던진다")
-                .isEqualTo(WRONG_INVITE_CODE);
     }
 
     @Test
@@ -835,8 +821,13 @@ public class ClubServiceTests {
 
         //when
         //then
-        InviteDto inviteDto = new InviteDto(clubId, "inviteCode");
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.joinClub(memberId, inviteDto));
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder()
+                .clubId(clubId)
+                .name("name")
+                .info("info")
+                .build();
+
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.joinClub(memberId, createDto));
         assertThat(exception.getErrorResult()).as("클럽 정보가 없으면 CLUB_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUB_NOT_FOUND);
     }
@@ -851,12 +842,15 @@ public class ClubServiceTests {
         Club club = createClub(clubId, "club", null);
         given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
-        String inviteCode = InviteCodeGenerator.generateInviteCode("club"); // seed = clubName
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder()
+                .clubId(clubId)
+                .name("name")
+                .info("info")
+                .build();
 
         //when
         //then
-        InviteDto inviteDto = new InviteDto(clubId, inviteCode);
-        BaseException exception = assertThrows(MemberException.class, () -> clubService.joinClub(memberId, inviteDto));
+        BaseException exception = assertThrows(MemberException.class, () -> clubService.joinClub(memberId, createDto));
         assertThat(exception.getErrorResult()).as("회원 정보가 없으면 MEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(MEMBER_NOT_FOUND);
     }

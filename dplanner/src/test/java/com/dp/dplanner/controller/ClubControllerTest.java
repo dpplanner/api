@@ -282,28 +282,28 @@ public class ClubControllerTest {
 
 
     /**
-     * GET /clubs/{clubId}/invite
+     * POST /clubs/{clubId}/invite
      */
     @Test
-    @DisplayName("클럽 초대코드 조회시 200 OK")
+    @DisplayName("클럽 초대코드 생성시 200 OK")
     public void inviteClub_OK() throws Throwable {
         //given
         Long clubId = 1L;
         given(clubService.inviteClub(any(Long.class), any(Long.class)))
                 .willReturn(InviteDto.builder()
-                        .clubId(clubId)
+//                        .clubId(clubId)
                         .inviteCode("inviteCode")
                         .build());
 
         //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/invite", clubId));
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/invite", clubId));
 
         //then
         resultActions.andExpect(status().isOk());
 
         InviteDto response = getResponse(resultActions, InviteDto.class);
 
-        assertThat(response.getClubId()).isNotNull();
+//        assertThat(response.getClubId()).isNotNull();
         assertThat(response.getInviteCode()).isEqualTo("inviteCode");
     }
 
@@ -315,7 +315,7 @@ public class ClubControllerTest {
         given(clubService.inviteClub(any(Long.class),any(Long.class))).willThrow(new ClubMemberException(AUTHORIZATION_DENIED));
 
         //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/invite", clubId));
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/invite", clubId));
 
         //then
         resultActions.andExpect(status().isForbidden());
@@ -329,7 +329,7 @@ public class ClubControllerTest {
         given(clubService.inviteClub(any(Long.class),any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
         //when
-        ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/invite", clubId));
+        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/invite", clubId));
 
         //then
         resultActions.andExpect(status().isNotFound());
@@ -350,12 +350,12 @@ public class ClubControllerTest {
 
         ClubMemberDto.Response responseDto = ClubMemberDto.Response.of(clubMember);
         responseDto.setId(clubMemberId);
-        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willReturn(responseDto);
+        given(clubService.joinClub(any(Long.class), any(ClubMemberDto.Create.class))).willReturn(responseDto);
 
         //when
-        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder().clubId(clubId).name("name").info("info").build();
         ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
-                .content(gson.toJson(inviteDto))
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON)
         );
 
@@ -371,12 +371,12 @@ public class ClubControllerTest {
     public void joinClub_NOTFOUND() throws Exception {
         //given
         Long clubId = 1L;
-        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(CLUB_NOT_FOUND));
+        given(clubService.joinClub(any(Long.class), any(ClubMemberDto.Create.class))).willThrow(new ClubException(CLUB_NOT_FOUND));
 
         //when
-        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder().clubId(clubId).name("name").info("info").build();
         ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
-                .content(gson.toJson(inviteDto))
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON)
         );
 
@@ -389,12 +389,11 @@ public class ClubControllerTest {
     public void joinClub_BADREQUEST() throws Exception {
         //given
         Long clubId = 1L;
-        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubException(WRONG_INVITE_CODE));
+        given(clubService.joinClub(any(Long.class), any(ClubMemberDto.Create.class))).willThrow(new ClubException(WRONG_INVITE_CODE));
 
         //when
-        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
-        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
-                .content(gson.toJson(inviteDto))
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder().clubId(clubId).name("name").info("info").build();        ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON)
         );
 
@@ -407,18 +406,19 @@ public class ClubControllerTest {
     public void joinClub_BADREQUEST2() throws Exception {
         //given
         Long clubId = 1L;
-        given(clubService.joinClub(any(Long.class), any(InviteDto.class))).willThrow(new ClubMemberException(CLUBMEMBER_ALREADY_EXISTS));
+        given(clubService.joinClub(any(Long.class), any(ClubMemberDto.Create.class))).willThrow(new ClubMemberException(CLUBMEMBER_ALREADY_EXISTS));
 
         //when
-        InviteDto inviteDto = InviteDto.builder().clubId(clubId).inviteCode("inviteCode").build();
+        ClubMemberDto.Create createDto = ClubMemberDto.Create.builder().clubId(clubId).name("name").info("info").build();
         ResultActions resultActions = mockMvc.perform(post("/clubs/{clubId}/join", clubId)
-                .content(gson.toJson(inviteDto))
+                .content(gson.toJson(createDto))
                 .contentType(APPLICATION_JSON)
         );
 
         //then
         resultActions.andExpect(status().isBadRequest());
     }
+
 
 
     /**

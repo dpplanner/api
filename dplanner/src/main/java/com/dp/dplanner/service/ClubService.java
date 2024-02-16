@@ -15,6 +15,7 @@ import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.util.InviteCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
-import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
-import static com.dp.dplanner.util.InviteCodeGenerator.*;
 
 @Log4j2
 @Service
@@ -34,11 +33,11 @@ import static com.dp.dplanner.util.InviteCodeGenerator.*;
 @RequiredArgsConstructor
 public class ClubService {
     private final MemberRepository memberRepository;
-
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubAuthorityRepository clubAuthorityRepository;
     private final ClubMemberService clubMemberService;
+    private final InviteCodeGenerator inviteCodeGenerator;
 
 
     @Transactional
@@ -144,46 +143,43 @@ public class ClubService {
         return ClubAuthorityDto.Response.ofList(clubMember.getClub().getId(),clubAuthorities);
     }
 
-    @RequiredAuthority(authority = MEMBER_ALL)
-    public InviteDto inviteClub(Long managerId,Long clubId) {
+    @Transactional
+    @RequiredAuthority(role = ADMIN)
+    public InviteDto inviteClub(Long adminId,Long clubId) {
 
-        ClubMember manager = clubMemberRepository.findById(managerId)
+        ClubMember admin = clubMemberRepository.findById(adminId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        if (!manager.isSameClub(clubId)) {
+        if (!admin.isSameClub(clubId)) {
             throw new ClubException(DIFFERENT_CLUB_EXCEPTION);
         }
 
-        Club club = manager.getClub();
-        String seed = club.getClubName();
+        Club club = admin.getClub();
 
-        String inviteCode = generateInviteCode(seed);
+        String inviteCode = inviteCodeGenerator.generateInviteCode(club);
 
-        return new InviteDto(club.getId(), inviteCode);
+        return InviteDto.builder().inviteCode(inviteCode).build();
     }
 
-    //TODO 클럽 가입 방법 정리(클럽 회원 생성 기능을 clubMemberService에 위임하고 싶은데 name, info등의 정보는 어떻게 처리할지?)
+    public InviteDto verifyInviteCode(Long clubId, String inviteCode) {
 
+        boolean verify = inviteCodeGenerator.verify(clubId, inviteCode);
+
+        return InviteDto.builder()
+                .verify(verify)
+                .build();
+    }
     @Transactional
-    public ClubMemberDto.Response joinClub(Long memberId, InviteDto inviteDto) {
+    public ClubMemberDto.Response joinClub(Long memberId, ClubMemberDto.Create createDto) {
 
-        Club club = clubRepository.findById(inviteDto.getClubId())
+        Club club = clubRepository.findById(createDto.getClubId())
                 .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
-        String seed = club.getClubName();
 
-        if (verify(seed, inviteDto.getInviteCode())) {
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() ->new MemberException(MEMBER_NOT_FOUND));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() ->new MemberException(MEMBER_NOT_FOUND));
 
-            ClubMemberDto.Create createDto = ClubMemberDto.Create.builder()
-                    .clubId(inviteDto.getClubId())
-                    .name(member.getName())
-                    .build();
-            member.updateRecentClub(club);
+        member.updateRecentClub(club);
 
-            return clubMemberService.create(memberId, createDto);
-        } else {
-            throw new ClubException(WRONG_INVITE_CODE);
-        }
+        return clubMemberService.create(memberId, createDto);
     }
 
 
