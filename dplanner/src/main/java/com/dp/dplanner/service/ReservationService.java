@@ -165,9 +165,7 @@ public class ReservationService {
             throw new ReservationException(DELETE_AUTHORIZATION_DENIED);
         }
 
-
-    // todo cancel 상태에서 한번 더 요청 보냉면 삭제됨. -> CANCEL 상태에도 그냥 그대로 CANCEL 추가
-        if (reservation.isConfirmed() || reservation.getStatus().equals(CANCEL)) {
+        if (reservation.isConfirmed() || reservation.getStatus().equals(CANCELED)) {
             reservation.cancel();
         }
         else {
