@@ -9,6 +9,7 @@ import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -109,7 +110,7 @@ public class ReservationServiceTests {
         assertThat(responseDto.isSharing()).as("공유 여부가 일치해야 한다").isEqualTo(createDto.isSharing());
         assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(createDto.getStartDateTime());
         assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(createDto.getEndDateTime());
-        assertThat(responseDto.getStatus()).as("예약은 CREATE 상태여야 한다").isEqualTo(CREATE.name());
+        assertThat(responseDto.getStatus()).as("예약은 REQUEST 상태여야 한다").isEqualTo(REQUEST.name());
     }
 
     @Test
@@ -339,7 +340,7 @@ public class ReservationServiceTests {
         assertThat(responseDto.isSharing()).as("공유 여부가 일치해야 한다").isEqualTo(updateDto.isSharing());
         assertThat(responseDto.getStartDateTime()).as("예약 시작 시간이 일치해야 한다").isEqualTo(updateDto.getStartDateTime());
         assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(updateDto.getEndDateTime());
-        assertThat(responseDto.getStatus()).as("예약은 UPDATE 상태여야 한다").isEqualTo(UPDATE.name());
+        assertThat(responseDto.getStatus()).as("예약은 REQUEST 상태여야 한다").isEqualTo(REQUEST.name());
     }
 
     @Test
@@ -389,7 +390,7 @@ public class ReservationServiceTests {
         ReservationDto.Response responseDto = reservationService.updateReservation(clubMember.getId(), updateDto);
 
         //then
-        assertThat(responseDto.getStatus()).as("예약은 UPDATE 상태여야 한다").isEqualTo(UPDATE.name());
+        assertThat(responseDto.getStatus()).as("예약은 REQUEST 상태여야 한다").isEqualTo(REQUEST.name());
     }
 
     @Test
@@ -548,7 +549,8 @@ public class ReservationServiceTests {
      * cancelReservation
      */
     @Test
-    @DisplayName("일반 회원은 승인되지 않은 예약을 즉시 삭제할 수 있다.")
+    @DisplayName("승인되지 않은 예약을 취소하면 즉시 삭제할 수 있다.")
+//    @DisplayName("일반 회원은 승인되지 않은 예약을 즉시 삭제할 수 있다.")
     public void cancelNotConfirmedReservationByUser() throws Exception {
         //given
         Long reservationId = 1L;
@@ -565,7 +567,27 @@ public class ReservationServiceTests {
     }
 
     @Test
+    @DisplayName("승인되지 않은 예약도 취소하면 즉시 삭제할 수 있다.")
+//    @DisplayName("일반 회원은 승인되지 않은 예약을 즉시 삭제할 수 있다.")
+    public void cancelConfirmedReservationByUser() throws Exception {
+        //given
+        Long reservationId = 1L;
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        reservation.confirm();
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
+        reservationService.cancelReservation(clubMember.getId(), deleteDto);
+
+        //then
+        Reservation deletedReservation = captureFromMockRepositoryWhenDelete();
+        assertThat(deletedReservation).as("삭제된 예약은 실제 예약과 일치해야 한다").isEqualTo(reservation);
+    }
+
+    @Test
     @DisplayName("일반 회원이 승인된 예약을 취소하는 경우 승인 대기상태가 된다.")
+    @Disabled("CANCEL 상태 사용 안 함.")
     public void cancelConfirmedReservationByUserThenCANCEL() throws Exception {
         //given
         Long reservationId = 1L;
@@ -578,7 +600,7 @@ public class ReservationServiceTests {
         reservationService.cancelReservation(clubMember.getId(), deleteDto);
 
         //then
-        assertThat(reservation.getStatus()).as("예약은 CANCEL 상태여야 한다").isEqualTo(CANCEL);
+//        assertThat(reservation.getStatus()).as("예약은 CANCEL 상태여야 한다").isEqualTo(CANCEL);
     }
     
     @Test
@@ -753,11 +775,11 @@ public class ReservationServiceTests {
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
 
         Reservation createReservation = createDefaultReservation(resource, sameClubMember);
-        assert createReservation.getStatus() == CREATE;
+        assert createReservation.getStatus() == REQUEST;
 
         Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
         updateDefaultReservation(updateReservation);
-        assert updateReservation.getStatus() == UPDATE;
+        assert updateReservation.getStatus() == REQUEST;
 
         given(reservationRepository.findAllById(reservationIds))
                 .willReturn(List.of(createReservation, updateReservation));
@@ -782,11 +804,11 @@ public class ReservationServiceTests {
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
 
         Reservation createReservation = createDefaultReservation(resource, sameClubMember);
-        assert createReservation.getStatus() == CREATE;
+        assert createReservation.getStatus() == REQUEST;
 
         Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
         updateDefaultReservation(updateReservation);
-        assert updateReservation.getStatus() == UPDATE;
+        assert updateReservation.getStatus() == REQUEST;
 
         given(reservationRepository.findAllById(reservationIds))
                 .willReturn(List.of(createReservation, updateReservation));
@@ -802,6 +824,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("예약 취소 요청을 승인하는 경우 예약이 삭제된다")
+    @Disabled("CANCEL 상태 삭제")
     public void confirmAllCanceledReservationThenDelete() throws Exception {
         //given
         clubMember.setAdmin();
@@ -809,12 +832,12 @@ public class ReservationServiceTests {
 
         Long canceledReservationId = 1L;
         Reservation canceledReservation = createDefaultReservation(resource, sameClubMember);
-        canceledReservation.cancel();
+//        canceledReservation.cancel();
 
         given(reservationRepository.findAllById(List.of(canceledReservationId)))
                 .willReturn(List.of(canceledReservation));
 
-        assert canceledReservation.getStatus() == CANCEL;
+//        assert canceledReservation.getStatus() == CANCEL;
 
         //when
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(canceledReservationId));
@@ -879,11 +902,11 @@ public class ReservationServiceTests {
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
 
         Reservation createReservation = createDefaultReservation(resource, sameClubMember);
-        assert createReservation.getStatus() == CREATE;
+        assert createReservation.getStatus() == REQUEST;
 
         Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
         updateDefaultReservation(updateReservation);
-        assert updateReservation.getStatus() == UPDATE;
+        assert updateReservation.getStatus() == REQUEST;
 
         given(reservationRepository.findAllById(reservationIds))
                 .willReturn(List.of(createReservation, updateReservation));
@@ -893,9 +916,11 @@ public class ReservationServiceTests {
         reservationService.rejectAllReservations(clubMember.getId(), requestDto);
 
         //then
-        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
-        assertThat(deletedReservations).as("거절된 예약 요청은 삭제되어야 한다")
-                .containsExactlyInAnyOrder(createReservation, updateReservation);
+        assertThat(createReservation.getStatus()).isEqualTo(REJECTED).as("거절된 예약은 REJECTED 상태여야 한다");
+        assertThat(updateReservation.getStatus()).isEqualTo(REJECTED).as("거절된 예약은 REJECTED 상태여야 한다");
+//        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
+//        assertThat(deletedReservations).as("거절된 예약 요청은 삭제되어야 한다")
+//                .containsExactlyInAnyOrder(createReservation, updateReservation);
     }
 
     @Test
@@ -909,11 +934,11 @@ public class ReservationServiceTests {
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
 
         Reservation createReservation = createDefaultReservation(resource, sameClubMember);
-        assert createReservation.getStatus() == CREATE;
+        assert createReservation.getStatus() == REQUEST;
 
         Reservation updateReservation = createDefaultReservation(resource, sameClubMember);
         updateDefaultReservation(updateReservation);
-        assert updateReservation.getStatus() == UPDATE;
+        assert updateReservation.getStatus() == REQUEST;
 
         given(reservationRepository.findAllById(reservationIds))
                 .willReturn(List.of(createReservation, updateReservation));
@@ -923,13 +948,16 @@ public class ReservationServiceTests {
         reservationService.rejectAllReservations(clubMember.getId(), requestDto);
 
         //then
-        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
-        assertThat(deletedReservations).as("거절된 예약 요청은 삭제되어야 한다")
-                .containsExactlyInAnyOrder(createReservation, updateReservation);
+        assertThat(createReservation.getStatus()).isEqualTo(REJECTED);
+        assertThat(updateReservation.getStatus()).isEqualTo(REJECTED);
+//        List<Reservation> deletedReservations = captureFromMockRepositoryWhenDeleteAll();
+//        assertThat(deletedReservations).as("거절된 예약 요청은 삭제되어야 한다")
+//                .containsExactlyInAnyOrder(createReservation, updateReservation);
     }
 
     @Test
     @DisplayName("예약 취소 요청을 거절하는 경우 예약이 CONFIRMED 상태로 남는다")
+    @Disabled("CANCEL 상태 사용 안 함.")
     public void rejectAllCanceledReservationThenRemain() throws Exception {
         //given
         clubMember.setAdmin();
@@ -937,12 +965,12 @@ public class ReservationServiceTests {
 
         Long canceledReservationId = 1L;
         Reservation canceledReservation = createDefaultReservation(resource, sameClubMember);
-        canceledReservation.cancel();
+//        canceledReservation.cancel();
 
         given(reservationRepository.findAllById(List.of(canceledReservationId)))
                 .willReturn(List.of(canceledReservation));
 
-        assert canceledReservation.getStatus() == CANCEL;
+//        assert canceledReservation.getStatus() == CANCEL;
 
         //when
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(canceledReservationId));

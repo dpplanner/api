@@ -1,10 +1,7 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
-import com.dp.dplanner.domain.Period;
-import com.dp.dplanner.domain.Reservation;
-import com.dp.dplanner.domain.ReservationInvitee;
-import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.AttachmentDto;
@@ -58,13 +55,12 @@ public class ReservationService {
         if (!clubMember.isConfirmed()) {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
-
-
         Reservation reservation;
 
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ResourceException(RESOURCE_NOT_FOUND));
 
+        //일반 사용자 요청 처리
         if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
 
             if (!clubMember.isSameClub(resource)) {
@@ -155,6 +151,12 @@ public class ReservationService {
 
         return ReservationDto.Response.of(reservation);
     }
+
+    /**
+     * 예약 취소 요청 보내면 바로 삭제 (원래 기획 의도랑 달라짐, CANCELD-> 관리자 확인 후 삭제 였는데 바로 삭제로)
+     * @param clubMemberId
+     * @param deleteDto
+     */
     @Transactional
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
 
@@ -165,14 +167,21 @@ public class ReservationService {
             throw new ReservationException(DELETE_AUTHORIZATION_DENIED);
         }
 
-        if (reservation.isConfirmed() || reservation.getStatus().equals(CANCELED)) {
-            reservation.cancel();
-        }
-        else {
-            reservationRepository.delete(reservation);
-        }
+        reservationRepository.delete(reservation);
+
+//        if (reservation.isConfirmed() || reservation.getStatus().equals(CANCELED)) {
+//            reservation.cancel();
+//        }
+//        else {
+//            reservationRepository.delete(reservation);
+//        }
     }
 
+    /**
+     * 관리자 혹은 매니저가 직접 예약 삭제
+     * @param managerId
+     * @param deleteDto
+     */
     @Transactional
     @RequiredAuthority(authority = SCHEDULE_ALL)
     public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto) {
@@ -210,14 +219,20 @@ public class ReservationService {
             if (!manager.isSameClub(reservation)) {
                 throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
             }
+            reservation.confirm();
         });
 
-        confirmReservations(reservations, true);
+//        confirmReservations(reservations, true);
 
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
                Message.confirmMessage());
 
-        // TODO Reservation Invitee에게 메시지 보내기
+        reservations.forEach(reservation -> {
+            List<Long> inviteeIds = reservation.getReservationInvitees().stream()
+                    .map(invitee -> invitee.getClubMember().getId())
+                    .collect(Collectors.toList());
+            messageService.createPrivateMessage(inviteeIds, Message.invitedMessage());
+        });
     }
 
     @Transactional
@@ -237,12 +252,13 @@ public class ReservationService {
             if (!manager.isSameClub(reservation)) {
                 throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
             }
+            reservation.reject();
         });
 
-        confirmReservations(reservations, false);
+//        confirmReservations(reservations, false);
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
                 Message.discardMessage());
-        // todo 취소 사유 보내기
+        // todo 거절 사유 보내기
     }
 
     public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {
@@ -270,9 +286,46 @@ public class ReservationService {
         List<Reservation> reservations = reservationRepository.findAllBetween(start, end, requestDto.getResourceId());
 
         reservations.forEach(reservation -> {
+            System.out.println(reservation.getResource().getClub().getId() + " " + clubMember.getClub().getId());
             if (!clubMember.isSameClub(reservation)) {
                     throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
                 }
+        });
+
+        return ReservationDto.Response.ofList(reservations);
+    }
+
+    public List<ReservationDto.Response> findAllReservationsByPeriodAndStatus(Long clubMemberId, ReservationDto.Request requestDto, ReservationStatus status) {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        LocalDateTime start = requestDto.getStartDateTime();
+        LocalDateTime end = requestDto.getEndDateTime();
+        List<Reservation> reservations = reservationRepository.findAllBetweenAndStatus(start, end, requestDto.getResourceId(),status);
+
+        reservations.forEach(reservation -> {
+            if (!clubMember.isSameClub(reservation)) {
+                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            }
+        });
+
+        return ReservationDto.Response.ofList(reservations);
+    }
+
+    public List<ReservationDto.Response> findAllReservationsByPeriodForScheduler(Long clubMemberId, ReservationDto.Request requestDto) {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        LocalDateTime start = requestDto.getStartDateTime();
+        LocalDateTime end = requestDto.getEndDateTime();
+        List<Reservation> reservations = reservationRepository.findAllBetweenForScheduler(start, end, requestDto.getResourceId());
+
+        reservations.forEach(reservation -> {
+            if (!clubMember.isSameClub(reservation)) {
+                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            }
         });
 
         return ReservationDto.Response.ofList(reservations);
@@ -316,6 +369,9 @@ public class ReservationService {
             }
             reservation.returned(returnDto.getReturnMessage());
 
+            List<Long> managerIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(clubMember.getClub().getId(), SCHEDULE_ALL).stream().map(ClubMember::getId).collect(Collectors.toList());
+            messageService.createPrivateMessage(managerIds, Message.checkReturnMessage());
+
         }
 
         return ReservationDto.Response.of(reservation);
@@ -326,28 +382,28 @@ public class ReservationService {
     /**
      * utility methods
      */
-    private void confirmReservations(List<Reservation> reservations, boolean isConfirm) {
+//    private void confirmReservations(List<Reservation> reservations, boolean isConfirm) {
+//
+//        Map<Boolean, List<Reservation>> partitioned = partitionCanceledReservations(reservations);
+//        List<Reservation> canceled = partitioned.get(true);
+//        List<Reservation> notCanceled = partitioned.get(false);
+//
+//        if (isConfirm) {
+//            reservationRepository.deleteAll(canceled);
+//            notCanceled.forEach(Reservation::confirm);
+//        } else {
+//            reservationRepository.deleteAll(notCanceled);
+//            canceled.forEach(Reservation::confirm);
+//        }
+//    }
 
-        Map<Boolean, List<Reservation>> partitioned = partitionCanceledReservations(reservations);
-        List<Reservation> canceled = partitioned.get(true);
-        List<Reservation> notCanceled = partitioned.get(false);
-
-        if (isConfirm) {
-            reservationRepository.deleteAll(canceled);
-            notCanceled.forEach(Reservation::confirm);
-        } else {
-            reservationRepository.deleteAll(notCanceled);
-            canceled.forEach(Reservation::confirm);
-        }
-    }
-
-    private Map<Boolean, List<Reservation>> partitionCanceledReservations(List<Reservation> reservations) {
-
-        return reservations.stream()
-                .collect(Collectors.partitioningBy(
-                        reservation -> reservation.getStatus().equals(CANCEL)
-                ));
-    }
+//    private Map<Boolean, List<Reservation>> partitionCanceledReservations(List<Reservation> reservations) {
+//
+//        return reservations.stream()
+//                .collect(Collectors.partitioningBy(
+//                        reservation -> reservation.getStatus().equals(CANCELED)
+//                ));
+//    }
 
 
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
@@ -362,10 +418,10 @@ public class ReservationService {
         return reservation.getClubMember().getId().equals(clubMemberId);
     }
 
-    private boolean isReservable(Long resourceId, LocalDateTime start, LocalDateTime end) {
-        return !(reservationRepository.existsBetween(start, end, resourceId)
-                || isLocked(resourceId, start, end));
-    }
+//    private boolean isReservable(Long resourceId, LocalDateTime start, LocalDateTime end) {
+//        return !(reservationRepository.existsBetween(start, end, resourceId)
+//                || isLocked(resourceId, start, end));
+//    }
 
     private boolean isUpdatable(Long reservationId, Long resourceId, LocalDateTime start, LocalDateTime end) {
         return !(reservationRepository.existsOthersBetween(start, end, resourceId, reservationId)
@@ -386,7 +442,6 @@ public class ReservationService {
         List<ReservationInvitee> reservationInvitees = new ArrayList<>();
         clubMemberIds
                 .forEach(inviteeId -> {
-                    System.out.println(inviteeId);
                     Optional<ClubMember> inviteeOptional = clubMemberRepository.findById(inviteeId);
                     if(inviteeOptional.isPresent()){
                         ClubMember invitee = inviteeOptional.get();
