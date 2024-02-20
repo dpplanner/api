@@ -132,7 +132,7 @@ public class CommentControllerTest {
     @Test
     public void CommentController_getMyComments() throws Throwable {
         ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/members/{memberId}/comments", memberId)
+                MockMvcRequestBuilders.get("/clubMembers/{clubMemberId}/comments", clubMemberId)
         );
 
         resultActions.andExpect(status().isOk());

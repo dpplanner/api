@@ -28,6 +28,7 @@ public class CommentDto {
             return  Comment.builder()
                     .post(post)
                     .clubMember(clubMember)
+                    .club(post.getClub())
                     .parent(parent)
                     .content(content)
                     .build();

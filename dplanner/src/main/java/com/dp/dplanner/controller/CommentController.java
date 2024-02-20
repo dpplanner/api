@@ -2,6 +2,8 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommentMemberLikeDto;
 import com.dp.dplanner.dto.CommonResponse;
+import com.dp.dplanner.exception.CommentException;
+import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +34,11 @@ public class CommentController {
 
     @PutMapping(value = "/comments/{commentId}")
     public CommonResponse<Response> updateComment(@AuthenticationPrincipal PrincipalDetails principal,
+                                                  @PathVariable("commentId") final Long commentId,
                                                   @RequestBody final Update updateDto) {
 
         Long clubMemberId = principal.getClubMemberId();
-
+        updateDto.setId(commentId);
         Response response = commentService.updateComment(clubMemberId, updateDto);
 
 
@@ -44,7 +47,7 @@ public class CommentController {
 
     @DeleteMapping(value = "/comments/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public CommonResponse updateComment(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse deleteComment(@AuthenticationPrincipal PrincipalDetails principal,
                                         @PathVariable final Long commentId) {
 
         Long clubMemberId = principal.getClubMemberId();
@@ -59,7 +62,6 @@ public class CommentController {
                                                                      @PathVariable final Long commentId) {
 
         Long clubMemberId = principal.getClubMemberId();
-
         CommentMemberLikeDto.Response response = commentService.likeComment(clubMemberId, commentId);
 
 
@@ -79,11 +81,13 @@ public class CommentController {
         return CommonResponse.createSuccess(response);
     }
 
-    @GetMapping(value = "/members/{memberId}/comments")
+    @GetMapping(value = "/clubMembers/{clubMemberId}/comments")
     public CommonResponse<List<Response>> getMyComments(@AuthenticationPrincipal PrincipalDetails principal,
-                                                        @PathVariable final Long memberId) {
+                                                        @PathVariable final Long clubMemberId) {
 
-        Long clubMemberId = principal.getClubMemberId();
+        if (!principal.getClubMemberId().equals(clubMemberId)) {
+            throw new CommentException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubId = principal.getClubId();
 
         List<Response> response = commentService.getCommentsByClubMemberId(clubMemberId, clubId);
