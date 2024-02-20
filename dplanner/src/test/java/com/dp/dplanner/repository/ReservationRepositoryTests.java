@@ -298,15 +298,15 @@ public class ReservationRepositoryTests {
     public void findAllNotConfirmed() throws Exception {
         //given
         Reservation reservation1 = persistReservation(12, 14);
-        assert reservation1.getStatus() == ReservationStatus.CREATE;
+        assert reservation1.getStatus() == ReservationStatus.REQUEST;
 
         Reservation reservation2 = persistReservation(14, 16);
         reservation2.update("title", "usage", getTime(14), getTime(16), true);
-        assert reservation2.getStatus() == ReservationStatus.UPDATE;
+        assert reservation2.getStatus() == ReservationStatus.REQUEST;
 
         Reservation reservation3 = persistReservation(16, 18);
-        reservation3.cancel();
-        assert reservation3.getStatus() == ReservationStatus.CANCEL;
+        reservation3.reject();
+        assert reservation3.getStatus() == ReservationStatus.REJECTED;
 
         Reservation reservation4 = persistReservation(18, 20);
         reservation4.confirm();
