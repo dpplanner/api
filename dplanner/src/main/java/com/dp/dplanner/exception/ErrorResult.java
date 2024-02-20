@@ -16,6 +16,9 @@ public enum ErrorResult {
     RESERVATION_UNAVAILABLE(HttpStatus.BAD_REQUEST,"예약할 수 없는 시간입니다."),
     WRONG_INVITE_CODE(HttpStatus.BAD_REQUEST, "초대코드가 일치하지 않습니다."),
     CLUBMEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "clubMember is already exists, request is invalid"),
+    REQUEST_IS_INVALID(HttpStatus.BAD_REQUEST, "request is invalid"),
+
+
 
     /**
      * 401 - 인증되지 않음
