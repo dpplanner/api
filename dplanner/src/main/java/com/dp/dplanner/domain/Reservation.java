@@ -55,7 +55,7 @@ public class Reservation extends BaseEntity{
         this.sharing = sharing;
         this.title = title;
         this.usage = usage;
-        this.status = CREATE;
+        this.status = REQUEST;
     }
 
     private void setResource(Resource resource) {
@@ -72,7 +72,7 @@ public class Reservation extends BaseEntity{
         this.usage = usage;
         this.sharing = sharing;
         this.period = new Period(startDateTime, endDateTime);
-        this.status = UPDATE;
+        this.status = REQUEST;
     }
 
     public void updateNotChangeStatus(String title, String usage, LocalDateTime startDateTime, LocalDateTime endDateTime, boolean sharing) {
@@ -83,8 +83,8 @@ public class Reservation extends BaseEntity{
     }
 
 
-    public void cancel() {
-        this.status = CANCEL;
+    public void reject() {
+        this.status = REJECTED;
     }
 
     public boolean isConfirmed() {
