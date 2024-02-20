@@ -19,6 +19,8 @@ public class Comment extends BaseEntity{
     @Id
     @GeneratedValue
     private Long id;
+    private String content;
+    private Boolean isDeleted;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_member_id")
@@ -37,14 +39,15 @@ public class Comment extends BaseEntity{
     @JoinColumn(name = "parent_id")
     private Comment parent;
 
-    private String content;
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", orphanRemoval = true)
     private List<Comment> children = new ArrayList<>();
 
+    @OneToMany(mappedBy = "comment",cascade = CascadeType.REMOVE)
+    private List<CommentMemberLike> commentMemberLikes = new ArrayList<>();
 
     @Builder
-    public Comment(ClubMember clubMember, Post post, Comment parent, String content,Club club) {
+    public Comment(ClubMember clubMember, Post post, Comment parent, String content, Club club) {
         setPost(post);
         if (parent != null) {
             addChildren(parent);
@@ -53,6 +56,14 @@ public class Comment extends BaseEntity{
         this.parent = parent;
         this.content = content;
         this.club = club;
+        this.isDeleted = false;
+    }
+
+    public void update(String content) {
+        this.content = content;
+    }
+    public void delete() {
+        this.isDeleted = true;
     }
 
     private void setPost(Post post) {
@@ -62,10 +73,5 @@ public class Comment extends BaseEntity{
     private void addChildren(Comment parent) {
         parent.getChildren().add(this);
         this.parent = parent;
-    }
-
-
-    public void update(String content) {
-        this.content = content;
     }
 }

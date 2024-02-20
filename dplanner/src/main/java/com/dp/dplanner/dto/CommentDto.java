@@ -49,6 +49,7 @@ public class CommentDto {
         private String clubMemberName;
         private int likeCount;
         private String content;
+        private Boolean isDeleted;
         private List<Response> children;
         private LocalDateTime createdTime;
         private LocalDateTime lastModifiedTime;
@@ -71,6 +72,7 @@ public class CommentDto {
                     .lastModifiedTime(comment.getLastModifiedDate())
                     .clubMemberName(comment.getClubMember().getName())
                     .likeCount(likeCount)
+                    .isDeleted(comment.getIsDeleted())
                     .build();
 
         }

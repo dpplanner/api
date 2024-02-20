@@ -97,8 +97,21 @@ public class CommentService {
         Comment comment = getComment(commentId);
         ClubMember clubMember = getClubMember(clubMemberId);
         checkDeletable(comment.getClubMember().getId(), clubMember);
-        commentRepository.delete(comment);
 
+        if (comment.getChildren().size() != 0) {
+            comment.delete(); // isDeleted = true
+        }else{
+            commentRepository.delete(getDeletableAncestorComment(comment));
+        }
+    }
+
+    private Comment getDeletableAncestorComment(Comment comment) {
+        Comment parent = comment.getParent(); // 현재 댓글의 부모를 구함
+        if (parent != null && parent.getChildren().size() == 1 && parent.getIsDeleted()) {
+            // 부모가 있고, 부모의 자식이 1개(지금 삭제하는 댓글)이고, 부모의 삭제 상태가 TRUE인 댓글이라면 재귀
+            return getDeletableAncestorComment(parent);
+        }
+        return comment; // 삭제해야하는 댓글 반환
     }
 
     @Transactional
@@ -168,7 +181,7 @@ public class CommentService {
     private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(()->new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
-
+// todo 리팩토링 필요 sql 요청 각 comment 마다 나감
     private List<Integer> getLikeCounts(List<Comment> comments) {
         return comments.stream().map(comment -> commentMemberLikeRepository.countDistinctByCommentId(comment.getId())).toList();
     }

@@ -14,6 +14,7 @@ import com.dp.dplanner.repository.CommentRepository;
 import com.dp.dplanner.repository.PostRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -282,13 +283,54 @@ public class CommentServiceTest {
     }
 
     @Test
+    @DisplayName("자식 댓글 없는 댓글 삭제하는 경우")
     public void CommentService_DeleteComment_ReturnVoid_UsualCase() {
 
         Comment comment = createComment(clubMember, post, null, "test");
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         assertAll(() -> commentService.deleteComment(clubMemberId, commentId));
+
+        verify(commentRepository, times(1)).delete(comment);
     }
+
+    @Test
+    @DisplayName("자식 댓글이 있는 댓글 삭제하는 경우")
+    public void CommentService_DeleteComment_ReturnVoid_HasChildrenComment() {
+
+        Comment comment = createComment(clubMember, post, null, "test");
+        Comment child = createComment(clubMember, post, comment, "child");
+
+        assert comment.getChildren().size() == 1;
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        assertAll(() -> commentService.deleteComment(clubMemberId, commentId));
+
+
+        assertThat(comment.getIsDeleted()).isTrue();
+        verify(commentRepository, times(0)).delete(comment);
+
+    }
+    @Test
+    @DisplayName("삭제 하는 댓글의 부모 댓글이 isDeleted true이고 부모 댓글의 자식이 삭제하는 댓글 하나인 경우에는 둘 다 삭제")
+    public void CommentService_DeleteComment_ReturnVoid_Recursive() {
+
+        Comment comment = createComment(clubMember, post, null, "test");
+        Comment child = createComment(clubMember, post, comment, "child");
+        Long childId = child.getId();
+        comment.delete();
+
+        assert comment.getIsDeleted();
+        assert comment.getChildren().size() == 1;
+
+        when(commentRepository.findById(childId)).thenReturn(Optional.ofNullable(child));
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        assertAll(() -> commentService.deleteComment(clubMemberId, childId));
+
+        verify(commentRepository, times(1)).delete(comment); // child가 호출되는게 아니라 재귀적으로 parent가 삭제되고 orphan이 된 child가 삭제됨. 유닛테스트에서는 orphan이 삭제 되지 않음
+    }
+
 
     @Test
     public void CommentService_DeleteComment_ReturnVoid_UsualCaseAdmin() {
