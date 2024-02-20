@@ -1,6 +1,7 @@
 package com.dp.dplanner.dto;
 
 import com.dp.dplanner.domain.club.Club;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class ClubDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Create{
+        @NotNull
         private String clubName;
         private String info;
 
@@ -36,6 +38,15 @@ public class ClubDto {
         private Long clubId;
         private String info;
 
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Request{
+        private Long clubId;
     }
 
     public interface ResponseMapping {
