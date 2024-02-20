@@ -68,7 +68,7 @@ public class ClubService {
 
     public ClubDto.Response findClubById(Long clubId) {
 
-        ClubDto.ResponseMapping club = clubRepository.findClubById(clubId);
+        ClubDto.ResponseMapping club = clubRepository.findClubDtoByClubId(clubId);
         if (club == null) {
             throw new ClubException(CLUB_NOT_FOUND);
         }

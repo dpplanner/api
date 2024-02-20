@@ -47,5 +47,5 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
         WHERE c.id = :clubId
         GROUP BY c.id
         """, nativeQuery = true)
-    ClubDto.ResponseMapping findClubById(@Param("clubId") Long clubId);
+    ClubDto.ResponseMapping findClubDtoByClubId(@Param("clubId") Long clubId);
 }

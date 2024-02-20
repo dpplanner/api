@@ -131,7 +131,7 @@ public class ClubServiceTests {
 
 
     /**
-     * findClubById
+     * findClubDtoByClubId
      */
     @Test
     @DisplayName("사용자는 clubId로 클럽을 조회할 수 있음")
@@ -141,7 +141,7 @@ public class ClubServiceTests {
         Club club = createClub(clubId, "newClub", "newClubInfo");
 
         ClubDto.ResponseMapping responseMapping = createResponseMapping(clubId, "newClub");
-        given(clubRepository.findClubById(clubId)).willReturn(responseMapping);
+        given(clubRepository.findClubDtoByClubId(clubId)).willReturn(responseMapping);
         //when
         ClubDto.Response responseDto = clubService.findClubById(clubId);
 
@@ -156,7 +156,7 @@ public class ClubServiceTests {
     public void findClubByWrongIdThenException() throws Exception {
         //given
         Long wrongId = 2L;
-        given(clubRepository.findClubById(wrongId)).willReturn(null);
+        given(clubRepository.findClubDtoByClubId(wrongId)).willReturn(null);
         //when
         //then
         BaseException exception = assertThrows(ClubException.class, () -> clubService.findClubById(wrongId));
