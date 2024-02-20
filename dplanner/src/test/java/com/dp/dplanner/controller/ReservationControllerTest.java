@@ -334,6 +334,7 @@ public class ReservationControllerTest {
                         .param("resourceId",resourceId.toString())
                         .param("start","2023-08-25 12:00:00")
                         .param("end","2023-08-25 14:00:00")
+                        .param("status","ALL")
         );
 
         resultActions.andExpect(status().isOk());
@@ -343,6 +344,7 @@ public class ReservationControllerTest {
 
 
     @Test
+    @Disabled("api 삭제")
     public void ReservationController_getAllReservationsNotConfirmed_OK() throws Throwable {
 
         Request requestDto = Request.builder()
