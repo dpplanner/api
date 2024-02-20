@@ -42,7 +42,8 @@ public class ClubMemberServiceTests {
     ClubMemberRepository clubMemberRepository;
     @Mock
     ClubAuthorityRepository clubAuthorityRepository;
-
+    @Mock
+    MessageService messageService;
     @InjectMocks
     ClubMemberService clubMemberService;
 

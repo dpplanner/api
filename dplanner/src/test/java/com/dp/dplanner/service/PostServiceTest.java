@@ -15,6 +15,7 @@ import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -55,6 +56,8 @@ public class PostServiceTest {
     ClubMemberService clubMemberService;
     @Mock
     AttachmentService attachmentService;
+    @Mock
+    MessageService messageService;
 
     @InjectMocks
     private PostService postService;
@@ -304,6 +307,7 @@ public class PostServiceTest {
     }
 
     @Test
+    @DisplayName("권한이 없는 클럽 맴버가 삭제하면 DELETE_AUTHORIZATION_DENIED를 던짐")
     public void PostService_DeletePostByAdmin_Throw_DELETE_AUTHORIZATION_DENIED() {
 
         Member newMember = Member.builder().build();

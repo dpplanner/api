@@ -6,6 +6,7 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
 import com.dp.dplanner.exception.ClubException;
@@ -38,7 +39,7 @@ public class PostService {
     private final ClubRepository clubRepository;
     private final ClubMemberService clubMemberService;
     private final AttachmentService attachmentService;
-
+    private final MessageService messageService;
 
     @Transactional
     public Response createPost(Long clubMemberId, Create create) {
@@ -131,7 +132,9 @@ public class PostService {
         ClubMember clubMember = getClubMember(clubMemberId);
         Post post = getPost(postId);
         checkDeletable(clubMember, post.getClubMember().getId());
-
+        if (!clubMember.equals(post.getClubMember())) {
+            messageService.createPrivateMessage(List.of(post.getClubMember().getId()), Message.postDeletedMessage());
+        }
         postRepository.delete(post);
 
     }

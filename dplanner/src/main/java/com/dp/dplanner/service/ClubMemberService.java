@@ -3,6 +3,7 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
+import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.exception.ClubAuthorityException;
 import com.dp.dplanner.exception.ClubException;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -29,6 +31,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 @RequiredArgsConstructor
 public class ClubMemberService {
 
+    private final MessageService messageService;
     private final MemberRepository memberRepository;
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
@@ -53,6 +56,10 @@ public class ClubMemberService {
 
         ClubMember clubMember = createDto.toEntity(member, club);
         ClubMember savedMember = clubMemberRepository.save(clubMember);
+
+
+        List<Long> managerIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), MEMBER_ALL).stream().map(ClubMember::getId).collect(Collectors.toList());
+        messageService.createPrivateMessage(managerIds, Message.clubJoinMessage());
 
         return ClubMemberDto.Response.of(savedMember);
     }

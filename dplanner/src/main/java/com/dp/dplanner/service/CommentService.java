@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.CommentMemberLikeDto;
 import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.ClubMemberRepository;
@@ -33,6 +34,8 @@ public class CommentService {
     private final CommentMemberLikeRepository commentMemberLikeRepository;
     private final ClubMemberService clubMemberService;
 
+    private final MessageService messageService;
+
     @Transactional
     public Response createComment(Long clubMemberId, Create createDto) {
 
@@ -47,6 +50,8 @@ public class CommentService {
             checkIsParent(parent, post.getId());
         }
         Comment savedComment = commentRepository.save(createDto.toEntity(clubMember, post, parent));
+
+        messageService.createPrivateMessage(List.of(post.getClubMember().getId()), Message.commentMessage());
 
         return Response.of(savedComment,0);
     }
@@ -106,7 +111,6 @@ public class CommentService {
         Optional<CommentMemberLike> find = commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId, commentId);
 
         if (find.isEmpty()) {
-
 
             CommentMemberLike commentMemberLike = commentMemberLikeRepository.save(
                     CommentMemberLike.builder()
