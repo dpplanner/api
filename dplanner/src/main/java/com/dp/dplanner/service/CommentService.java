@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,7 +54,7 @@ public class CommentService {
 
         messageService.createPrivateMessage(List.of(post.getClubMember().getId()), Message.commentMessage());
 
-        return Response.of(savedComment,0);
+        return Response.of(savedComment,0L,false);
     }
 
     public List<Response> getCommentsByPostId(Long clubMemberId, Long postId) {
@@ -62,10 +63,8 @@ public class CommentService {
         ClubMember clubMember = getClubMember(clubMemberId);
         checkIsSameClub(post.getClub().getId(), clubMember);
 
-        List<Comment> comments = commentRepository.findCommentsUsingPostId(postId);
-        List<Integer> likeCounts = getLikeCounts(comments);
-
-        return Response.ofList(comments,likeCounts);
+        List<Object[]> results = commentRepository.findCommentsUsingPostId(postId,clubMemberId);
+        return getResponseList(results);
     }
 
     public List<Response> getCommentsByClubMemberId(Long clubMemberId, Long clubId) {
@@ -73,10 +72,8 @@ public class CommentService {
         ClubMember clubMember = getClubMember(clubMemberId);
         checkIsSameClub(clubId, clubMember);
 
-        List<Comment> comments = commentRepository.findCommentsByClubMemberId(clubMemberId);
-        List<Integer> likeCounts = getLikeCounts(comments);
-
-        return Response.ofList(comments, likeCounts);
+        List<Object[]> results = commentRepository.findCommentsByClubMemberId(clubMemberId);
+        return getResponseList(results);
     }
 
     @Transactional
@@ -86,9 +83,9 @@ public class CommentService {
         checkUpdatable(clubMemberId, comment);
         comment.update(updateDto.getContent());
 
-        int likeCount = commentMemberLikeRepository.countDistinctByCommentId(comment.getId());
+        Long likeCount = commentMemberLikeRepository.countDistinctByCommentId(comment.getId());
 
-        return Response.of(comment,likeCount);
+        return Response.of(comment,likeCount,null);
     }
 
     @Transactional
@@ -181,9 +178,19 @@ public class CommentService {
     private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(()->new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
-// todo 리팩토링 필요 sql 요청 각 comment 마다 나감
-    private List<Integer> getLikeCounts(List<Comment> comments) {
-        return comments.stream().map(comment -> commentMemberLikeRepository.countDistinctByCommentId(comment.getId())).toList();
+
+    private List<Response> getResponseList(List<Object[]> results) {
+        List<CommentResponseDto> commentResponseDtos = new ArrayList<>();
+        for (Object[] result : results) {
+            commentResponseDtos.add(
+                    CommentResponseDto.builder()
+                            .comment((Comment) result[0])
+                            .likeStatus(result[1] != null)
+                            .likeCount((Long) result[2])
+                            .build()
+            );
+        }
+        return Response.ofList(commentResponseDtos);
     }
 
 }

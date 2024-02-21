@@ -3,6 +3,7 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.ClubMember;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ public class CommentDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Create {
+        @NotNull
         private Long postId;
         private Long parentId;
         private String content;
@@ -35,7 +37,17 @@ public class CommentDto {
         }
 
     }
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CommentResponseDto{
+        private Comment comment;
+        private Boolean likeStatus;
+        private Long likeCount;
 
+    }
     @Getter
     @Setter
     @Builder
@@ -47,14 +59,15 @@ public class CommentDto {
         private Long postId;
         private Long clubMemberId;
         private String clubMemberName;
-        private int likeCount;
+        private Long likeCount;
         private String content;
         private Boolean isDeleted;
+        private Boolean likeStatus;
         private List<Response> children;
         private LocalDateTime createdTime;
         private LocalDateTime lastModifiedTime;
 
-        public static Response of(Comment comment,int likeCount) {
+        public static Response of(Comment comment,Long likeCount,Boolean likeStatus) {
 
             Long parentId = null;
             List<Response> children = new ArrayList<>();
@@ -73,21 +86,22 @@ public class CommentDto {
                     .clubMemberName(comment.getClubMember().getName())
                     .likeCount(likeCount)
                     .isDeleted(comment.getIsDeleted())
+                    .likeStatus(likeStatus)
                     .build();
 
         }
 
-        public static List<Response> ofList(List<Comment> comments, List<Integer> likeCounts) {
-
+        public static List<Response> ofList(List<CommentResponseDto> commentResponseDtos) {
             List<Response> commentResponseList = new ArrayList<>();
             Map<Long, Response> responseMap = new HashMap<>();
-            IntStream.range(0,comments.size()).forEach(
+
+            IntStream.range(0,commentResponseDtos.size()).forEach(
                     index -> {
-                        Response response = Response.of(comments.get(index),likeCounts.get(index));
+                        Response response = Response.of(commentResponseDtos.get(index).getComment(), commentResponseDtos.get(index).getLikeCount(), commentResponseDtos.get(index).likeStatus);
                         responseMap.put(response.getId(), response);
-                        if (comments.get(index).getParent() != null) {
+                        if (commentResponseDtos.get(index).getComment().getParent() != null) {
                             try {
-                                responseMap.get(comments.get(index).getParent().getId()).getChildren().add(response);
+                                responseMap.get(commentResponseDtos.get(index).getComment().getParent().getId()).getChildren().add(response);
                             } catch (NullPointerException e) {
                                 commentResponseList.add(response); // CommentService :: getCommentsByClubMemberId 할 때 다른 사람이 작성한 원본 댓글에 대댓글 달았을 때 발생하는 오류
                             }
@@ -98,7 +112,6 @@ public class CommentDto {
 
             return commentResponseList;
         }
-
     }
 
 

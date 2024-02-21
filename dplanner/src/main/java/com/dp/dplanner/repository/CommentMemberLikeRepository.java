@@ -8,5 +8,5 @@ import java.util.Optional;
 public interface CommentMemberLikeRepository extends JpaRepository<CommentMemberLike,Long> {
     Optional<CommentMemberLike> findCommentMemberLikeByClubMemberIdAndCommentId(Long clubMemberId, Long commentId);
 
-    int countDistinctByCommentId(Long CommentId);
+    Long countDistinctByCommentId(Long CommentId);
 }

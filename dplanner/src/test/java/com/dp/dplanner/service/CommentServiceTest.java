@@ -76,13 +76,17 @@ public class CommentServiceTest {
         return comment;
     }
 
-    private List<Comment> createComments() {
+    private List<Object[]> createComments() {
         Comment comment = createComment(clubMember, post, null, "test1");
         Comment comment2 = createComment(clubMember, post, comment, "test2");
         Comment comment3 = createComment(clubMember, post, comment, "test3");
         Comment comment4 = createComment(clubMember, post, null, "test4");
+        Object[] commentObject = {comment, null, 0L};
+        Object[] commentObject2 = {comment2, null, 0L};
+        Object[] commentObject3 = {comment3, null, 0L};
+        Object[] commentObject4 = {comment4, null, 0L};
 
-        return Arrays.asList(comment, comment4, comment2, comment3);
+        return Arrays.asList(commentObject, commentObject2, commentObject3, commentObject4);
     }
 
     @BeforeEach
@@ -190,14 +194,13 @@ public class CommentServiceTest {
 
         doReturn(Optional.of(post)).when(postRepository).findById(postId);
         doReturn(Optional.of(clubMember)).when(clubMemberRepository).findById(clubMemberId);
-        doReturn(createComments()).when(commentRepository).findCommentsUsingPostId(postId);
+        doReturn(createComments()).when(commentRepository).findCommentsUsingPostId(postId,clubMemberId);
         List<CommentDto.Response> commentsList =  commentService.getCommentsByPostId(clubMemberId,postId);
 
         assertThat(commentsList.size()).isEqualTo(2);
         assertThat(commentsList.get(0).getChildren().size()).isEqualTo(2);
         assertThat(commentsList.get(1).getChildren().size()).isEqualTo(0);
 
-        verify(commentMemberLikeRepository, times(4)).countDistinctByCommentId(any(Long.class));
 
     }
     @Test
@@ -220,7 +223,10 @@ public class CommentServiceTest {
 
         Long newCommentId = comment3.getId();
         doReturn(Optional.of(clubMember)).when(clubMemberRepository).findById(clubMemberId);
-        when(commentRepository.findCommentsByClubMemberId(clubMemberId)).thenReturn(Arrays.asList(comment, comment2, comment4));
+        Object[] commentObject = {comment, null, 0L};
+        Object[] commentObject2 = {comment2, null, 0L};
+        Object[] commentObject3 = {comment4, null, 0L};
+        when(commentRepository.findCommentsByClubMemberId(clubMemberId)).thenReturn(Arrays.asList(commentObject, commentObject2, commentObject3));
 
         List<CommentDto.Response> commentsList = commentService.getCommentsByClubMemberId(clubMemberId, clubId);
 
@@ -233,7 +239,6 @@ public class CommentServiceTest {
         assertThat(commentsList).extracting(CommentDto.Response::getClubMemberId).containsOnly(clubMemberId);
         assertThat(commentsList).extracting(CommentDto.Response::getPostId).containsOnly(postId);
 
-        verify(commentMemberLikeRepository, times(3)).countDistinctByCommentId(any(Long.class));
 
     }
 

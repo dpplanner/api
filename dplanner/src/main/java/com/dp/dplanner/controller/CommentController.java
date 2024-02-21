@@ -6,6 +6,7 @@ import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,7 +25,7 @@ public class CommentController {
     @PostMapping(value = "/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public CommonResponse<Response> createComment(@AuthenticationPrincipal PrincipalDetails principal,
-                                                  @RequestBody final Create createDto){
+                                                  @RequestBody @Valid final Create createDto){
 
         Long clubMemberId = principal.getClubMemberId();
         Response response = commentService.createComment(clubMemberId, createDto);
@@ -84,7 +85,6 @@ public class CommentController {
     @GetMapping(value = "/clubMembers/{clubMemberId}/comments")
     public CommonResponse<List<Response>> getMyComments(@AuthenticationPrincipal PrincipalDetails principal,
                                                         @PathVariable final Long clubMemberId) {
-
         if (!principal.getClubMemberId().equals(clubMemberId)) {
             throw new CommentException(ErrorResult.REQUEST_IS_INVALID);
         }

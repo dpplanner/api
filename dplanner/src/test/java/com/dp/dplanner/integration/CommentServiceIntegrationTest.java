@@ -59,9 +59,9 @@ public class CommentServiceIntegrationTest {
         assertThat(commentsResponseList.size()).isEqualTo(2);
         assertThat(commentsResponseList.get(0).getChildren().size()).isEqualTo(2);
         assertThat(commentsResponseList.get(1).getChildren().size()).isEqualTo(0);
-        assertThat(commentsResponseList).extracting(CommentDto.Response::getLikeCount).isEqualTo(Arrays.asList(1, 0));
-        assertThat(commentsResponseList.get(0).getChildren().get(0).getLikeCount()).isEqualTo(0);
-        assertThat(commentsResponseList.get(0).getChildren().get(1).getLikeCount()).isEqualTo(1);
+        assertThat(commentsResponseList).extracting(CommentDto.Response::getLikeCount).isEqualTo(Arrays.asList(1L, 0L));
+        assertThat(commentsResponseList.get(0).getChildren().get(0).getLikeCount()).isEqualTo(0L);
+        assertThat(commentsResponseList.get(0).getChildren().get(1).getLikeCount()).isEqualTo(1L);
     }
 
     private Comment createComment(ClubMember clubMember, Post post, Comment parent, String content) {
