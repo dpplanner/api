@@ -28,7 +28,7 @@ public class LockController {
                                                @PathVariable Long resourceId,
                                                @RequestBody Create createDto) {
         Long clubMemberId = principal.getClubMemberId();
-
+        createDto.setResourceId(resourceId);
         Response response = lockService.createLock(clubMemberId, createDto);
 
         return CommonResponse.createSuccess(response);
@@ -71,7 +71,7 @@ public class LockController {
                                                @RequestBody Update updateDto) {
 
         Long clubMemberId = principal.getClubMemberId();
-
+        updateDto.setId(lockId);
         Response response = lockService.updateLock(clubMemberId, updateDto);
 
         return CommonResponse.createSuccess(response);
