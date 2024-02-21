@@ -167,8 +167,8 @@ public class CommentRepositoryTest {
         testEntityManager.persist(post2);
         Comment comment3 = commentRepository.save(createComment(clubMember, post2, null));
 
-        int commentCount = commentRepository.countDistinctByPostId(post.getId());
-        assertThat(commentCount).isEqualTo(2);
+        Long commentCount = commentRepository.countDistinctByPostId(post.getId());
+        assertThat(commentCount).isEqualTo(2L);
 
     }
 }

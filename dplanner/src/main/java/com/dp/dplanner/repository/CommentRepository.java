@@ -27,5 +27,5 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             "ORDER BY c.parent.id ASC NULLS FIRST, c.createdDate ASC")
     List<Object[]> findCommentsUsingPostId(@Param(value = "postId") Long postId,@Param(value = "clubMemberId") Long club_member_id);
 
-    int countDistinctByPostId(Long postId);
+    Long countDistinctByPostId(Long postId);
 }
