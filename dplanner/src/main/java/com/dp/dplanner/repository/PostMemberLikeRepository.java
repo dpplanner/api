@@ -9,6 +9,8 @@ public interface PostMemberLikeRepository extends JpaRepository<PostMemberLike, 
 
     Optional<PostMemberLike> findByClubMemberIdAndPostId(long clubMemberId, long postId);
 
-    int countDistinctByPostId(long postId);
+    Long countDistinctByPostId(long postId);
+
+    Boolean existsPostMemberLikeByPostIdAndClubMemberId(Long postId, Long clubMemberId);
 
 }

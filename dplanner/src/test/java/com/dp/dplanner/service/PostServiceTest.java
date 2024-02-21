@@ -178,8 +178,8 @@ public class PostServiceTest {
     public void PostService_GetPostById_ReturnPostResponseDto() {
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-        when(commentRepository.countDistinctByPostId(postId)).thenReturn(0);
-        when(postMemberLikeRepository.countDistinctByPostId(postId)).thenReturn(0);
+        when(commentRepository.countDistinctByPostId(postId)).thenReturn(0L);
+        when(postMemberLikeRepository.countDistinctByPostId(postId)).thenReturn(0L);
 
         Response response = postService.getPostById(clubMemberId, postId);
 
@@ -233,13 +233,16 @@ public class PostServiceTest {
         Post post4 = createPost();
         Post post5 = createPost();
 
+        Object[] postObject1 = {post1, null, 0L, 0L};
+        Object[] postObject2 = {post2, null, 0L, 0L};
+        Object[] postObject3 = {post3, null, 0L, 0L};
+        Object[] postObject4 = {post4, null, 0L, 0L};
+        Object[] postObject5 = {post5, null, 0L, 0L};
 
-        Slice<Post> postSlice = new SliceImpl<>(Arrays.asList(post5, post4, post3, post2, post1), PageRequest.of(0, 10), false);
+        Slice<Object[]> postSlice = new SliceImpl<>(Arrays.asList(postObject1, postObject2, postObject3, postObject4, postObject5), PageRequest.of(0, 10), false);
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-        when(postRepository.findByClubId(clubId, PageRequest.of(0,10))).thenReturn(postSlice);
-        when(postMemberLikeRepository.countDistinctByPostId(anyLong())).thenReturn(0);
-        when(commentRepository.countDistinctByPostId(anyLong())).thenReturn(0);
+        when(postRepository.findByClubId(clubId,clubMemberId ,PageRequest.of(0,10))).thenReturn(postSlice);
 
         SliceResponse responseSlice = postService.getPostsByClubId(clubMemberId, clubId, PageRequest.of(0, 10));
 
@@ -252,8 +255,6 @@ public class PostServiceTest {
         assertThat(responseSlice.getContent()).extracting(Response::getClubId).containsOnly(clubId);
         responseSlice.getContent().forEach(response -> assertResponse(response, "test"));
 
-        verify(postMemberLikeRepository, times(5)).countDistinctByPostId(anyLong());
-        verify(commentRepository, times(5)).countDistinctByPostId(anyLong());
     }
 
     @Test

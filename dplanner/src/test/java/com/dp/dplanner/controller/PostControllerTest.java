@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -121,7 +122,7 @@ public class PostControllerTest {
                 .clubId(clubId)
                 .build();
 
-        final Response responseDto = Response.builder().id(1L).content("test").likeCount(0).commentCount(0).build();
+        final Response responseDto = Response.builder().id(1L).content("test").likeCount(0L).commentCount(0L).build();
 
         doReturn(responseDto).when(postService).createPost(anyLong(),any(Create.class));
 
@@ -202,7 +203,7 @@ public class PostControllerTest {
 
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/posts")
+                MockMvcRequestBuilders.get("/posts/clubs/{clubId}",clubId)
                 .contentType(MediaType.APPLICATION_JSON)
         );
 
@@ -216,7 +217,7 @@ public class PostControllerTest {
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/posts")
+                MockMvcRequestBuilders.get("/posts/clubs/{clubId}",clubId)
                 .contentType(MediaType.APPLICATION_JSON)
         );
 
@@ -233,7 +234,7 @@ public class PostControllerTest {
 
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/posts/members/{memberId}", memberId)
+                MockMvcRequestBuilders.get("/posts/clubMembers/{clubMemberId}", clubMemberId)
         );
 
         resultActions.andExpect(status().isOk());
@@ -247,7 +248,7 @@ public class PostControllerTest {
         doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/posts/members/{memberId}", memberId)
+                MockMvcRequestBuilders.get("/posts/clubMembers/{clubMemberId}", clubMemberId)
         );
 
         resultActions.andExpect(status().isForbidden());
@@ -262,7 +263,7 @@ public class PostControllerTest {
         Post post = Post.builder().clubMember(clubMember).club(club).build();
         ReflectionTestUtils.setField(post, "id", postId);
 
-        doReturn(Response.of(post, 0, 0)).when(postService).getPostById(anyLong(), anyLong());
+        doReturn(Response.of(post, 0L, 0L,false)).when(postService).getPostById(anyLong(), anyLong());
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/posts/{postId}", postId)
@@ -324,7 +325,7 @@ public class PostControllerTest {
     {
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.multipart("/posts/{postId}", postId)
+                MockMvcRequestBuilders.multipart(HttpMethod.PUT,"/posts/{postId}", postId)
                         .file(new MockMultipartFile("update", "", MediaType.APPLICATION_JSON_VALUE, "{\"id\" : 1, \"content\":\"hello\"}".getBytes()))
                         .file(new MockMultipartFile("files", "fileName" + "." + "jpg", "jpg", "image".getBytes()))
                         .file(new MockMultipartFile("files", "fileName2" + "." + "jpg", "jpg", "image2".getBytes()))
@@ -340,7 +341,7 @@ public class PostControllerTest {
         doThrow(new PostException(UPDATE_AUTHORIZATION_DENIED)).when(postService).updatePost(anyLong(), any(Update.class));
 
         final ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.multipart("/posts/{postId}", postId)
+                MockMvcRequestBuilders.multipart(HttpMethod.PUT,"/posts/{postId}", postId)
                         .file(new MockMultipartFile("update", "", MediaType.APPLICATION_JSON_VALUE, "{\"id\" : 1, \"content\":\"hello\"}".getBytes()))
                         .contentType(MediaType.MULTIPART_FORM_DATA_VALUE));
 

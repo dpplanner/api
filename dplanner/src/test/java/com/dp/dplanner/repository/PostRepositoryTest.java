@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -113,12 +114,13 @@ public class PostRepositoryTest {
         postRepository.save(post3);
 
         pageRequest = PageRequest.of(0, 2);
-        Slice<Post> postSlice = postRepository.findByClubId(club.getId(),pageRequest);
+        Slice<Object[]> postSlice = postRepository.findByClubId(club.getId(),clubMember.getId(),pageRequest);
+        List<Post> posts = postSlice.stream().map(object -> (Post) object[0]).toList();
 
-        assertThat(postSlice).isNotNull();
-        assertThat(postSlice).extracting(Post::getId).isNotNull();
-        assertThat(postSlice.getSize()).isEqualTo(2);
-        assertThat(postSlice).containsExactly(post2, post);
+        assertThat(posts).isNotNull();
+        assertThat(posts).extracting(Post::getId).isNotNull();
+        assertThat(posts.size()).isEqualTo(2);
+        assertThat(posts).containsExactly(post2, post);
 
     }
 
@@ -141,17 +143,18 @@ public class PostRepositoryTest {
         Thread.sleep(100);
         postRepository.save(post4);
 
-        Slice<Post> postList = postRepository.findByClubId(club.getId(),PageRequest.of(0, 2));
-        Slice<Post> postList2 = postRepository.findByClubId(club.getId(),PageRequest.of(1, 2));
-        Slice<Post> postList3 = postRepository.findByClubId(club.getId(),PageRequest.of(0, 10));
+        Slice<Object[]> postList = postRepository.findByClubId(club.getId(),clubMember.getId(), PageRequest.of(0, 2));
+        Slice<Object[]> postList2 = postRepository.findByClubId(club.getId(),clubMember.getId(),PageRequest.of(1, 2));
+        Slice<Object[]> postList3 = postRepository.findByClubId(club.getId(),clubMember.getId(),PageRequest.of(0, 10));
 
-        assertThat(postList.getContent()).containsExactly(post2, post1);
+
+        assertThat(postList.stream().map(object -> (Post) object[0]).collect(Collectors.toList())).containsExactly(post2, post1);
         assertThat(postList.hasNext()).isTrue();
 
-        assertThat(postList2.getContent()).containsExactly(post4, post3);
+        assertThat(postList2.stream().map(object -> (Post) object[0]).collect(Collectors.toList())).containsExactly(post4, post3);
         assertThat(postList2.hasNext()).isFalse();
 
-        assertThat(postList3.getContent()).containsExactly(post2, post1, post4, post3);
+        assertThat(postList3.stream().map(object -> (Post) object[0]).collect(Collectors.toList())).containsExactly(post2, post1, post4, post3);
         assertThat(postList3.hasNext()).isFalse();
     }
     @Test
@@ -201,11 +204,12 @@ public class PostRepositoryTest {
         postRepository.save(post5);
 
 
-        Slice<Post> postSlice = postRepository.findMyPostsByClubId(clubMember.getId(), club.getId(), Pageable.unpaged());
+        Slice<Object[]> postSlice = postRepository.findMyPostsByClubId(clubMember.getId(), club.getId(), Pageable.unpaged());
 
         assertThat(postSlice).isNotNull();
         assertThat(postSlice.getContent().size()).isEqualTo(4);
-        assertThat(postSlice.getContent()).extracting(Post::getClubMember).extracting(ClubMember::getId).containsOnly(clubMember.getId());
+        assertThat(postSlice.stream().map(object -> (Post) object[0]).collect(Collectors.toList()))
+                .extracting(Post::getClubMember).extracting(ClubMember::getId).containsOnly(clubMember.getId());
 
 
 

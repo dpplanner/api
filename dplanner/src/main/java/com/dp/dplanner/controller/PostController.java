@@ -2,6 +2,8 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.dto.PostMemberLikeDto;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.PostService;
 import jakarta.validation.Valid;
@@ -31,21 +33,25 @@ public class PostController {
     public CommonResponse<Response> createPost(@AuthenticationPrincipal PrincipalDetails principal,
                                                @RequestPart @Valid final Create create,
                                                @RequestPart(required = false) final List<MultipartFile> files) {
-
+        if (!principal.getClubId().equals(create.getClubId())) {
+            throw new PostException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
         create.setFiles(files);
-
         Response response = postService.createPost(clubMemberId, create);
 
         return CommonResponse.createSuccess(response);
     }
 
-    @GetMapping(value = "")
+    @GetMapping(value = "/clubs/{clubId}")
     public CommonResponse<SliceResponse> getClubPosts(@AuthenticationPrincipal PrincipalDetails principal,
+                                              @PathVariable final Long clubId,
                                               @PageableDefault final Pageable pageable) {
 
         Long clubMemberId = principal.getClubMemberId();
-        Long clubId = principal.getClubId();
+        if (!principal.getClubId().equals(clubId)) {
+            throw new PostException(ErrorResult.REQUEST_IS_INVALID);
+        }
 
         SliceResponse response = postService.getPostsByClubId(clubMemberId, clubId, pageable);
 
@@ -54,11 +60,13 @@ public class PostController {
     }
 
 
-    @GetMapping(value = "/members/{memberId}")
+    @GetMapping(value = "/clubMembers/{clubMemberId}")
     public CommonResponse<SliceResponse> getMyPosts(@AuthenticationPrincipal PrincipalDetails principal,
-                                            @PathVariable final Long memberId,
+                                            @PathVariable final Long clubMemberId,
                                             @PageableDefault final Pageable pageable) {
-        Long clubMemberId = principal.getClubMemberId();
+        if (!principal.getClubMemberId().equals(clubMemberId)) {
+            throw new PostException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubId = principal.getClubId();
 
         SliceResponse response = postService.getMyPostsByClubId(clubMemberId, clubId, pageable);
@@ -89,9 +97,8 @@ public class PostController {
         return CommonResponse.createSuccessWithNoContent();
     }
 
-    @PostMapping(value = "/{postId}") // Post? Put? 해당 동작은 멱등하지 않는데.. 그럼 POST?
+    @PutMapping(value = "/{postId}")
     public CommonResponse<Response> updatePost(@AuthenticationPrincipal PrincipalDetails principal,
-                                               @PathVariable final Long postId,
                                                @Valid @RequestPart final Update update,
                                                @RequestPart(required = false) final List<MultipartFile> files) {
         Long clubMemberId = principal.getClubMemberId();
@@ -119,7 +126,6 @@ public class PostController {
                                             @PathVariable final Long postId) {
 
         Long clubMemberId = principal.getClubMemberId();
-
         Response response = postService.toggleIsFixed(clubMemberId, postId);
 
         return CommonResponse.createSuccess(response);

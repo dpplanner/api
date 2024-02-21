@@ -19,6 +19,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,7 +57,7 @@ public class PostService {
                             .build());
         }
 
-        return Response.of(post,0,0);
+        return Response.of(post,0L,0L,false);
     }
 
     public Response getPostById(Long clubMemberId, Long postId) {
@@ -65,36 +66,26 @@ public class PostService {
         checkIsSameClub(clubMemberId, post.getClub().getId());
 
 
-        int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
-        int commentCount = commentRepository.countDistinctByPostId(post.getId());
-
-        return Response.of(post, likeCount, commentCount);
+        Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
+        Long commentCount = commentRepository.countDistinctByPostId(post.getId());
+        Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
+        return Response.of(post, likeCount, commentCount,likeStatus);
     }
 
     public SliceResponse getPostsByClubId(Long clubMemberId, Long clubId, Pageable pageable) {
 
         checkIsSameClub(clubMemberId, clubId);
-        Slice<Post> postSlice = postRepository.findByClubId(clubId, pageable);
-
+        Slice<Object[]> postSlice = postRepository.findByClubId(clubId, clubMemberId, pageable);
         return getSliceResponse(pageable, postSlice);
-
     }
 
     public SliceResponse getMyPostsByClubId(Long clubMemberId, Long clubId, Pageable pageable) {
 
         checkIsSameClub(clubMemberId, clubId);
-        Slice<Post> postSlice = postRepository.findMyPostsByClubId(clubMemberId, clubId, pageable);
-
+        Slice<Object[]> postSlice = postRepository.findMyPostsByClubId(clubMemberId, clubId, pageable);
         return getSliceResponse(pageable, postSlice);
-
     }
 
-    private SliceResponse getSliceResponse(Pageable pageable, Slice<Post> postSlice) {
-        List<Integer> likeCounts = postSlice.getContent().stream().map(post -> postMemberLikeRepository.countDistinctByPostId(post.getId())).toList();
-        // toDO 배치 단위로 구하기
-        List<Integer> commentCounts = postSlice.getContent().stream().map(post -> commentRepository.countDistinctByPostId(post.getId())).toList();
-        return new SliceResponse(Response.ofList(postSlice.getContent(), likeCounts, commentCounts), pageable, postSlice.hasNext());
-    }
 
     @Transactional
     public Response updatePost(Long clubMemberId, Update update) {
@@ -120,10 +111,11 @@ public class PostService {
 
         post.updateContent(update.getContent());
 
-        int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
-        int commentCount = commentRepository.countDistinctByPostId(post.getId());
+        Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
+        Long commentCount = commentRepository.countDistinctByPostId(post.getId());
+        Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
 
-        return Response.of(post,likeCount,commentCount);
+        return Response.of(post,likeCount,commentCount,likeStatus);
     }
 
     @Transactional
@@ -174,10 +166,11 @@ public class PostService {
         Post post = getPost(postId);
         post.toggleIsFixed();
 
-        int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
-        int commentCount = commentRepository.countDistinctByPostId(post.getId());
+        Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
+        Long commentCount = commentRepository.countDistinctByPostId(post.getId());
+        Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
 
-        return Response.of(post,likeCount,commentCount);
+        return Response.of(post,likeCount,commentCount,likeStatus);
     }
 
     private void checkIsSameClub(Long clubMemberId, Long clubId) {
@@ -213,5 +206,22 @@ public class PostService {
     private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
     }
+
+    private SliceResponse getSliceResponse(Pageable pageable, Slice<Object[]> postSlice) {
+        List<PostResponseDto> postResponseDtos = new ArrayList<>();
+        for(Object[] object : postSlice){
+            postResponseDtos.add(
+                    PostResponseDto.builder()
+                            .post((Post) object[0])
+                            .likeStatus(object[1] != null)
+                            .likeCount((Long) object[2])
+                            .commentCount((Long) object[3])
+                            .build()
+
+            );
+        }
+        return new SliceResponse(Response.ofList(postResponseDtos), pageable, postSlice.hasNext());
+    }
+
 }
 

@@ -43,6 +43,17 @@ public class PostDto {
 
 
     }
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class PostResponseDto {
+        private Post post;
+        private Boolean likeStatus;
+        private Long likeCount;
+        private Long commentCount;
+
+    }
 
 
     @Getter
@@ -56,15 +67,16 @@ public class PostDto {
         private Long clubId;
         private String clubMemberName;
         private String clubRole;
-        private int likeCount;
-        private int commentCount;
+        private Long likeCount;
+        private Long commentCount;
+        private Boolean likeStatus;
         private List<String> attachmentsUrl;
         private LocalDateTime createdTime;
         private LocalDateTime lastModifiedTime;
 
 
         // Entity -> DTO
-        public static Response of(Post post,int likeCount,int commentCount) {
+        public static Response of(Post post,Long likeCount,Long commentCount,Boolean likeStatus) {
 
             return Response.builder()
                     .id(post.getId())
@@ -75,17 +87,30 @@ public class PostDto {
                     .clubRole(post.getClubMember().getRole().name())
                     .likeCount(likeCount)
                     .commentCount(commentCount)
+                    .likeStatus(likeStatus)
                     .createdTime(post.getCreatedDate())
                     .lastModifiedTime(post.getLastModifiedDate())
                     .attachmentsUrl(post.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.toList()))
                     .build();
         }
 
-        public static List<Response> ofList(List<Post> posts, List<Integer> likeCounts, List<Integer> commentCounts) {
-            return IntStream.range(0,posts.size())
-                    .mapToObj(index->of(posts.get(index),likeCounts.get(index),commentCounts.get(index)))
+//        public static List<Response> ofList(List<Post> posts, List<Long> likeCounts, List<Long> commentCounts) {
+//            return IntStream.range(0,posts.size())
+//                    .mapToObj(index->of(posts.get(index),likeCounts.get(index),commentCounts.get(index),false))
+//                    .collect(Collectors.toList());
+//        }
+
+        public static List<Response> ofList(List<PostResponseDto> postResponseDtos) {
+            return IntStream.range(0, postResponseDtos.size())
+                    .mapToObj(index -> of(
+                            postResponseDtos.get(index).getPost(),
+                            postResponseDtos.get(index).getLikeCount(),
+                            postResponseDtos.get(index).getCommentCount(),
+                            postResponseDtos.get(index).getLikeStatus()))
                     .collect(Collectors.toList());
         }
+
+
     }
 
     @Getter

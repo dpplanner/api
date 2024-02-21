@@ -12,24 +12,27 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    @Query("select p " +
+    @Query("select p, l.id, (select count(*) from PostMemberLike l2 where l2.post.id = p.id) as likeCount, (select count(*) from Comment c where c.post.id = p.id) as commentCount " +
             "from Post p " +
             "join fetch p.clubMember " +
+            "left join PostMemberLike l on p.id = l.post.id and l.clubMember.id = :clubMemberId " +
             "where p.club.id = :clubId " +
             "order by p.isFixed desc, p.createdDate desc")
-    Slice<Post> findByClubId(@Param(value = "clubId") Long clubId, Pageable pageable);
+    Slice<Object[]> findByClubId(@Param(value = "clubId") Long clubId, @Param(value = "clubMemberId") Long clubMemberId, Pageable pageable);
 
-    @Query("select p " +
+    @Query("select p, l.id, (select count(*) from PostMemberLike l2 where l2.post.id = p.id) as likeCount, (select count(*) from Comment c where c.post.id = p.id) as commentCount " +
             "from Post p " +
             "join fetch p.clubMember " +
+            "left join PostMemberLike l on p.id = l.post.id and l.clubMember.id = :clubMemberId " +
             "where p.club.id = :clubId " +
             "and p.clubMember.id = :clubMemberId "  +
             "order by p.isFixed desc, p.createdDate desc")
-    Slice<Post> findMyPostsByClubId(@Param(value = "clubMemberId") Long clubMemberId,@Param(value = "clubId") Long clubId, Pageable pageable);
+    Slice<Object[]> findMyPostsByClubId(@Param(value = "clubMemberId") Long clubMemberId,@Param(value = "clubId") Long clubId, Pageable pageable);
 
     @Query("select p " +
             "from Post p " +
             "join fetch p.clubMember " +
             "where p.id = :id")
     Optional<Post> findById(@Param(value = "id")Long id);
+
 }

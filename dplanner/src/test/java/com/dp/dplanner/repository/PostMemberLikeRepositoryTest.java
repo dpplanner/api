@@ -53,7 +53,7 @@ public class PostMemberLikeRepositoryTest {
 
         postMemberLikeRepository.saveAll(Arrays.asList(like1, like2));
 
-        int likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
+        Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
 
         assertThat(likeCount).isEqualTo(2);
     }
