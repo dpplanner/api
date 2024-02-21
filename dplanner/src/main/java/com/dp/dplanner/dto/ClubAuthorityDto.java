@@ -3,6 +3,7 @@ package com.dp.dplanner.dto;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class ClubAuthorityDto {
         private Long clubId;
         private String name;
         private String description;
+        @NotNull
         private List<String> authorities;
 
         public Create(Long clubId, String name, String description, String... authorities) {
@@ -59,6 +61,7 @@ public class ClubAuthorityDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Update {
+        @NotNull
         private Long id;
         private Long clubId;
         private String name;
