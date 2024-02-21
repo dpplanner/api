@@ -11,6 +11,7 @@ import com.dp.dplanner.service.ClubMemberService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -173,6 +174,7 @@ public class ClubMemberControllerTests {
      */
     @Test
     @DisplayName("클럽 회원 여러명을 퇴출하는 경우 200 OK")
+    @Disabled("해당 api 삭제")
     public void deleteClubMembers_OK() throws Throwable {
         //given
         Long clubId = 1L;
@@ -196,6 +198,7 @@ public class ClubMemberControllerTests {
 
     @Test
     @DisplayName("본인의 데이터가 없을 때 클럽 회원 여러명을 퇴출하는 경우 404 NOT FOUND")
+    @Disabled("해당 api 삭제")
     public void deleteClubMembers_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
@@ -580,7 +583,7 @@ public class ClubMemberControllerTests {
 
 
     /**
-     * DELETE /clubs/{clubId}/club-members/{clubMemberId}?force=false
+     * DELETE /clubs/{clubId}/club-members/{clubMemberId}/leave
      */
     @Test
     @DisplayName("클럽 탈퇴 요청시 204 NO CONTENT")
@@ -593,15 +596,14 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "false"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/leave", clubId, clubMemberId));
 
         //then
         resultActions.andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("클럽 탈퇴 권한이 없으면 403 FORBIDDEN")
+    @DisplayName("관리자인 경우엔 탈퇴 할 수 없음. 클럽 탈퇴 권한이 없으면 403 FORBIDDEN")
     public void deleteClubMember_FORBIDDEN() throws Throwable {
         //given
         Long clubId = 1L;
@@ -612,8 +614,7 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "false"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/leave", clubId, clubMemberId));
 
         //then
         resultActions.andExpect(status().isForbidden());
@@ -631,8 +632,8 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "false"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/leave", clubId, clubMemberId));
+
 
         //then
         resultActions.andExpect(status().isNotFound());
@@ -650,8 +651,8 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "false"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/leave", clubId, clubMemberId));
+
 
         //then
         resultActions.andExpect(status().isForbidden());
@@ -661,7 +662,7 @@ public class ClubMemberControllerTests {
 
 
     /**
-     * DELETE /clubs/{clubId}/club-members/{clubMemberId}?force=true
+     * DELETE /clubs/{clubId}/club-members/{clubMemberId}/kickOut
      */
     @Test
     @DisplayName("클럽 회원을 퇴출하는 경우 204 NO CONTENT")
@@ -674,8 +675,7 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "true"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickOut", clubId, clubMemberId));
 
         //then
         resultActions.andExpect(status().isNoContent());
@@ -693,8 +693,8 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "true"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickOut", clubId, clubMemberId));
+
 
         //then
         resultActions.andExpect(status().isForbidden());
@@ -712,8 +712,8 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId)
-                        .param("force", "true"));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickOut", clubId, clubMemberId));
+
 
         //then
         resultActions.andExpect(status().isNotFound());

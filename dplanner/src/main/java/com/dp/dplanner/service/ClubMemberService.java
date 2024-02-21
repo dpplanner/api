@@ -295,14 +295,15 @@ public class ClubMemberService {
      */
     private static boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
 
+        // 본인이 자기 자신 KickOut 하는 경우
         if (clubMember.equals(manager)) {
             return true;
         }
-
+        // 다른 클럽인 경우
         if (!manager.isSameClub(clubMember)) {
             return true;
         }
-
+        // 매니저가 ADMIN kickOut 하는 경우
         if ((isMemberManager(manager) && clubMember.checkRoleIs(ADMIN))) {
             return true;
         }

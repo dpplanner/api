@@ -2,6 +2,8 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.CommonResponse;
+import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubMemberService;
 import jakarta.validation.Valid;
@@ -20,17 +22,6 @@ public class ClubMemberController {
 
     private final ClubMemberService clubMemberService;
 
-//    @GetMapping("")
-//    public ResponseEntity<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
-//                                                                          @PathVariable("clubId") Long clubId) {
-//
-//        Long clubMemberId = principal.getClubMemberId();
-//        List<ClubMemberDto.Response> response = clubMemberService.findMyClubMembers(clubMemberId,clubId);
-//
-//        return ResponseEntity
-//                .status(HttpStatus.OK)
-//                .body(response);
-//    }
 
     @GetMapping(value = "")
     public CommonResponse<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
@@ -40,22 +31,10 @@ public class ClubMemberController {
         List<ClubMemberDto.Response> response;
 
         if (confirmed == null) {
-            // ToDo 리팩토링 필요
             response = clubMemberService.findMyClubMembers(clubMemberId,clubId);
         }else{
             response = clubMemberService.findMyClubMembers(clubMemberId,clubId, confirmed);
-
         }
-        return CommonResponse.createSuccess(response);
-    }
-
-    @DeleteMapping("")
-    public CommonResponse<List<ClubMemberDto.Response>> deleteClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                          @PathVariable("clubId") Long clubId,
-                                                                          @RequestBody @Valid List<ClubMemberDto.Request> requestDto) {
-        Long clubMemberId = principal.getClubMemberId();
-
-        List<ClubMemberDto.Response> response = clubMemberService.kickOutAll(clubMemberId, clubId, requestDto);
         return CommonResponse.createSuccess(response);
     }
 
@@ -96,22 +75,44 @@ public class ClubMemberController {
         return CommonResponse.createSuccess(response);
     }
 
-    @DeleteMapping(value = "/{clubMemberId}", params = "force")
+    @DeleteMapping(value = "/{clubMemberId}/kickOut")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public CommonResponse deleteClubMember(@AuthenticationPrincipal PrincipalDetails principal,
+    public CommonResponse kickOutClubMember(@AuthenticationPrincipal PrincipalDetails principal,
                                            @PathVariable("clubId") Long clubId,
-                                           @PathVariable("clubMemberId") Long requestClubMemberId,
-                                           @RequestParam(defaultValue = "false") boolean force) {
+                                           @PathVariable("clubMemberId") Long requestClubMemberId){
 
-        Long clubMemberId = principal.getClubMemberId();
+        Long managerId = principal.getClubMemberId();
+        clubMemberService.kickOut(managerId, clubId, new ClubMemberDto.Request(requestClubMemberId));
 
-        if (force) {
-            clubMemberService.kickOut(clubMemberId, clubId, new ClubMemberDto.Request(requestClubMemberId));
-        } else {
-            clubMemberService.leaveClub(clubMemberId,new ClubMemberDto.Request(requestClubMemberId));
-        }
         return CommonResponse.createSuccessWithNoContent();
     }
+
+    @DeleteMapping(value = "/{clubMemberId}/leave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse leaveClub(@AuthenticationPrincipal PrincipalDetails principal,
+                                           @PathVariable("clubId") Long clubId,
+                                           @PathVariable("clubMemberId") Long requestClubMemberId) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
+        if (!principal.getClubMemberId().equals(requestClubMemberId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
+        Long clubMemberId = principal.getClubMemberId();
+        clubMemberService.leaveClub(clubMemberId,new ClubMemberDto.Request(requestClubMemberId));
+        return CommonResponse.createSuccessWithNoContent();
+    }
+
+//    @DeleteMapping("")
+//    public CommonResponse<List<ClubMemberDto.Response>> deleteClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
+//                                                                          @PathVariable("clubId") Long clubId,
+//                                                                          @RequestBody @Valid List<ClubMemberDto.Request> requestDto) {
+//        Long clubMemberId = principal.getClubMemberId();
+//
+//        List<ClubMemberDto.Response> response = clubMemberService.kickOutAll(clubMemberId, clubId, requestDto);
+//        return CommonResponse.createSuccess(response);
+//    }
 
     @PatchMapping("/{clubMemberId}/role")
     public CommonResponse<ClubMemberDto.Response> updateClubMemberRole(@AuthenticationPrincipal PrincipalDetails principal,

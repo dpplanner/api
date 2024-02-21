@@ -1,6 +1,8 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.*;
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
 import jakarta.validation.Valid;
@@ -10,7 +12,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,19 +29,14 @@ public class ClubController {
         return CommonResponse.createSuccess(responseDto);
     }
 
-    @GetMapping(value = "")
-    public CommonResponse<List<ClubDto.Response>> findClubs(@RequestParam Map<String, String> param) {
-
-        List<ClubDto.Response> responseDto;
-
-        if (param.get("memberId") != null) {
-            Long memberId = Long.valueOf(param.get("memberId"));
-            responseDto = clubService.findMyClubs(memberId);
-        }else{
-            //todo param에 따라 정렬 및 검색 기능 추가
-            responseDto = clubService.findClubs(param);
+    @GetMapping(value = "", params = {"memberId"})
+    public CommonResponse<List<ClubDto.Response>> findClubs(@AuthenticationPrincipal PrincipalDetails principal,
+                                                            @RequestParam("memberId") Long memberId) {
+        if (!principal.getId().equals(memberId)) {
+            throw new MemberException(ErrorResult.REQUEST_IS_INVALID);
         }
-
+        List<ClubDto.Response> responseDto;
+        responseDto = clubService.findMyClubs(memberId);
         return CommonResponse.createSuccess(responseDto);
     }
 
@@ -129,5 +125,4 @@ public class ClubController {
 
         return CommonResponse.createSuccess(responseDto);
     }
-
 }

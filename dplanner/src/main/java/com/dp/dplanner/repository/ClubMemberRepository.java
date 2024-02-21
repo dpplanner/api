@@ -16,6 +16,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     Optional<ClubMember> findByClubIdAndMemberId(Long clubId, Long memberId);
 
+    @Query("select cm from ClubMember cm where cm.club = :club order by cm.isConfirmed desc, cm.name")
     List<ClubMember> findAllByClub(Club club);
 
 
