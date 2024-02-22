@@ -44,6 +44,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query("select r " +
             "from Reservation r " +
+            "join fetch r.clubMember cm " +
+            "join fetch r.resource res " +
             "where r.resource.id = :resourceId " +
             "and ((r.period.startDateTime <= :start and :start < r.period.endDateTime) " +
             "or (:start <= r.period.startDateTime and r.period.startDateTime < :end)) " +
@@ -54,6 +56,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query("select r " +
             "from Reservation r " +
+            "join fetch r.clubMember cm " +
+            "join fetch r.resource res " +
             "where r.resource.id = :resourceId " +
             "and r.status = :status " +
             "and ((r.period.startDateTime <= :start and :start < r.period.endDateTime) " +
@@ -66,6 +70,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query("select r " +
             "from Reservation r " +
+            "join fetch r.clubMember cm " +
+            "join fetch r.resource res " +
             "where r.resource.id = :resourceId " +
             "and r.status != 'REJECTED' " +
             "and ((r.period.startDateTime <= :start and :start < r.period.endDateTime) " +
@@ -78,6 +84,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query("select r " +
             "from Reservation r " +
+            "join fetch r.clubMember cm " +
+            "join fetch r.resource res " +
             "where r.resource.id = :resourceId " +
             "and r.status != 'CONFIRMED' " +
             "order by r.period.startDateTime asc, r.period.endDateTime asc")
