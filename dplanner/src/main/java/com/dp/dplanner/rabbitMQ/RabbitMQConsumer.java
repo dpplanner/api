@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@Profile("production")
+@Profile("!test")
 @Slf4j
 @RequiredArgsConstructor
 public class RabbitMQConsumer {

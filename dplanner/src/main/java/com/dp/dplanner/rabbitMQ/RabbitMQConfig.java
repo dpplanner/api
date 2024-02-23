@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("production")
+@Profile("!test")
 public class RabbitMQConfig {
 
     @Value("${spring.rabbitmq.host}")

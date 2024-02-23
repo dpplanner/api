@@ -9,3 +9,10 @@ rabbitmq:
   routing.key.2: club.key.2
   routing.key.3: club.key.3
 
+spring:
+  # RabbitMQ 연결 정보
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest

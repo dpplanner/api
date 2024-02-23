@@ -1,30 +1,24 @@
 spring:
-  profiles:
-    include: oauth, rabbitMQ
-    active: production
+  config:
+    activate:
+      on-profile: production
+    import:
+      - application-oauth.yml
+      - application-rabbitMQ.yml
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-
   jpa:
     hibernate:
-      ddl-auto: update #create update none
+      ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     properties:
       hibernate:
-        format_sql: true
-        show-sql: true
         default_batch_fetch_size: 500
-# RabbitMQ 연결 정보
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-
 
 cloud:
   aws:
@@ -39,10 +33,5 @@ cloud:
     s3:
       bucket : dplanner-resource-server
 
-logging.level:
-  org.hibernate.SQL: debug
-  org.hibernate.type: trace
-
-# Service Post 설정
 server:
   port: 8080

@@ -1,11 +1,12 @@
 spring:
+  profiles:
+    active: test
   jpa:
     hibernate:
       ddl-auto: create #create update none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
-
   security:
     oauth2:
       client:
@@ -16,8 +17,6 @@ spring:
             scope:
               - profile
               - email
-  profiles:
-    active: test
 
 cloud:
   aws:

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Controller
-@Profile("production")
+@Profile("!test")
 @RequiredArgsConstructor
 public class ReservationRabbitMQController {
 
