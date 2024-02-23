@@ -1,6 +1,7 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommonResponse;
+import com.dp.dplanner.dto.LoginDto;
 import com.dp.dplanner.dto.TokenDto;
 import com.dp.dplanner.exception.AuthenticationException;
 import com.dp.dplanner.service.AuthService;
@@ -25,7 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public  CommonResponse<?> refreshToken(@RequestBody @Valid TokenDto tokenDto, HttpServletResponse response) {
+    public CommonResponse<?> refreshToken(@RequestBody @Valid TokenDto tokenDto, HttpServletResponse response) {
         TokenDto refreshedToken;
         try {
             refreshedToken = authService.refreshToken(tokenDto);
@@ -38,4 +39,12 @@ public class AuthController {
             return CommonResponse.createSuccessWithNoContent();
         }
     }
+
+    @PostMapping("/login")
+    public CommonResponse<TokenDto> login(@RequestBody @Valid LoginDto loginDto) {
+        TokenDto refreshedToken;
+        refreshedToken = authService.login(loginDto);
+        return CommonResponse.createSuccess(refreshedToken);
+    }
+
 }

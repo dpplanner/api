@@ -3,7 +3,6 @@ package com.dp.dplanner.security;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.repository.ClubMemberRepository;
@@ -17,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -24,7 +24,7 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final String secret = "ZHBsYW5uZXI=";
-    private static final Long ACCESS_TOKEN_VALID_TIME = 30 * 60 * 1000L;            // 30 min
+    private static final Long ACCESS_TOKEN_VALID_TIME = 30 * 60 * 1000L * 100;            // 3000 min
     private static final Long REFRESH_TOKEN_VALID_TIME = 3 * 30 * 24 * 30 * 60 * 1000L; // 3 month
     private final MemberRepository memberRepository;
     private final ClubMemberRepository clubMemberRepository;
@@ -63,13 +63,13 @@ public class JwtTokenProvider {
 
         Member member = memberRepository.findById(principal.getId()).orElseThrow(() -> new MemberException(ErrorResult.MEMBER_NOT_FOUND));
         Club recentClub = member.getRecentClub();
-        ClubMember clubMember;
+        Optional<ClubMember> optionalClubMember;
 
         if (recentClub != null) {
-            clubMember = clubMemberRepository.findByClubIdAndMemberId(recentClub.getId(), member.getId()).orElseThrow(() -> new ClubMemberException(ErrorResult.CLUBMEMBER_NOT_FOUND));
-            claims.put("recent_club_id", recentClub.getId());
-            claims.put("club_member_id", clubMember.getId());
-        }else{
+            optionalClubMember = clubMemberRepository.findByClubIdAndMemberId(recentClub.getId(), member.getId());
+            claims.put("recent_club_id", optionalClubMember.map(ClubMember::getClub).map(Club::getId).orElse(null));
+            claims.put("club_member_id", optionalClubMember.map(ClubMember::getId).orElse(null));
+        } else {
             claims.put("recent_club_id", null);
             claims.put("club_member_id", null);
         }
