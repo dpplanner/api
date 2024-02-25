@@ -44,4 +44,8 @@ public class AuthController {
         return CommonResponse.createSuccess(refreshedToken);
     }
 
+    @GetMapping("/health")
+    public CommonResponse health() {
+        return CommonResponse.createSuccess("UP");
+    }
 }
