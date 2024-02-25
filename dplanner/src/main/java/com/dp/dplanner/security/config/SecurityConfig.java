@@ -1,5 +1,6 @@
 package com.dp.dplanner.security.config;
 
+import com.dp.dplanner.security.CustomAuthenticationEntryPoint;
 import com.dp.dplanner.security.JwtAuthenticationFilter;
 import com.dp.dplanner.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final OAuth2SuccessHandler successHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final JwtTokenProvider tokenProvider;
 
     @Bean
@@ -48,21 +48,22 @@ public class SecurityConfig {
                         .permitAll()
                         .anyRequest().authenticated()
                 )
-
-                .oauth2Login((oauth2Login) ->
-                    oauth2Login
-                            .authorizationEndpoint((authorization)->
-                                    authorization.baseUri("/oauth2/authorization"))
-                            .redirectionEndpoint((redirection)->
-                                    redirection.baseUri("/*/oauth2/code/*"))
-                            .userInfoEndpoint((userInfoEndpointConfig) ->
-                                    userInfoEndpointConfig.userService(customOAuth2UserService))
-                            .successHandler(successHandler)
+                .exceptionHandling(
+                        (exceptionHandling) -> exceptionHandling.authenticationEntryPoint(customAuthenticationEntryPoint)
                 );
 
+//                .oauth2Login((oauth2Login) ->
+//                    oauth2Login
+//                            .authorizationEndpoint((authorization)->
+//                                    authorization.baseUri("/oauth2/authorization"))
+//                            .redirectionEndpoint((redirection)->
+//                                    redirection.baseUri("/*/oauth2/code/*"))
+//                            .userInfoEndpoint((userInfoEndpointConfig) ->
+//                                    userInfoEndpointConfig.userService(customOAuth2UserService))
+//                            .successHandler(successHandler)
+//                );
         http.addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
                 UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

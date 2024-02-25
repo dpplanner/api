@@ -8,7 +8,6 @@ import com.dp.dplanner.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,10 +32,8 @@ public class AuthController {
             return CommonResponse.createSuccess(refreshedToken);
 
         } catch (AuthenticationException e) {
-            response.setHeader("Location", "/login");
-            response.setStatus(HttpStatus.SEE_OTHER.value());
-
-            return CommonResponse.createSuccessWithNoContent();
+            response.setStatus(401);
+            return CommonResponse.createFail(e.getMessage());
         }
     }
 
