@@ -12,6 +12,7 @@ import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.service.upload.UploadService;
 import com.dp.dplanner.util.InviteCodeGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -22,6 +23,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
@@ -47,6 +49,8 @@ public class ClubServiceTests {
     ClubMemberService clubMemberService;
     @Mock
     InviteCodeGenerator inviteCodeGenerator;
+    @Mock
+    UploadService uploadService;
 
     @InjectMocks
     ClubService clubService;
@@ -863,7 +867,21 @@ public class ClubServiceTests {
                 .isEqualTo(MEMBER_NOT_FOUND);
     }
 
+    @Test
+    @DisplayName("클럽 대표 이미지 변경")
+    public void updateClubRepresentativeImage() throws Exception
+    {
+        MockMultipartFile multipartFile = new MockMultipartFile("image", "content".getBytes());
 
+        Long clubId = 1L;
+        Club club = createClub(clubId, "club", null);
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
+        given(uploadService.uploadFile(any())).willReturn("updatedUrl");
+
+        ClubDto.Response response = clubService.changeClubRepresentativeImage(1L, clubId, multipartFile);
+
+        assertThat(response.getUrl()).isEqualTo("updatedUrl");
+    }
 
 
     /**
@@ -954,6 +972,11 @@ public class ClubServiceTests {
 
             @Override
             public String getInfo() {
+                return null;
+            }
+
+            @Override
+            public String getUrl() {
                 return null;
             }
 

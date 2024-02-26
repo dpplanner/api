@@ -53,6 +53,7 @@ public class ClubDto {
         Long getId();
         String getClubName();
         String getInfo();
+        String getUrl();
         Long getMemberCount();
         Boolean getIsConfirmed();
     }
@@ -67,6 +68,7 @@ public class ClubDto {
         private String info;
         private Long memberCount;
         private Boolean isConfirmed;
+        private String url;
 
         public static ClubDto.Response of(ResponseMapping responseMapping) {
             return Response.builder()
@@ -75,6 +77,7 @@ public class ClubDto {
                     .info(responseMapping.getInfo())
                     .memberCount(responseMapping.getMemberCount())
                     .isConfirmed(responseMapping.getIsConfirmed())
+                    .url(responseMapping.getUrl())
                     .build();
         }
         public static ClubDto.Response of(Club club) {
@@ -82,6 +85,7 @@ public class ClubDto {
                     .id(club.getId())
                     .clubName(club.getClubName())
                     .info(club.getInfo())
+                    .url(club.getUrl())
                     .build();
         }
         public static List<ClubDto.Response> ofList(List<Club> clubs) {

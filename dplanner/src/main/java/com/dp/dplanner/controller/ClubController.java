@@ -1,6 +1,7 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.*;
+import com.dp.dplanner.exception.ClubException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.security.PrincipalDetails;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,7 +30,6 @@ public class ClubController {
         ClubDto.Response responseDto = clubService.createClub(memberId, createDto);
         return CommonResponse.createSuccess(responseDto);
     }
-
     @GetMapping(value = "", params = {"memberId"})
     public CommonResponse<List<ClubDto.Response>> findClubs(@AuthenticationPrincipal PrincipalDetails principal,
                                                             @RequestParam("memberId") Long memberId) {
@@ -123,6 +124,18 @@ public class ClubController {
         updateDto.setClubId(clubId);
         ClubAuthorityDto.Response responseDto = clubService.updateClubAuthority(clubMemberId, updateDto);
 
+        return CommonResponse.createSuccess(responseDto);
+    }
+
+    @PostMapping("/{clubId}/updateClubImage")
+    public CommonResponse<ClubDto.Response> changeClubRepresentativeImage(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                          @PathVariable("clubId") Long clubId,
+                                                                          @RequestBody MultipartFile image) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
+        Long clubMemberId = principal.getClubMemberId();
+        ClubDto.Response responseDto = clubService.changeClubRepresentativeImage(clubMemberId, clubId, image);
         return CommonResponse.createSuccess(responseDto);
     }
 }

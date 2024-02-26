@@ -15,11 +15,13 @@ import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.service.upload.UploadService;
 import com.dp.dplanner.util.InviteCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class ClubService {
     private final ClubAuthorityRepository clubAuthorityRepository;
     private final ClubMemberService clubMemberService;
     private final InviteCodeGenerator inviteCodeGenerator;
+    private final UploadService uploadService;
 
 
     @Transactional
@@ -183,6 +186,17 @@ public class ClubService {
         return clubMemberService.create(memberId, createDto);
     }
 
+    @Transactional
+    @RequiredAuthority(role = ADMIN)
+    public ClubDto.Response changeClubRepresentativeImage(Long adminId, Long clubId, MultipartFile image) {
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+
+        String url = uploadService.uploadFile(image);
+        club.updateUrl(url);
+
+        return ClubDto.Response.of(club);
+    }
 
     /**
      * utility methods

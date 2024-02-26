@@ -19,6 +19,7 @@ public class Club {
     private String clubName;
 
     private String info;
+    private String url;
 
     @OneToMany(mappedBy = "club")
     private List<ClubMember> clubMembers = new ArrayList<>();
@@ -32,6 +33,10 @@ public class Club {
     public Club updateInfo(String updatedClubInfo) {
         this.info = updatedClubInfo;
         return this;
+    }
+
+    public void updateUrl(String url) {
+        this.url = url;
     }
 
 }

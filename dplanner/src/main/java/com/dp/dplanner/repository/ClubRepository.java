@@ -13,7 +13,7 @@ import java.util.List;
 public interface ClubRepository extends JpaRepository<Club, Long> {
     @Query(value = """
     SELECT
-        c.id AS id, c.club_name AS clubName, c.info, COUNT(cm.club_id) AS memberCount,
+        c.id AS id, c.club_name AS clubName, c.info, c.url, COUNT(cm.club_id) AS memberCount,
         (
             SELECT cm2.is_confirmed
             FROM club_member cm2
