@@ -23,7 +23,7 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
     LEFT JOIN
         club_member cm ON c.id = cm.club_id
     WHERE
-        cm.member_id = 1
+        cm.member_id = :memberId
     ORDER BY
         c.id
         """, nativeQuery = true)
