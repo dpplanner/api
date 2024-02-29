@@ -69,6 +69,7 @@ public class PostDto {
         private Boolean isFixed;
         private Long clubId;
         private String clubMemberName;
+        private String profileUrl;
         private String clubRole;
         private Long likeCount;
         private Long commentCount;
@@ -88,6 +89,7 @@ public class PostDto {
                     .isFixed(post.getIsFixed())
                     .clubId(post.getClub().getId())
                     .clubMemberName(post.getClubMember().getName())
+                    .profileUrl(post.getClubMember().getUrl())
                     .clubRole(post.getClubMember().getRole().name())
                     .likeCount(likeCount)
                     .commentCount(commentCount)
