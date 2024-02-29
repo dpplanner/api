@@ -100,8 +100,10 @@ public class PostController {
     @PutMapping(value = "/{postId}")
     public CommonResponse<Response> updatePost(@AuthenticationPrincipal PrincipalDetails principal,
                                                @Valid @RequestPart final Update update,
+                                               @PathVariable("postId") final Long postId,
                                                @RequestPart(required = false) final List<MultipartFile> files) {
         Long clubMemberId = principal.getClubMemberId();
+        update.setId(postId);
         update.setFiles(files);
 
         Response response = postService.updatePost(clubMemberId, update);
