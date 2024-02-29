@@ -67,6 +67,7 @@ public class ClubMemberDto {
             private String info;
             private String role;
             private boolean isConfirmed;
+            private String url;
 
         public static ClubMemberDto.Response of(ClubMember clubMember) {
             return new ClubMemberDto.Response(
@@ -74,7 +75,8 @@ public class ClubMemberDto {
                     clubMember.getName(),
                     clubMember.getInfo(),
                     clubMember.getRole().name(),
-                    clubMember.isConfirmed()
+                    clubMember.isConfirmed(),
+                    clubMember.getUrl()
             );
         }
 

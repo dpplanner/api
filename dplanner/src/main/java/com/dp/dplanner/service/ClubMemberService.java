@@ -13,10 +13,12 @@ import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.service.upload.UploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +34,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 public class ClubMemberService {
 
     private final MessageService messageService;
+    private final UploadService uploadService;
     private final MemberRepository memberRepository;
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
@@ -266,6 +269,15 @@ public class ClubMemberService {
         clubMemberRepository.deleteAll(deletedClubMembers);
 
         return ClubMemberDto.Response.ofList(deletedClubMembers);
+    }
+
+    @Transactional
+    public ClubMemberDto.Response changeClubMemberProfileImage(Long clubMemberId, MultipartFile image) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        String url = uploadService.uploadFile(image);
+        clubMember.updateProfileUrl(url);
+
+        return ClubMemberDto.Response.of(clubMember);
     }
 
 

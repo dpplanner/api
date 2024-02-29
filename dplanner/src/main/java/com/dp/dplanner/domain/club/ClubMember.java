@@ -38,6 +38,7 @@ public class ClubMember {
     private String name;
     private String info;
     private Boolean isConfirmed;
+    private String url;
 
     @Builder
     public ClubMember(Member member, Club club, String name, String info) {
@@ -123,6 +124,9 @@ public class ClubMember {
     public void update(String name, String info) {
         this.name = name;
         this.info = info;
+    }
+    public void updateProfileUrl(String url) {
+        this.url = url;
     }
     public void updateClubAuthority(ClubAuthority clubAuthority) {
         this.clubAuthority = clubAuthority;

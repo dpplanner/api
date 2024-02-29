@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -27,6 +28,10 @@ public class ClubMemberController {
     public CommonResponse<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
                                                                           @PathVariable("clubId") Long clubId,
                                                                           @RequestParam(required = false) Boolean confirmed) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
         Long clubMemberId = principal.getClubMemberId();
         List<ClubMemberDto.Response> response;
 
@@ -43,6 +48,9 @@ public class ClubMemberController {
     public CommonResponse confirmClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
                                              @PathVariable("clubId") Long clubId,
                                              @RequestBody @Valid List<ClubMemberDto.Request> requestDto) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
 
         Long clubMemberId = principal.getClubMemberId();
 
@@ -54,6 +62,10 @@ public class ClubMemberController {
     public CommonResponse<ClubMemberDto.Response> findClubMemberById(@AuthenticationPrincipal PrincipalDetails principal,
                                                                      @PathVariable("clubId") Long clubId,
                                                                      @PathVariable("clubMemberId") Long requestClubMemberId) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
         Long clubMemberId = principal.getClubMemberId();
 
         ClubMemberDto.Response response =
@@ -64,9 +76,11 @@ public class ClubMemberController {
 
     @PatchMapping("/{clubMemberId}")
     public CommonResponse<ClubMemberDto.Response> updateClubMember(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                   @PathVariable("clubId") Long clubId,
                                                                    @PathVariable("clubMemberId") Long requestClubMemberId,
                                                                    @RequestBody @Valid ClubMemberDto.Update updateDto) {
+        if (!principal.getClubMemberId().equals(requestClubMemberId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
 
         Long clubMemberId = principal.getClubMemberId();
 
@@ -80,6 +94,9 @@ public class ClubMemberController {
     public CommonResponse kickOutClubMember(@AuthenticationPrincipal PrincipalDetails principal,
                                            @PathVariable("clubId") Long clubId,
                                            @PathVariable("clubMemberId") Long requestClubMemberId){
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
 
         Long managerId = principal.getClubMemberId();
         clubMemberService.kickOut(managerId, clubId, new ClubMemberDto.Request(requestClubMemberId));
@@ -90,11 +107,7 @@ public class ClubMemberController {
     @DeleteMapping(value = "/{clubMemberId}/leave")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public CommonResponse leaveClub(@AuthenticationPrincipal PrincipalDetails principal,
-                                           @PathVariable("clubId") Long clubId,
                                            @PathVariable("clubMemberId") Long requestClubMemberId) {
-        if (!principal.getClubId().equals(clubId)) {
-            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
-        }
         if (!principal.getClubMemberId().equals(requestClubMemberId)) {
             throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
         }
@@ -119,11 +132,26 @@ public class ClubMemberController {
                                                                        @PathVariable("clubId") Long clubId,
                                                                        @PathVariable("clubMemberId") Long requestClubMemberId,
                                                                        @RequestBody @Valid ClubMemberDto.Update updateDto) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
         Long clubMemberId = principal.getClubMemberId();
 
         updateDto.setId(requestClubMemberId);
         ClubMemberDto.Response response = clubMemberService.updateClubMemberClubAuthority(clubMemberId, clubId, updateDto);
 
         return CommonResponse.createSuccess(response);
+    }
+
+    @PostMapping("/{clubMemberId}/updateProfileImage")
+    public CommonResponse<ClubMemberDto.Response> changeClubMemberProfileImage(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                          @PathVariable("clubMemberId") Long clubMemberId,
+                                                                          @RequestBody MultipartFile image) {
+        if (!principal.getClubMemberId().equals(clubMemberId)) {
+            throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
+        }
+        ClubMemberDto.Response responseDto = clubMemberService.changeClubMemberProfileImage(clubMemberId, image);
+        return CommonResponse.createSuccess(responseDto);
     }
 }
