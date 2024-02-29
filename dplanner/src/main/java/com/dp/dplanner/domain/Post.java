@@ -25,6 +25,7 @@ public class Post extends BaseEntity{
     private ClubMember clubMember;
 
     private String content;
+    private String title;
     private Boolean isFixed;
 
     @OneToMany(mappedBy = "post",cascade = CascadeType.REMOVE)
@@ -37,10 +38,11 @@ public class Post extends BaseEntity{
     private List<PostMemberLike> postMemberLikes = new ArrayList();
 
     @Builder
-    public Post(Club club, ClubMember clubMember, String content, Boolean isFixed) {
+    public Post(Club club, ClubMember clubMember, String content,String title, Boolean isFixed) {
         this.club = club;
         this.clubMember = clubMember;
         this.content = content;
+        this.title = title;
 
         if (isFixed == null) {
             this.isFixed = false;
@@ -53,8 +55,8 @@ public class Post extends BaseEntity{
         this.attachments.remove(attachment);
     }
 
-    public void updateContent(String content) {
-
+    public void updatePost(String title, String content) {
+        this.title = title;
         this.content = content;
 
     }

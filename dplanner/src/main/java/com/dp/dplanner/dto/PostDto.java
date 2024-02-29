@@ -29,6 +29,7 @@ public class PostDto {
         @NotNull
         private Long clubId;
         private String content;
+        private String title;
         private List<MultipartFile> files;
 
         public Post toEntity(ClubMember clubMember, Club club) {
@@ -36,6 +37,7 @@ public class PostDto {
                     .clubMember(clubMember)
                     .club(club)
                     .content(this.content)
+                    .title(this.title)
                     .isFixed(false)
                     .build();
         }
@@ -63,6 +65,7 @@ public class PostDto {
     public static class Response{
         private Long id;
         private String content;
+        private String title;
         private Boolean isFixed;
         private Long clubId;
         private String clubMemberName;
@@ -81,6 +84,7 @@ public class PostDto {
             return Response.builder()
                     .id(post.getId())
                     .content(post.getContent())
+                    .title(post.getTitle())
                     .isFixed(post.getIsFixed())
                     .clubId(post.getClub().getId())
                     .clubMemberName(post.getClubMember().getName())
@@ -133,6 +137,7 @@ public class PostDto {
         @NotNull
         private Long id;
         private String content;
+        private String title;
         @Builder.Default
         private List<String> attachmentUrl = new ArrayList<>();
         private List<MultipartFile> files;

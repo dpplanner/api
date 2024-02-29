@@ -109,7 +109,7 @@ public class PostService {
         }
 
 
-        post.updateContent(update.getContent());
+        post.updatePost(update.getTitle(), update.getContent());
 
         Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
