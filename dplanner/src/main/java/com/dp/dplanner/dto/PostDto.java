@@ -136,7 +136,6 @@ public class PostDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Update {
-        @NotNull
         private Long id;
         private String content;
         private String title;
