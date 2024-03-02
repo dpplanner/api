@@ -59,6 +59,7 @@ public class CommentDto {
         private Long postId;
         private Long clubMemberId;
         private String clubMemberName;
+        private String profileUrl;
         private Long likeCount;
         private String content;
         private Boolean isDeleted;
@@ -79,6 +80,7 @@ public class CommentDto {
                     .content(comment.getContent())
                     .parentId(parentId)
                     .clubMemberId(comment.getClubMember().getId())
+                    .profileUrl(comment.getClubMember().getUrl())
                     .postId(comment.getPost().getId())
                     .children(children)
                     .createdTime(comment.getCreatedDate())
