@@ -102,11 +102,13 @@ public class ClubMemberService {
         Club club = clubMember.getClub();
 
         List<ClubMember> clubMembers;
-        if (clubMember.hasAuthority(MEMBER_ALL)) {
+        clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
+
+/*        if (clubMember.hasAuthority(MEMBER_ALL)) {
             clubMembers = clubMemberRepository.findAllByClub(club);
         } else {
             clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
-        }
+        }*/
 
         return ClubMemberDto.Response.ofList(clubMembers);
     }

@@ -271,6 +271,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("관리자는 승인되지 않은 회원을 포함한 전체 클럽 회원을 조회할 수 있다.")
+    @Disabled("관리자이거나 클럽 회원 관리 권한이 있어도, 해당 메서드에서는 confirm된 회원만 볼 수 있도록 로직 변경")
     public void findMyClubMemberByAdmin() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -295,6 +296,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("매니저에게 클럽 회원 관리 권한이 있으면 승인되지 않은 회원을 포함한 전체 회원을 조회할 수 있다.")
+    @Disabled("관리자이거나 클럽 회원 관리 권한이 있어도, 해당 메서드에서는 confirm된 회원만 볼 수 있도록 로직 변경.")
     public void findMyClubMemberByManagerHasMEMBER_ALL() throws Exception {
         //given
         Long clubMemberId = 1L;
