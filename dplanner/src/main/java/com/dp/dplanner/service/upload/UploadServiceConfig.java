@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("production")
+@Profile("!test")
 public class UploadServiceConfig {
     @Autowired
     private AmazonS3Client amazonS3Client;
