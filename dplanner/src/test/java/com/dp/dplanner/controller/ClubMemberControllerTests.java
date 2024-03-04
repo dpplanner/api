@@ -229,7 +229,8 @@ public class ClubMemberControllerTests {
         doNothing().when(clubMemberService).confirmAll(any(Long.class), any(List.class));
 
         //when
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(2L);
+//        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
         ResultActions resultActions = mockMvc.perform(patch("/clubs/{clubId}/club-members/confirm", clubId)
                 .content(gson.toJson(requestDto))
                 .contentType(MediaType.APPLICATION_JSON));
@@ -248,7 +249,8 @@ public class ClubMemberControllerTests {
                 .when(clubMemberService).confirmAll(any(Long.class), any(List.class));
 
         //when
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(2L);
+//        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
         ResultActions resultActions = mockMvc.perform(patch("/clubs/{clubId}/club-members/confirm", clubId)
                 .content(gson.toJson(requestDto))
                 .contentType(MediaType.APPLICATION_JSON));
@@ -267,7 +269,8 @@ public class ClubMemberControllerTests {
                 .when(clubMemberService).confirmAll(any(Long.class), any(List.class));
 
         //when
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
+        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(2L);
+//        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
         ResultActions resultActions = mockMvc.perform(patch("/clubs/{clubId}/club-members/confirm", clubId)
                 .content(gson.toJson(requestDto))
                 .contentType(MediaType.APPLICATION_JSON));

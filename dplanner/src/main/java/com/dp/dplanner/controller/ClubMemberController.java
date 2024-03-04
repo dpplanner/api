@@ -47,14 +47,14 @@ public class ClubMemberController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public CommonResponse confirmClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
                                              @PathVariable("clubId") Long clubId,
-                                             @RequestBody @Valid List<ClubMemberDto.Request> requestDto) {
+                                             @RequestBody @Valid ClubMemberDto.Request requestDto) {
         if (!principal.getClubId().equals(clubId)) {
             throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
         }
 
         Long clubMemberId = principal.getClubMemberId();
 
-        clubMemberService.confirmAll(clubMemberId, requestDto);
+        clubMemberService.confirmAll(clubMemberId, List.of(requestDto));
         return CommonResponse.createSuccessWithNoContent();
     }
 
