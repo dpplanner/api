@@ -3,6 +3,7 @@ package com.dp.dplanner.repository;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.dto.ClubMemberDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +34,27 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
             @Param("clubId") Long clubId,
             @Param("authorityType") ClubAuthorityType authorityType
     );
+
+    @Query(value = """
+    SELECT
+        cm.id, cm.club_id as clubId, cm.name, cm.info, cm.role, cm.is_confirmed as isConfirmed, cm.url,
+        ca2.id AS clubAuthorityId, ca2.name clubAuthorityName, ca2.clubAuthorityTypes
+    FROM
+        club_member cm
+    LEFT JOIN
+        (
+            SELECT
+                ca.*,
+                ARRAY_AGG(ct.club_authority_types) AS clubAuthorityTypes
+            FROM
+                club_authority ca
+            JOIN
+                club_authority_club_authority_types AS ct ON ca.id = ct.club_authority_id
+            GROUP BY
+                ca.id
+        ) AS ca2 ON cm.club_authority_id = ca2.id
+        WHERE cm.id = :clubMemberId
+""", nativeQuery = true)
+
+    Optional<ClubMemberDto.ResponseMapping> findClubMemberWithClubAuthority(@Param("clubMemberId") Long clubMemberId);
 }

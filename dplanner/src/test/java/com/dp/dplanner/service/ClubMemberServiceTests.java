@@ -159,9 +159,8 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long sameClubMemberId = 2L;
-        ClubMember sameClubMember = createConfirmedClubMember(club, "sameClubMember");
-        ReflectionTestUtils.setField(sameClubMember, "id", sameClubMemberId);
-        given(clubMemberRepository.findById(sameClubMemberId)).willReturn(Optional.ofNullable(sameClubMember));
+        ClubMemberDto.ResponseMapping sameClubMember = createResponseMapping("sameClubMember", clubId, sameClubMemberId, true);
+        given(clubMemberRepository.findClubMemberWithClubAuthority(sameClubMemberId)).willReturn(Optional.ofNullable(sameClubMember));
 
         //when
         ClubMemberDto.Request requestDto = new ClubMemberDto.Request(sameClubMemberId);
@@ -182,8 +181,10 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long otherClubMemberId = 2L;
-        ClubMember otherClubMember = createConfirmedClubMember(Club.builder().build(), "otherClubMember");
-        given(clubMemberRepository.findById(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
+        Long otherClubId = 100L;
+        ClubMemberDto.ResponseMapping otherClubMember = createResponseMapping("otherClubMember", otherClubId, otherClubMemberId, true);
+
+        given(clubMemberRepository.findClubMemberWithClubAuthority(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
 
         //when
         //then
@@ -202,10 +203,11 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long notConfirmedClubMemberId = 2L;
-        ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
-        given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
+        ClubMemberDto.ResponseMapping notConfirmedClubMember = createResponseMapping("otherClubMember", clubId,notConfirmedClubMemberId,false);
 
-        assert !notConfirmedClubMember.isConfirmed();
+        given(clubMemberRepository.findClubMemberWithClubAuthority(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
+
+        assert !notConfirmedClubMember.getIsConfirmed();
 
         //when
         //then
@@ -1609,6 +1611,7 @@ public class ClubMemberServiceTests {
         return clubMember;
     }
 
+
     private static List<ClubMember> createUnconfirmedClubMembers(Club club, int n, String name) {
         List<ClubMember> unconfirmedClubMembers = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -1679,5 +1682,61 @@ public class ClubMemberServiceTests {
                 .club(club)
                 .clubAuthorityTypes(clubAuthorityTypes)
                 .build();
+    }
+
+
+    private ClubMemberDto.ResponseMapping createResponseMapping(String name, Long clubId, Long id, boolean iscConfirmed) {
+
+        return new ClubMemberDto.ResponseMapping() {
+            @Override
+            public Long getId() {
+                return id;
+            }
+
+            @Override
+            public Long getClubId() {
+                return clubId;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public String getInfo() {
+                return null;
+            }
+
+            @Override
+            public String getRole() {
+                return null;
+            }
+
+            @Override
+            public Boolean getIsConfirmed() {
+                return iscConfirmed;
+            }
+
+            @Override
+            public String getUrl() {
+                return null;
+            }
+
+            @Override
+            public Long getClubAuthorityId() {
+                return null;
+            }
+
+            @Override
+            public String getClubAuthorityName() {
+                return null;
+            }
+
+            @Override
+            public List<String> getClubAuthorityTypes() {
+                return null;
+            }
+        };
     }
 }

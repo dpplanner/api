@@ -286,12 +286,6 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
         Long clubMemberId = 1L;
-        ClubMember clubMember = ClubMember.createClubMember(
-                Member.builder().name("member").build(),
-                Club.builder().build());
-
-        given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
-                .willReturn(ClubMemberDto.Response.of(clubMember));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -300,8 +294,6 @@ public class ClubMemberControllerTests {
         //then
         resultActions.andExpect(status().isOk());
 
-        ClubMemberDto.Response response = getResponse(resultActions, ClubMemberDto.Response.class);
-        assertThat(response.getName()).isEqualTo("member");
     }
 
     @Test

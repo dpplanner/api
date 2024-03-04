@@ -2,6 +2,7 @@ package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
+import com.dp.dplanner.dto.ClubMemberDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -328,6 +329,35 @@ class ClubMemberRepositoryTest {
 
         // Then: 결과 검증
         assertThat(0).isEqualTo(membersWithAuthority.size());
+
+    }
+
+    @Test
+    @DisplayName("클럽 맴버 조회시  클럽 권한과 함께 조회 native Query")
+    public void findClubMemberWithClubAuthority() throws Exception
+    {
+
+        ClubMember clubMember1 = ClubMember.builder().club(club).member(member).name("Member1").build();
+
+        ClubAuthority authority1 = ClubAuthority.builder()
+                .club(club)
+                .clubAuthorityTypes(Arrays.asList(ClubAuthorityType.SCHEDULE_ALL,ClubAuthorityType.POST_ALL))
+                .name("Authority1")
+                .build();
+
+        clubMember1.setManager();
+        clubMember1.updateClubAuthority(authority1);
+
+        clubAuthorityRepository.save(authority1);
+        clubMemberRepository.save(clubMember1);
+
+        ClubMemberDto.ResponseMapping clubMemberResponseMapping = clubMemberRepository.findClubMemberWithClubAuthority(clubMember1.getId()).get();
+
+
+        assertThat(clubMemberResponseMapping.getId()).isEqualTo(clubMember1.getId());
+        assertThat(clubMemberResponseMapping.getClubAuthorityId()).isEqualTo(authority1.getId());
+        assertThat(clubMemberResponseMapping.getClubAuthorityTypes()).contains(ClubAuthorityType.SCHEDULE_ALL.name(), ClubAuthorityType.POST_ALL.name());
+        assertThat(clubMemberResponseMapping.getClubAuthorityTypes().size()).isEqualTo(2);
 
     }
 }

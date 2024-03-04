@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.projection.ProjectionFactory;
-import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -61,9 +59,6 @@ public class ClubServiceTests {
 
     @BeforeEach
     void setUp() {
-        ProjectionFactory factory = new SpelAwareProxyProjectionFactory();
-        ClubDto.ResponseMapping responseMapping = factory.createProjection(ClubDto.ResponseMapping.class);
-
 
         //레포지토리에 미리 저장된 member
         memberId = 1L;

@@ -67,23 +67,23 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(savedMember);
     }
 
-    public ClubMemberDto.Response findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
+    public ClubMemberDto.ResponseExtend findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        ClubMember requestClubMember = clubMemberRepository.findById(requestDto.getId())
+        ClubMemberDto.ResponseMapping requestClubMember = clubMemberRepository.findClubMemberWithClubAuthority(requestDto.getId())
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(requestClubMember)) {
+        if (!clubMember.isSameClub(requestClubMember.getClubId())) {
             throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
 
-        if (!requestClubMember.isConfirmed()) {
+        if (!requestClubMember.getIsConfirmed()) {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
 
-        return ClubMemberDto.Response.of(requestClubMember);
+        return ClubMemberDto.ResponseExtend.of(requestClubMember);
     }
 
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId,Long clubId) {
