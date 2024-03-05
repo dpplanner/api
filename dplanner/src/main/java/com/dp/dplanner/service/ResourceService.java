@@ -5,7 +5,6 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.domain.club.ClubRole;
 import com.dp.dplanner.exception.ResourceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -16,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.dto.ResourceDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
@@ -28,7 +28,7 @@ public class ResourceService {
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
 
-    @RequiredAuthority(role = ClubRole.ADMIN)
+    @RequiredAuthority(authority = RESOURCE_ALL)
     @Transactional
     public Response createResource(Long clubMemberId, Create createDto) {
 
@@ -40,7 +40,7 @@ public class ResourceService {
         return Response.of(resource);
     }
 
-    @RequiredAuthority(role = ClubRole.ADMIN)
+    @RequiredAuthority(authority = RESOURCE_ALL)
     @Transactional
     public Response updateResource(Long clubMemberId, Update updateDto) {
 
@@ -52,7 +52,7 @@ public class ResourceService {
         return Response.of(resource);
     }
 
-    @RequiredAuthority(role = ClubRole.ADMIN)
+    @RequiredAuthority(authority = RESOURCE_ALL)
     @Transactional
     public void deleteResource(Long clubMemberId, Long resourceId) {
 

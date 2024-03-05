@@ -86,6 +86,12 @@ public class ClubMemberService {
         return ClubMemberDto.ResponseExtend.of(requestClubMember);
     }
 
+    /**
+     * 일반적인 회원 목록 요청 처리
+     * @param clubMemberId
+     * @param clubId
+     * @return
+     */
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId,Long clubId) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -230,7 +236,7 @@ public class ClubMemberService {
     }
 
     @Transactional
-    @RequiredAuthority(role = ADMIN)
+    @RequiredAuthority(authority = MEMBER_ALL)
     public void kickOut(Long managerId, Long clubId, ClubMemberDto.Request requestDto) {
 
         ClubMember admin = clubMemberRepository.findById(managerId)
@@ -251,7 +257,7 @@ public class ClubMemberService {
     }
 
     @Transactional
-    @RequiredAuthority(role = ADMIN)
+    @RequiredAuthority(authority = MEMBER_ALL)
     public List<ClubMemberDto.Response> kickOutAll(Long adminId, Long clubId, List<ClubMemberDto.Request> requestDto) {
 
         ClubMember admin = clubMemberRepository.findById(adminId)

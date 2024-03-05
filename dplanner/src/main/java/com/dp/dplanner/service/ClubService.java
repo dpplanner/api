@@ -89,6 +89,7 @@ public class ClubService {
     }
 
     @Transactional
+    @RequiredAuthority(role = ADMIN)
     public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
@@ -148,7 +149,7 @@ public class ClubService {
     }
 
     @Transactional
-    @RequiredAuthority(role = ADMIN)
+    // TODO 초대 코드 생성 로직 변경
     public InviteDto inviteClub(Long adminId,Long clubId) {
 
         ClubMember admin = clubMemberRepository.findById(adminId)
