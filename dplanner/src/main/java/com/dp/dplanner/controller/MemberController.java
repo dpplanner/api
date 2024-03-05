@@ -17,7 +17,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @PatchMapping("/members/{memberId}/refreshFcmToken")
+    @PatchMapping("/members/{memberId}/refresh-fcmtoken")
     public CommonResponse updateFcmToken(@AuthenticationPrincipal PrincipalDetails principal,
                                          @PathVariable Long memberId,
                                          @RequestBody FCMNotificationRequestDto requestDto) {
@@ -30,7 +30,7 @@ public class MemberController {
 
     }
 
-    @PatchMapping("/members/{memberId}/changeClub")
+    @PatchMapping("/members/{memberId}/change-club")
     public CommonResponse changeClub(@AuthenticationPrincipal PrincipalDetails principal,
                                      @PathVariable Long memberId,
                                      @RequestBody ClubDto.Request request) {

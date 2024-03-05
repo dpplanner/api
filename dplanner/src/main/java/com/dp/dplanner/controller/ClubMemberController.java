@@ -89,7 +89,7 @@ public class ClubMemberController {
         return CommonResponse.createSuccess(response);
     }
 
-    @DeleteMapping(value = "/{clubMemberId}/kickOut")
+    @DeleteMapping(value = "/{clubMemberId}/kickout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public CommonResponse kickOutClubMember(@AuthenticationPrincipal PrincipalDetails principal,
                                            @PathVariable("clubId") Long clubId,
@@ -144,7 +144,7 @@ public class ClubMemberController {
         return CommonResponse.createSuccess(response);
     }
 
-    @PostMapping("/{clubMemberId}/updateProfileImage")
+    @PostMapping("/{clubMemberId}/update-profile-image")
     public CommonResponse<ClubMemberDto.Response> changeClubMemberProfileImage(@AuthenticationPrincipal PrincipalDetails principal,
                                                                           @PathVariable("clubMemberId") Long clubMemberId,
                                                                           @RequestBody MultipartFile image) {

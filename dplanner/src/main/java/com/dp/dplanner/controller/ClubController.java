@@ -127,7 +127,7 @@ public class ClubController {
         return CommonResponse.createSuccess(responseDto);
     }
 
-    @PostMapping("/{clubId}/updateClubImage")
+    @PostMapping("/{clubId}/update-club-image")
     public CommonResponse<ClubDto.Response> changeClubRepresentativeImage(@AuthenticationPrincipal PrincipalDetails principal,
                                                                           @PathVariable("clubId") Long clubId,
                                                                           @RequestBody MultipartFile image) {
