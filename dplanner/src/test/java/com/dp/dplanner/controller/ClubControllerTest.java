@@ -435,7 +435,7 @@ public class ClubControllerTest {
                 .club(club)
                 .name("name")
                 .description("description")
-                .clubAuthorityTypes(List.of(MEMBER_ALL, MESSAGE_ALL))
+                .clubAuthorityTypes(List.of(MEMBER_ALL, SCHEDULE_ALL))
                 .build();
 
         List<ClubAuthorityDto.Response> responseDto = ClubAuthorityDto.Response.ofList(clubId, List.of(clubAuthority));
@@ -454,7 +454,7 @@ public class ClubControllerTest {
         assertThat(response.get(0).getClubId()).isEqualTo(clubId);
         assertThat(response.get(0).getName()).isEqualTo("name");
         assertThat(response.get(0).getDescription()).isEqualTo("description");
-        assertThat(response.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name());
+        assertThat(response.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
 
     }
 

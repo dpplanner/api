@@ -33,7 +33,7 @@ public class ClubAuthorityRepositoryTest {
         //when
         ClubAuthority clubAuthority = ClubAuthority.builder()
                 .club(club)
-                .clubAuthorityTypes(List.of(ClubAuthorityType.MESSAGE_ALL,ClubAuthorityType.MEMBER_ALL))
+                .clubAuthorityTypes(List.of(ClubAuthorityType.MEMBER_ALL))
                 .build();
 
         clubAuthorityRepository.save(clubAuthority);
@@ -42,8 +42,8 @@ public class ClubAuthorityRepositoryTest {
         List<ClubAuthority> findAuthorities = clubAuthorityRepository.findAllByClub(club);
         List<ClubAuthorityType> authorityTypes = findAuthorities.get(0).getClubAuthorityTypes();
 
-        assertThat(authorityTypes).as("메세지 권한과 회원 권한을 포함해야 함")
-                .contains(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.MEMBER_ALL);
+        assertThat(authorityTypes).as("회원 권한을 포함해야 함")
+                .contains(ClubAuthorityType.MEMBER_ALL);
         assertThat(authorityTypes).as("스케줄 권한과 게시판 권한을 포함하지 않아야 함")
                 .doesNotContain(ClubAuthorityType.POST_ALL, ClubAuthorityType.SCHEDULE_ALL);
     }
@@ -57,7 +57,7 @@ public class ClubAuthorityRepositoryTest {
 
         ClubAuthority clubAuthority = ClubAuthority.builder()
                 .club(club)
-                .clubAuthorityTypes(List.of(ClubAuthorityType.MESSAGE_ALL,ClubAuthorityType.MEMBER_ALL))
+                .clubAuthorityTypes(List.of(ClubAuthorityType.SCHEDULE_ALL,ClubAuthorityType.MEMBER_ALL))
                 .build();
 
         clubAuthorityRepository.save(clubAuthority);

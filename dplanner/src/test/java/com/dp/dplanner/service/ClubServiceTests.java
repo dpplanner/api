@@ -466,14 +466,14 @@ public class ClubServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
-        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId, "name", "description", ClubAuthorityType.SCHEDULE_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name());
+        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId, "name", "description", ClubAuthorityType.SCHEDULE_ALL.name());
 
         ClubAuthorityDto.Response responseDto = clubService.createClubAuthority(clubMemberId, createDto);
 
         //then
 
-        assertThat(responseDto.getAuthorities()).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
-                .containsExactlyInAnyOrder(ClubAuthorityType.SCHEDULE_ALL.name(), ClubAuthorityType.MESSAGE_ALL.name());
+        assertThat(responseDto.getAuthorities()).as("매니저는 스케줄 권한을 가져야 한다.")
+                .containsExactlyInAnyOrder(ClubAuthorityType.SCHEDULE_ALL.name());
 
         assertThat(responseDto.getAuthorities()).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
                 .doesNotContain(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
@@ -491,7 +491,7 @@ public class ClubServiceTests {
         ClubMember clubMember = createClubMemberAsAdmin(club);
 
         Long clubAuthorityId = 1L;
-        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MESSAGE_ALL));
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.POST_ALL));
 
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
         given(clubAuthorityRepository.findById(clubAuthorityId)).willReturn(Optional.ofNullable(clubAuthority));
@@ -504,14 +504,13 @@ public class ClubServiceTests {
                         clubId,
                         "updateName",
                         "updateDescription",
-                        ClubAuthorityType.SCHEDULE_ALL.name(),
-                        ClubAuthorityType.MESSAGE_ALL.name());
+                        ClubAuthorityType.SCHEDULE_ALL.name());
 
         clubService.updateClubAuthority(clubMemberId, updateDto);
 
         //then
-        assertThat(clubAuthority.getClubAuthorityTypes()).as("매니저는 스케줄과 메세지 관리 권한을 가져야 한다.")
-                .contains(ClubAuthorityType.SCHEDULE_ALL, ClubAuthorityType.MESSAGE_ALL);
+        assertThat(clubAuthority.getClubAuthorityTypes()).as("매니저는 스케줄 권한을 가져야 한다.")
+                .contains(ClubAuthorityType.SCHEDULE_ALL);
         assertThat(clubAuthority.getClubAuthorityTypes()).as("매니저는 스케줄과 메세지 관리를 제외한 다른 권한은 가지지 않아야 한다.")
                 .doesNotContain(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL);
         assertThat(clubAuthority.getName()).as("요청한 이름으로 변경되어야 한다.")
@@ -569,7 +568,7 @@ public class ClubServiceTests {
         ClubMember clubMember = createClubMemberAsAdmin(club);
 
         ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
-        ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.SCHEDULE_ALL));
+        ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.POST_ALL, ClubAuthorityType.SCHEDULE_ALL));
 
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
         given(clubAuthorityRepository.findAllByClub(club)).willReturn(List.of(clubAuthority, clubAuthority2));
@@ -582,7 +581,7 @@ public class ClubServiceTests {
         assertThat(responseList.size()).isEqualTo(2);
         assertThat(responseList).extracting(ClubAuthorityDto.Response::getClubId).containsOnly(clubId);
         assertThat(responseList.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
-        assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MESSAGE_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
+        assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.POST_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
     }
 
     @Test
@@ -597,7 +596,7 @@ public class ClubServiceTests {
         clubMember.setManager();
 
         ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
-        ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.MESSAGE_ALL, ClubAuthorityType.SCHEDULE_ALL));
+        ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.POST_ALL, ClubAuthorityType.SCHEDULE_ALL));
 
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
         given(clubAuthorityRepository.findAllByClub(club)).willReturn(List.of(clubAuthority, clubAuthority2));
@@ -610,7 +609,7 @@ public class ClubServiceTests {
         assertThat(responseList.size()).isEqualTo(2);
         assertThat(responseList).extracting(ClubAuthorityDto.Response::getClubId).containsOnly(clubId);
         assertThat(responseList.get(0).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MEMBER_ALL.name(), ClubAuthorityType.POST_ALL.name());
-        assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.MESSAGE_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
+        assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.POST_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
     }
 
     @Test

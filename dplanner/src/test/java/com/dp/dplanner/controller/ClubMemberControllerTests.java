@@ -670,7 +670,7 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickOut", clubId, clubMemberId));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickout", clubId, clubMemberId));
 
         //then
         resultActions.andExpect(status().isNoContent());
@@ -688,7 +688,7 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickOut", clubId, clubMemberId));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickout", clubId, clubMemberId));
 
 
         //then
@@ -707,7 +707,7 @@ public class ClubMemberControllerTests {
 
         //when
         ResultActions resultActions = mockMvc.perform(
-                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickOut", clubId, clubMemberId));
+                delete("/clubs/{clubId}/club-members/{clubMemberId}/kickout", clubId, clubMemberId));
 
 
         //then
