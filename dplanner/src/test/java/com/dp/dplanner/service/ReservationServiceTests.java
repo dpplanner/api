@@ -66,13 +66,13 @@ public class ReservationServiceTests {
     @BeforeEach
     void setUp() {
         Club club = Club.builder().build();
-        resource = createResource(club, 1L);
-        clubMember = createClubMember(club, 1L);
-        sameClubMember = createClubMember(club, 2L);
+        resource = createResource(club, 111L);
+        clubMember = createClubMember(club, 11L);
+        sameClubMember = createClubMember(club, 22L);
 
         Club otherClub = Club.builder().build();
-        otherClubResource = createResource(otherClub, 2L);
-        otherClubMember = createClubMember(otherClub, 3L);
+        otherClubResource = createResource(otherClub, 33L);
+        otherClubMember = createClubMember(otherClub, 44L);
 
         clubAuthority = ClubAuthority.builder()
                 .club(clubMember.getClub())

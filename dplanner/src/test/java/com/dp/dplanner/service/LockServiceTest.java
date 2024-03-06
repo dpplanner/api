@@ -61,7 +61,7 @@ public class LockServiceTest {
         ReflectionTestUtils.setField(member,"id",clubId);
 
 
-        clubId = 10L;
+        clubId = 15L;
         club = Club.builder().build();
         ReflectionTestUtils.setField(club,"id",clubId);
 
@@ -71,7 +71,7 @@ public class LockServiceTest {
                 .club(club)
                 .build();
 
-        resourceId = 20L;
+        resourceId = 35L;
         resource = Resource.builder()
                 .club(club)
                 .build();

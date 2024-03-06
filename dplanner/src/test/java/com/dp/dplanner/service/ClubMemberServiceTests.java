@@ -53,7 +53,7 @@ public class ClubMemberServiceTests {
     @BeforeEach
     void setUp() {
         //레포지토리에 미리 저장된 club
-        clubId = 1L;
+        clubId = 100L;
         club = createClub("club");
         ReflectionTestUtils.setField(club, "id", clubId);
     }
@@ -159,7 +159,7 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long sameClubMemberId = 2L;
-        ClubMemberDto.ResponseMapping sameClubMember = createResponseMapping("sameClubMember", clubId, sameClubMemberId, true);
+        ClubMemberDto.ResponseMapping sameClubMember = createResponseMapping(clubId, sameClubMemberId, "sameClubMember", true);
         given(clubMemberRepository.findClubMemberWithClubAuthority(sameClubMemberId)).willReturn(Optional.ofNullable(sameClubMember));
 
         //when
@@ -181,8 +181,8 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long otherClubMemberId = 2L;
-        Long otherClubId = 100L;
-        ClubMemberDto.ResponseMapping otherClubMember = createResponseMapping("otherClubMember", otherClubId, otherClubMemberId, true);
+        Long otherClubId = 200L;
+        ClubMemberDto.ResponseMapping otherClubMember = createResponseMapping(otherClubId, otherClubMemberId, "otherClubMember", true);
 
         given(clubMemberRepository.findClubMemberWithClubAuthority(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
 
@@ -203,7 +203,7 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long notConfirmedClubMemberId = 2L;
-        ClubMemberDto.ResponseMapping notConfirmedClubMember = createResponseMapping("otherClubMember", clubId,notConfirmedClubMemberId,false);
+        ClubMemberDto.ResponseMapping notConfirmedClubMember = createResponseMapping(clubId, notConfirmedClubMemberId, "otherClubMember", false);
 
         given(clubMemberRepository.findClubMemberWithClubAuthority(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
 
@@ -1053,6 +1053,7 @@ public class ClubMemberServiceTests {
 
     @Test
     @DisplayName("클럽 탈퇴시 클럽 회원 데이터 요청 데이터가 다르면 DIFFERENT_CLUB_EXCEPTION ")
+    @Disabled("Controller에서 유효성 검사 진행함에 따라 test disable")
     public void leaveClubDifferentClubMemberThenException() throws Exception {
         //given
         Long clubMemberId = 1L;
@@ -1685,7 +1686,7 @@ public class ClubMemberServiceTests {
     }
 
 
-    private ClubMemberDto.ResponseMapping createResponseMapping(String name, Long clubId, Long id, boolean iscConfirmed) {
+    private ClubMemberDto.ResponseMapping createResponseMapping( Long clubId, Long id,String name, boolean iscConfirmed) {
 
         return new ClubMemberDto.ResponseMapping() {
             @Override

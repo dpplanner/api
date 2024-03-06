@@ -61,7 +61,7 @@ public class ClubServiceTests {
     void setUp() {
 
         //레포지토리에 미리 저장된 member
-        memberId = 1L;
+        memberId = 567L;
         member = Member.builder().build();
         ReflectionTestUtils.setField(member, "id", memberId);
     }
@@ -225,13 +225,13 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
         //when
         ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
-        ClubDto.Response responseDto = clubService.updateClubInfo(memberId, updateDto);
+        ClubDto.Response responseDto = clubService.updateClubInfo(clubMemberId, updateDto);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 함").isNotNull();
@@ -245,14 +245,14 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
         //when
         //then
         ClubDto.Update updateDto = new ClubDto.Update(2L, "updatedClubInfo");
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.updateClubInfo(memberId, updateDto));
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.updateClubInfo(clubMemberId, updateDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 정보를 수정하는 경우 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
@@ -265,7 +265,7 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMember(club, member);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
@@ -274,7 +274,7 @@ public class ClubServiceTests {
         //when
         //then
         ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.updateClubInfo(memberId, updateDto));
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.updateClubInfo(clubMemberId, updateDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
 
@@ -287,7 +287,7 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMember(club, member);
         clubMember.setManager();
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
@@ -297,7 +297,7 @@ public class ClubServiceTests {
         //when
         //then
         ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.updateClubInfo(memberId, updateDto));
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.updateClubInfo(clubMemberId, updateDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
@@ -306,7 +306,7 @@ public class ClubServiceTests {
     @DisplayName("정보 수정 시 클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
     public void updateClubInfoByNotClubMemberThenException() throws Exception {
         //given
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(null));
 
         //when
@@ -328,7 +328,7 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMember(club, member);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
@@ -349,7 +349,7 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMember(club, member);
         clubMember.setManager();
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
@@ -372,7 +372,7 @@ public class ClubServiceTests {
         Club club = createClub(clubId, "club", null);
         ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL));
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
         given(clubAuthorityRepository.save(any(ClubAuthority.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -461,7 +461,7 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
@@ -487,10 +487,10 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", null);
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
 
-        Long clubAuthorityId = 1L;
+        Long clubAuthorityId = 1234L;
         ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.POST_ALL));
 
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
@@ -526,14 +526,14 @@ public class ClubServiceTests {
         Long clubId = 1L;
         Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubMemberId = 1L;
+        Long clubMemberId = 12L;
         ClubMember clubMember = createClubMemberAsAdmin(club);
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
         //when
         //then
         ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(2L,"name","description", ClubAuthorityType.SCHEDULE_ALL.name());
-        BaseException exception = assertThrows(ClubException.class, () -> clubService.createClubAuthority(memberId, createDto));
+        BaseException exception = assertThrows(ClubException.class, () -> clubService.createClubAuthority(clubMemberId, createDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 정보를 수정하려 하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
