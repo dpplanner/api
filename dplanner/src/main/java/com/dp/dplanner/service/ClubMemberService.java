@@ -224,9 +224,7 @@ public class ClubMemberService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(requestDto.getId())) {
-            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
-        }
+        assert clubMemberId.equals(requestDto.getId());
 
         if (clubMember.checkRoleIs(ADMIN)) {
             throw new ClubMemberException(DELETE_AUTHORIZATION_DENIED);
