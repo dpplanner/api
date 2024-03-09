@@ -52,7 +52,9 @@ public class ClubController {
     public CommonResponse<ClubDto.Response> updateClubInfo(@AuthenticationPrincipal PrincipalDetails principal,
                                                            @PathVariable("clubId") Long clubId,
                                                            @RequestBody @Valid ClubDto.Update updateDto) {
-
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
         updateDto.setClubId(clubId);
         ClubDto.Response responseDto = clubService.updateClubInfo(clubMemberId, updateDto);
@@ -63,7 +65,9 @@ public class ClubController {
     @PostMapping("/{clubId}/invite") // 초대 코드 생성
     public CommonResponse<InviteDto> inviteClub(@AuthenticationPrincipal PrincipalDetails principal,
                                                 @PathVariable("clubId") Long clubId) {
-
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
         InviteDto responseDto = clubService.inviteClub(clubMemberId,clubId);
 
@@ -97,8 +101,10 @@ public class ClubController {
     public CommonResponse<ClubAuthorityDto.Response> createManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
                                                                               @PathVariable("clubId") Long clubId,
                                                                               @RequestBody @Valid ClubAuthorityDto.Create createDto) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
-
         createDto.setClubId(clubId);
         ClubAuthorityDto.Response responseDto = clubService.createClubAuthority(clubMemberId, createDto);
 
@@ -108,7 +114,9 @@ public class ClubController {
     @GetMapping("/{clubId}/authorities")
     public CommonResponse<List<ClubAuthorityDto.Response>> findManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
                                                                                   @PathVariable("clubId") Long clubId) {
-
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
         List<ClubAuthorityDto.Response> responseDto = clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
 
@@ -119,8 +127,10 @@ public class ClubController {
     public CommonResponse<ClubAuthorityDto.Response> updateManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
                                                                               @PathVariable("clubId") Long clubId,
                                                                               @RequestBody @Valid ClubAuthorityDto.Update updateDto) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
-
         updateDto.setClubId(clubId);
         ClubAuthorityDto.Response responseDto = clubService.updateClubAuthority(clubMemberId, updateDto);
 
@@ -129,10 +139,12 @@ public class ClubController {
 
     @DeleteMapping("/{clubId}/authorities")
     public CommonResponse deleteManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                              @PathVariable("clubId") Long clubId,
-                                                                              @RequestBody @Valid ClubAuthorityDto.Delete deleteDto) {
+                                                   @PathVariable("clubId") Long clubId,
+                                                   @RequestBody @Valid ClubAuthorityDto.Delete deleteDto) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+        }
         Long clubMemberId = principal.getClubMemberId();
-
         deleteDto.setClubId(clubId);
         clubService.deleteClubAuthority(clubMemberId, deleteDto);
 
