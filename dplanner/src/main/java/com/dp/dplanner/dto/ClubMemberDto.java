@@ -2,6 +2,7 @@ package com.dp.dplanner.dto;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -60,7 +61,7 @@ public class ClubMemberDto {
 
     @Getter
     @Setter
-    @SuperBuilder
+    @Builder
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Response {
@@ -70,6 +71,10 @@ public class ClubMemberDto {
             private String role;
             private Boolean isConfirmed;
             private String url;
+            private Long clubAuthorityId;
+            private String clubAuthorityName;
+            @Builder.Default
+            private List<String> clubAuthorityTypes = new ArrayList<>();
 
         public static ClubMemberDto.Response of(ClubMember clubMember) {
             return Response.builder()
@@ -79,39 +84,17 @@ public class ClubMemberDto {
                     .role(clubMember.getRole().name())
                     .isConfirmed(clubMember.getIsConfirmed())
                     .url(clubMember.getUrl())
+                    .clubAuthorityId(clubMember.getClubAuthority() != null ? clubMember.getClubAuthority().getId() : null)
+                    .clubAuthorityName(clubMember.getClubAuthority() != null ? clubMember.getClubAuthority().getName() : null)
+                    .clubAuthorityTypes(clubMember.getClubAuthority() != null ? clubMember.getClubAuthority().getClubAuthorityTypes().stream().map(ClubAuthorityType::toString).toList() : null)
                     .build();
         }
-
 
         public static List<ClubMemberDto.Response> ofList(List<ClubMember> clubMembers) {
             return clubMembers.stream().map(ClubMemberDto.Response::of).toList();
         }
     }
-    @Getter
-    @Setter
-    @SuperBuilder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ResponseExtend extends Response{
-        private Long clubAuthorityId;
-        private String clubAuthorityName;
-        @Builder.Default
-        private List<String> clubAuthorityTypes = new ArrayList<>();
 
-        public static ClubMemberDto.ResponseExtend of(ResponseMapping clubMember) {
-            return ClubMemberDto.ResponseExtend.builder()
-                    .id(clubMember.getId())
-                    .name(clubMember.getName())
-                    .info(clubMember.getInfo())
-                    .role(clubMember.getRole())
-                    .isConfirmed(clubMember.getIsConfirmed())
-                    .url(clubMember.getUrl())
-                    .clubAuthorityId(clubMember.getClubAuthorityId())
-                    .clubAuthorityName(clubMember.getClubAuthorityName())
-                    .clubAuthorityTypes(clubMember.getClubAuthorityTypes())
-                    .build();
-        }
-    }
     public interface ResponseMapping{
         Long getId();
         Long getClubId();

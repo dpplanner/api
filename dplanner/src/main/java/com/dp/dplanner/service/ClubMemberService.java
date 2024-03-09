@@ -67,15 +67,18 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(savedMember);
     }
 
-    public ClubMemberDto.ResponseExtend findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
+    public ClubMemberDto.Response findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        ClubMemberDto.ResponseMapping requestClubMember = clubMemberRepository.findClubMemberWithClubAuthority(requestDto.getId())
+        ClubMember requestClubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(requestClubMember.getClubId())) {
+//        ClubMemberDto.ResponseMapping requestClubMember = clubMemberRepository.findClubMemberWithClubAuthority(requestDto.getId())
+//                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        if (!clubMember.isSameClub(requestClubMember)) {
             throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
 
@@ -83,7 +86,7 @@ public class ClubMemberService {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
 
-        return ClubMemberDto.ResponseExtend.of(requestClubMember);
+        return ClubMemberDto.Response.of(requestClubMember);
     }
 
     /**
@@ -107,16 +110,9 @@ public class ClubMemberService {
 
         Club club = clubMember.getClub();
 
-        List<ClubMember> clubMembers;
-        clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
-
-/*        if (clubMember.hasAuthority(MEMBER_ALL)) {
-            clubMembers = clubMemberRepository.findAllByClub(club);
-        } else {
-            clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
-        }*/
-
-        return ClubMemberDto.Response.ofList(clubMembers);
+        // todo clubAuthority에 권한 배열로 넣어서 조인 안 하고 가져올 수 있도록 변경
+        List<ClubMember> clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
+        return clubMembers.stream().map(ClubMemberDto.Response::of).toList();
     }
 
     @RequiredAuthority(authority = MEMBER_ALL)
@@ -129,14 +125,9 @@ public class ClubMemberService {
             throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
         }
 
-        List<ClubMember> clubMembers;
-        if (confirmed) {
-            clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(manager.getClub());
-        } else {
-            clubMembers = clubMemberRepository.findAllUnconfirmedClubMemberByClub(manager.getClub());
-        }
+        List<ClubMember> clubMembers = clubMemberRepository.findAllUnconfirmedClubMemberByClub(manager.getClub());
 
-        return ClubMemberDto.Response.ofList(clubMembers);
+        return clubMembers.stream().map(ClubMemberDto.Response::of).toList();
     }
 
     @Transactional
@@ -149,7 +140,8 @@ public class ClubMemberService {
         ClubMember clubMember = clubMemberRepository.findById(updateDto.getId())
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isConfirmed()) {
+
+        if (!clubMember.getIsConfirmed()) {
             throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
         }
 
@@ -157,6 +149,15 @@ public class ClubMemberService {
         return ClubMemberDto.Response.of(clubMember);
     }
 
+
+    @Transactional
+    public ClubMemberDto.Response changeClubMemberProfileImage(Long clubMemberId, MultipartFile image) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        String url = uploadService.uploadFile(image);
+        clubMember.updateProfileUrl(url);
+
+        return ClubMemberDto.Response.of(clubMember);
+    }
 
     @Transactional
     @RequiredAuthority(role = ADMIN)
@@ -192,7 +193,7 @@ public class ClubMemberService {
         }
 
         if (updateDto.getRole() != null) {
-            if (updateDto.getRole().equals(USER.name())) {
+            if (updateDto.getRole().equals(USER.name()) || updateDto.getRole().equals(ADMIN.name())) {
                 clubMember.updateClubAuthority(null);
             }
             clubMember.changeRole(ClubRole.valueOf(updateDto.getRole()));
@@ -275,15 +276,6 @@ public class ClubMemberService {
         clubMemberRepository.deleteAll(deletedClubMembers);
 
         return ClubMemberDto.Response.ofList(deletedClubMembers);
-    }
-
-    @Transactional
-    public ClubMemberDto.Response changeClubMemberProfileImage(Long clubMemberId, MultipartFile image) {
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
-        String url = uploadService.uploadFile(image);
-        clubMember.updateProfileUrl(url);
-
-        return ClubMemberDto.Response.of(clubMember);
     }
 
 

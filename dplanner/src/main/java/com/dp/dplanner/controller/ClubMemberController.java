@@ -27,7 +27,7 @@ public class ClubMemberController {
     @GetMapping(value = "")
     public CommonResponse<List<ClubMemberDto.Response>> findMyClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
                                                                           @PathVariable("clubId") Long clubId,
-                                                                          @RequestParam(required = false) Boolean confirmed) {
+                                                                          @RequestParam(name="confirmed",required = false) Boolean confirmed) {
         if (!principal.getClubId().equals(clubId)) {
             throw new ClubMemberException(ErrorResult.REQUEST_IS_INVALID);
         }
@@ -35,10 +35,10 @@ public class ClubMemberController {
         Long clubMemberId = principal.getClubMemberId();
         List<ClubMemberDto.Response> response;
 
-        if (confirmed == null) {
+        if (confirmed == null || confirmed) {
             response = clubMemberService.findMyClubMembers(clubMemberId,clubId);
         }else{
-            response = clubMemberService.findMyClubMembers(clubMemberId,clubId, confirmed);
+            response = clubMemberService.findMyClubMembers(clubMemberId,clubId, false);
         }
         return CommonResponse.createSuccess(response);
     }

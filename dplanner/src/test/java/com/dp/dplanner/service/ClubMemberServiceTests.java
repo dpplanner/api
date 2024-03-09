@@ -159,8 +159,9 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long sameClubMemberId = 2L;
-        ClubMemberDto.ResponseMapping sameClubMember = createResponseMapping(clubId, sameClubMemberId, "sameClubMember", true);
-        given(clubMemberRepository.findClubMemberWithClubAuthority(sameClubMemberId)).willReturn(Optional.ofNullable(sameClubMember));
+        ClubMember sameClubMember = createConfirmedClubMember(club, "sameClubMember");
+        ReflectionTestUtils.setField(sameClubMember, "id", sameClubMemberId);
+        given(clubMemberRepository.findById(sameClubMemberId)).willReturn(Optional.ofNullable(sameClubMember));
 
         //when
         ClubMemberDto.Request requestDto = new ClubMemberDto.Request(sameClubMemberId);
@@ -180,11 +181,9 @@ public class ClubMemberServiceTests {
         ClubMember clubMember = createConfirmedClubMember(club, "member");
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
-        Long otherClubMemberId = 2L;
-        Long otherClubId = 200L;
-        ClubMemberDto.ResponseMapping otherClubMember = createResponseMapping(otherClubId, otherClubMemberId, "otherClubMember", true);
-
-        given(clubMemberRepository.findClubMemberWithClubAuthority(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
+        Long otherClubMemberId = 200L;
+        ClubMember otherClubMember = createConfirmedClubMember(Club.builder().build(), "otherClubMember");
+        given(clubMemberRepository.findById(otherClubMemberId)).willReturn(Optional.ofNullable(otherClubMember));
 
         //when
         //then
@@ -203,9 +202,9 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         Long notConfirmedClubMemberId = 2L;
-        ClubMemberDto.ResponseMapping notConfirmedClubMember = createResponseMapping(clubId, notConfirmedClubMemberId, "otherClubMember", false);
+        ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
+        given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
 
-        given(clubMemberRepository.findClubMemberWithClubAuthority(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
 
         assert !notConfirmedClubMember.getIsConfirmed();
 
@@ -423,7 +422,7 @@ public class ClubMemberServiceTests {
                 .willReturn(confirmedClubMembers);
 
         //when
-        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(adminId, clubId,true);
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(adminId, clubId);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
@@ -489,7 +488,7 @@ public class ClubMemberServiceTests {
                 .willReturn(confirmedClubMembers);
 
         //when
-        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(managerId, clubId,true);
+        List<ClubMemberDto.Response> responseDto = clubMemberService.findMyClubMembers(managerId, clubId);
 
         //then
         assertThat(responseDto).as("결과가 존재해야 한다").isNotNull();
@@ -693,7 +692,7 @@ public class ClubMemberServiceTests {
         assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
         assertThat(toBeUser.getClubAuthority()).as("일반회원은 권한이 없어야 함").isEqualTo(null);
         assertThat(toBeAdmin.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.ADMIN);
-        assertThat(toBeAdmin.getClubAuthority()).as("이전 매니저의 권한은 유지되어야함.").isEqualTo(clubAuthority);
+        assertThat(toBeAdmin.getClubAuthority()).as("이전 매니저의 권한은 유지되지 않음.").isEqualTo(null);
     }
 
     @Test
@@ -1685,59 +1684,4 @@ public class ClubMemberServiceTests {
                 .build();
     }
 
-
-    private ClubMemberDto.ResponseMapping createResponseMapping( Long clubId, Long id,String name, boolean iscConfirmed) {
-
-        return new ClubMemberDto.ResponseMapping() {
-            @Override
-            public Long getId() {
-                return id;
-            }
-
-            @Override
-            public Long getClubId() {
-                return clubId;
-            }
-
-            @Override
-            public String getName() {
-                return name;
-            }
-
-            @Override
-            public String getInfo() {
-                return null;
-            }
-
-            @Override
-            public String getRole() {
-                return null;
-            }
-
-            @Override
-            public Boolean getIsConfirmed() {
-                return iscConfirmed;
-            }
-
-            @Override
-            public String getUrl() {
-                return null;
-            }
-
-            @Override
-            public Long getClubAuthorityId() {
-                return null;
-            }
-
-            @Override
-            public String getClubAuthorityName() {
-                return null;
-            }
-
-            @Override
-            public List<String> getClubAuthorityTypes() {
-                return null;
-            }
-        };
-    }
 }

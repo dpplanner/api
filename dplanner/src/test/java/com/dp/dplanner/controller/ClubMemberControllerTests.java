@@ -118,7 +118,7 @@ public class ClubMemberControllerTests {
         List<ClubMember> clubMembers = getConfirmedClubMembers(Club.builder().build(), 5);
         List<ClubMemberDto.Response> responseDto = ClubMemberDto.Response.ofList(clubMembers);
 
-        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class), eq(true))).willReturn(responseDto);
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class))).willReturn(responseDto);
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
