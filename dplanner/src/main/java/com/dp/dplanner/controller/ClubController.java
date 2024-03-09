@@ -127,6 +127,17 @@ public class ClubController {
         return CommonResponse.createSuccess(responseDto);
     }
 
+    @DeleteMapping("/{clubId}/authorities")
+    public CommonResponse deleteManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                              @PathVariable("clubId") Long clubId,
+                                                                              @RequestBody @Valid ClubAuthorityDto.Delete deleteDto) {
+        Long clubMemberId = principal.getClubMemberId();
+
+        deleteDto.setClubId(clubId);
+        clubService.deleteClubAuthority(clubMemberId, deleteDto);
+
+        return CommonResponse.createSuccessWithNoContent();
+    }
     @PostMapping("/{clubId}/update-club-image")
     public CommonResponse<ClubDto.Response> changeClubRepresentativeImage(@AuthenticationPrincipal PrincipalDetails principal,
                                                                           @PathVariable("clubId") Long clubId,

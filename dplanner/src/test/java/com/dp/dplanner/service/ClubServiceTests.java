@@ -260,6 +260,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("일반 회원이 클럽정보를 수정하려 하면 UPDATE_AUTHORIZATION_DENIED")
+    @Disabled("aop 적용으로 통합 테스트로 변경")
     public void updateClubInfoByUserThenException() throws Exception {
         //given
         Long clubId = 1L;
@@ -282,6 +283,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("매니저가 클럽정보를 수정하려 하면 UPDATE_AUTHORIZATION_DENIED")
+    @Disabled("aop 적용으로 통합 테스트로 변경")
     public void updateClubInfoByManagerThenException() throws Exception {
         //given
         Long clubId = 1L;
@@ -323,6 +325,7 @@ public class ClubServiceTests {
      */
     @Test
     @DisplayName("일반 회원이 매니저의 권한을 설정하려 하면 UPDATE_AUTHORIZATION_DENIED")
+    @Disabled("aop 적용으로 통합 테스트로 변경")
     public void setManagerAuthorityByUserThenException() throws Exception {
         //given
         Long clubId = 1L;
@@ -344,6 +347,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("매니저가 매니저의 권한을 설정하려 하면 UPDATE_AUTHORIZATION_DENIED")
+    @Disabled("aop 적용으로 통합 테스트로 변경")
     public void setManagerAuthorityByManagerThenException() throws Exception {
         //given
         Long clubId = 1L;
@@ -614,6 +618,7 @@ public class ClubServiceTests {
 
     @Test
     @DisplayName("일반회원이 자신이 속한 클럽의 매니저 권한을 확인하려 하면 READ_AUTHORIZATION_DENIED.")
+    @Disabled("aop 적용으로 통합 테스트로 변경")
     public void findManagerAuthoritiesByUserThenException() throws Exception {
         //given
         Long clubId = 1L;

@@ -85,6 +85,15 @@ public class ClubAuthorityDto {
     @Setter
     @Builder
     @AllArgsConstructor
+    public static class Delete{
+        private Long id;
+        private Long clubId;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
     public static class Response {
         private Long id;
         private Long clubId;

@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -63,12 +62,6 @@ public class ClubService {
         return response;
     }
 
-    public List<ClubDto.Response> findClubs(Map<String, String> param) {
-
-        List<Club> clubs = clubRepository.findAll();
-        return ClubDto.Response.ofList(clubs);
-    }
-
     public ClubDto.Response findClubById(Long clubId) {
 
         ClubDto.ResponseMapping club = clubRepository.findClubDtoByClubId(clubId);
@@ -94,7 +87,8 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        checkUpdatable(clubMember, updateDto.getClubId());
+        checkSameClub(clubMember,updateDto.getClubId());
+//        checkUpdatable(clubMember, updateDto.getClubId());
 
         Club updatedClub = clubMember.getClub().updateInfo(updateDto.getInfo());
         return ClubDto.Response.of(updatedClub);
@@ -107,7 +101,8 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        checkUpdatable(clubMember, createDto.getClubId());
+        checkSameClub(clubMember,createDto.getClubId());
+//        checkUpdatable(clubMember, createDto.getClubId());
 
         ClubAuthority createdClubAuthority = createDto.toEntity(clubMember.getClub());
         clubAuthorityRepository.save(createdClubAuthority);
@@ -124,7 +119,8 @@ public class ClubService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        checkUpdatable(clubMember, updateDto.getClubId());
+        checkSameClub(clubMember,updateDto.getClubId());
+//        checkUpdatable(clubMember, updateDto.getClubId());
 
         ClubAuthority authority = clubAuthorityRepository.findById(updateDto.getId())
                 .orElseThrow(() -> new ClubAuthorityException(CLUB_AUTHORITY_NOT_FOUND));
@@ -135,13 +131,32 @@ public class ClubService {
 
     }
 
+    @Transactional
+    @RequiredAuthority(role = ADMIN)
+    public void deleteClubAuthority(Long clubMemberId, ClubAuthorityDto.Delete deleteDto) {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+
+        checkSameClub(clubMember, deleteDto.getClubId());
+
+        ClubAuthority authority = clubAuthorityRepository.findById(deleteDto.getId())
+                .orElseThrow(() -> new ClubAuthorityException(CLUB_AUTHORITY_NOT_FOUND));
+
+        checkSameClub(clubMember, authority.getClub().getId());
+
+        clubAuthorityRepository.delete(authority);
+
+    }
+
     @RequiredAuthority(role = ADMIN)
     public List<ClubAuthorityDto.Response> findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
 
-        checkReadable(clubMember, requestDto.getClubId());
+        checkSameClub(clubMember,requestDto.getClubId());
+//        checkReadable(clubMember, requestDto.getClubId());
 
         List<ClubAuthority> clubAuthorities = clubAuthorityRepository.findAllByClub(clubMember.getClub());
 
@@ -203,7 +218,7 @@ public class ClubService {
      * utility methods
      */
 
-    private static void checkUpdatable(ClubMember clubMember, Long clubId) {
+/*    private static void checkUpdatable(ClubMember clubMember, Long clubId) {
         checkSameClub(clubMember, clubId);
 
         if (!clubMember.checkRoleIs(ADMIN)) {
@@ -217,7 +232,7 @@ public class ClubService {
         if (clubMember.checkRoleIs(USER)) {
             throw new ClubException(READ_AUTHORIZATION_DENIED);
         }
-    }
+    }*/
 
     private static void checkSameClub(ClubMember clubMember, Long clubId) {
         if (!clubMember.isSameClub(clubId)) {
