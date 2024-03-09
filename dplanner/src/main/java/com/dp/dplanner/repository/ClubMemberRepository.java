@@ -1,10 +1,12 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.club.Club;
+import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubMemberDto;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -57,4 +59,10 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 """, nativeQuery = true)
 
     Optional<ClubMemberDto.ResponseMapping> findClubMemberWithClubAuthority(@Param("clubMemberId") Long clubMemberId);
+
+    @Modifying
+    @Query("""
+    update ClubMember cm set cm.clubAuthority = null where cm.clubAuthority = :authority
+""")
+    void deleteClubAuthority(@Param("authority") ClubAuthority authority);
 }

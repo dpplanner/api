@@ -145,6 +145,7 @@ public class ClubService {
 
         checkSameClub(clubMember, authority.getClub().getId());
 
+        clubMemberRepository.deleteClubAuthority(authority);
         clubAuthorityRepository.delete(authority);
 
     }
