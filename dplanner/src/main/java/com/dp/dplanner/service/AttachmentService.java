@@ -4,9 +4,7 @@ import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.Reservation;
-import com.dp.dplanner.exception.FileException;
-import com.dp.dplanner.exception.PostException;
-import com.dp.dplanner.exception.ReservationException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.AttachmentRepository;
 import com.dp.dplanner.repository.PostRepository;
 import com.dp.dplanner.repository.ReservationRepository;
@@ -31,10 +29,10 @@ public class AttachmentService {
 
     public List<Response> createAttachment(Create createDto) {
 
-        Post post = postRepository.findById(createDto.getPostId()).orElseThrow(() -> new PostException(POST_NOT_FOUND));
+        Post post = postRepository.findById(createDto.getPostId()).orElseThrow(() -> new ServiceException(POST_NOT_FOUND));
 
         List<Attachment> attachments = new ArrayList<>();
-        createDto.getFiles().stream().forEach(file -> {
+        createDto.getFiles().forEach(file -> {
             try {
                 if (file.getSize() > 0) {
                     String url = uploadService.uploadFile(file);
@@ -42,7 +40,7 @@ public class AttachmentService {
                     attachments.add(attachmentRepository.save(createDto.toEntity(post, url, fileType)));
                 }
             } catch (RuntimeException e) {
-                throw new FileException(FILE_EXCEPTION);
+                throw new ServiceException(FILE_EXCEPTION);
             }
         });
 
@@ -51,7 +49,7 @@ public class AttachmentService {
 
     public void createAttachmentReservation(Create createDto) {
 
-        Reservation reservation= reservationRepository.findById(createDto.getReservationId()).orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+        Reservation reservation= reservationRepository.findById(createDto.getReservationId()).orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         List<Attachment> attachments = new ArrayList<>();
         createDto.getFiles().stream().forEach(file -> {
@@ -62,7 +60,7 @@ public class AttachmentService {
                     attachments.add(attachmentRepository.save(createDto.toEntity(reservation, url, fileType)));
                 }
             } catch (RuntimeException e) {
-                throw new FileException(FILE_EXCEPTION);
+                throw new ServiceException(FILE_EXCEPTION);
             }
         });
 

@@ -4,7 +4,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.MemberException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import io.jsonwebtoken.*;
@@ -36,9 +36,9 @@ public class JwtTokenProvider {
             Claims claims = getClaims(token);
             return !isExpired(claims);
         } catch (ExpiredJwtException e) {
-            log.info("토큰 유효기간 만료");
+            log.info("토큰 유효기간 만료, {}" , token);
         } catch (JwtException e) {
-            log.info("올바르지 않은 토큰");
+            log.info("올바르지 않은 토큰, {}", token);
         }
         return false;
     }
@@ -61,7 +61,7 @@ public class JwtTokenProvider {
         PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
         Claims claims = Jwts.claims().setSubject(principal.getName());
 
-        Member member = memberRepository.findById(principal.getId()).orElseThrow(() -> new MemberException(ErrorResult.MEMBER_NOT_FOUND));
+        Member member = memberRepository.findById(principal.getId()).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
         Club recentClub = member.getRecentClub();
         Optional<ClubMember> optionalClubMember;
 

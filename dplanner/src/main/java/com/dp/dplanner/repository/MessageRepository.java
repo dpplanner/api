@@ -4,6 +4,7 @@ import com.dp.dplanner.domain.message.PrivateMessage;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +19,7 @@ public class MessageRepository {
         this.entityManager = entityManager;
     }
 
+    @Transactional
     public PrivateMessage save(PrivateMessage privateMessage) {
         entityManager.persist(privateMessage);
         return privateMessage;

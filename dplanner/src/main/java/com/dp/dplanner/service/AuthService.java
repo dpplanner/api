@@ -4,7 +4,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.LoginDto;
 import com.dp.dplanner.dto.TokenDto;
-import com.dp.dplanner.exception.AuthenticationException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.security.JwtTokenProvider;
@@ -35,10 +35,10 @@ public class AuthService {
         String oldRefreshToken = tokenDto.getRefreshToken();
 
         if (!tokenProvider.verify(oldRefreshToken)) {
-            throw new AuthenticationException(INVALID_TOKEN);
+            throw new ServiceException(INVALID_TOKEN);
         }
 
-        Member member = memberRepository.findByRefreshToken(oldRefreshToken).orElseThrow(() -> new AuthenticationException(INVALID_TOKEN)); // 저장된 refreshToken으로 member 정보 가져오기
+        Member member = memberRepository.findByRefreshToken(oldRefreshToken).orElseThrow(() -> new ServiceException(INVALID_TOKEN)); // 저장된 refreshToken으로 member 정보 가져오기
         
         PrincipalDetails principal = new PrincipalDetails(member.getId(), null,null,"", null); // club_id , club_member_id 넣어줄 필요 없음
         Authentication authentication =  new UsernamePasswordAuthenticationToken(principal, "",null);

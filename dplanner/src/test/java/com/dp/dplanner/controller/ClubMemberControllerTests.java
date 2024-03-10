@@ -5,8 +5,8 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.service.ClubMemberService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
@@ -96,7 +96,7 @@ public class ClubMemberControllerTests {
     public void findMyClubMembers_NOTFOUND() throws Throwable {
         //given
         Long clubId = 1L;
-        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class))).willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class))).willThrow(new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId));
@@ -158,7 +158,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
 
         given(clubMemberService.findMyClubMembers(any(Long.class),any(Long.class), any(Boolean.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         //when
         ResultActions resultActions = mockMvc.perform(get("/clubs/{clubId}/club-members", clubId)
@@ -204,7 +204,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
 
         given(clubMemberService.kickOutAll(any(Long.class), any(Long.class), any(List.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         //when
         List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(List.of(2L, 3L, 4L));
@@ -245,7 +245,7 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
 
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION))
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION))
                 .when(clubMemberService).confirmAll(any(Long.class), any(List.class));
 
         //when
@@ -256,7 +256,7 @@ public class ClubMemberControllerTests {
                 .contentType(MediaType.APPLICATION_JSON));
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -265,7 +265,7 @@ public class ClubMemberControllerTests {
         //given
         Long clubId = 1L;
 
-        doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
+        doThrow(new ServiceException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).confirmAll(any(Long.class), any(List.class));
 
         //when
@@ -300,20 +300,20 @@ public class ClubMemberControllerTests {
     }
 
     @Test
-    @DisplayName("승인되지 않은 클럽 회원을 id로 조회시 401 UNAUTHORIZED")
+    @DisplayName("승인되지 않은 클럽 회원을 id로 조회시 404 NOTFOUND")
     public void findById_UNAUTHORIZED() throws Throwable {
         //given
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_CONFIRMED));
 
         //when
         ResultActions resultActions = mockMvc.perform(
                 get("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId));
         //then
-        resultActions.andExpect(status().isUnauthorized());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -324,14 +324,14 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
-                .willThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION));
+                .willThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION));
 
         //when
         ResultActions resultActions = mockMvc.perform(
                 get("/clubs/{clubId}/club-members/{clubMemberId}", clubId, clubMemberId));
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -342,7 +342,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.findById(any(Long.class), any(ClubMemberDto.Request.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         //when
         ResultActions resultActions = mockMvc.perform(
@@ -391,14 +391,14 @@ public class ClubMemberControllerTests {
     }
 
     @Test
-    @DisplayName("승인되지 않은 클럽 회원의 정보를 수정하면 401 UNAUTHORIZED")
+    @DisplayName("승인되지 않은 클럽 회원의 정보를 수정하면 404 NOT FOUND")
     public void updateClubMember_UNAUTHORIZED() throws Throwable {
         //given
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_CONFIRMED));
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -411,7 +411,7 @@ public class ClubMemberControllerTests {
                 .contentType(MediaType.APPLICATION_JSON));
 
         //then
-        resultActions.andExpect(status().isUnauthorized());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -422,7 +422,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(UPDATE_AUTHORIZATION_DENIED));
+                .willThrow(new ServiceException(UPDATE_AUTHORIZATION_DENIED));
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -435,7 +435,7 @@ public class ClubMemberControllerTests {
                 .contentType(MediaType.APPLICATION_JSON));
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -446,7 +446,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.update(any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         //when
         ClubMemberDto.Update updateDto = ClubMemberDto.Update.builder()
@@ -491,14 +491,14 @@ public class ClubMemberControllerTests {
     }
 
     @Test
-    @DisplayName("승인되지 않은 클럽 회원의 역할을 수정하려 하면 401 UNAUTHORIZED")
+    @DisplayName("승인되지 않은 클럽 회원의 역할을 수정하려 하면 404 NOTFOUND")
     public void updateClubMemberRole_UNAUTHORIZED() throws Throwable {
         //given
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
         given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_CONFIRMED));
 
 
         //when
@@ -508,7 +508,7 @@ public class ClubMemberControllerTests {
                 .contentType(MediaType.APPLICATION_JSON));
 
         //then
-        resultActions.andExpect(status().isUnauthorized());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -519,7 +519,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(UPDATE_AUTHORIZATION_DENIED));
+                .willThrow(new ServiceException(UPDATE_AUTHORIZATION_DENIED));
 
 
         //when
@@ -529,7 +529,7 @@ public class ClubMemberControllerTests {
                 .contentType(MediaType.APPLICATION_JSON));
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -540,7 +540,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION));
+                .willThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION));
 
 
         //when
@@ -550,7 +550,7 @@ public class ClubMemberControllerTests {
                 .contentType(MediaType.APPLICATION_JSON));
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -561,7 +561,7 @@ public class ClubMemberControllerTests {
         Long clubMemberId = 1L;
 
         given(clubMemberService.updateClubMemberClubAuthority(any(Long.class), any(Long.class), any(ClubMemberDto.Update.class)))
-                .willThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .willThrow(new ServiceException(CLUBMEMBER_NOT_FOUND));
 
 
         //when
@@ -604,7 +604,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doThrow(new ClubMemberException(DELETE_AUTHORIZATION_DENIED))
+        doThrow(new ServiceException(DELETE_AUTHORIZATION_DENIED))
                 .when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
@@ -612,7 +612,7 @@ public class ClubMemberControllerTests {
                 delete("/clubs/{clubId}/club-members/{clubMemberId}/leave", clubId, clubMemberId));
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -622,7 +622,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
+        doThrow(new ServiceException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
@@ -641,7 +641,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION))
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION))
                 .when(clubMemberService).leaveClub(any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
@@ -650,7 +650,7 @@ public class ClubMemberControllerTests {
 
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
     }
 
@@ -683,7 +683,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doThrow(new ClubMemberException(DELETE_AUTHORIZATION_DENIED))
+        doThrow(new ServiceException(DELETE_AUTHORIZATION_DENIED))
                 .when(clubMemberService).kickOut(any(Long.class), any(Long.class), any(ClubMemberDto.Request.class));
 
         //when
@@ -692,7 +692,7 @@ public class ClubMemberControllerTests {
 
 
         //then
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
     }
 
     @Test
@@ -702,7 +702,7 @@ public class ClubMemberControllerTests {
         Long clubId = 1L;
         Long clubMemberId = 1L;
 
-        doThrow(new ClubMemberException(CLUBMEMBER_NOT_FOUND))
+        doThrow(new ServiceException(CLUBMEMBER_NOT_FOUND))
                 .when(clubMemberService).kickOut(any(Long.class), any(Long.class), any(ClubMemberDto.Request.class));
 
         //when

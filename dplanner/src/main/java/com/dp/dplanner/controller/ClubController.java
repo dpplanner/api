@@ -1,9 +1,8 @@
 package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.*;
-import com.dp.dplanner.exception.ClubException;
+import com.dp.dplanner.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.MemberException;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.ClubService;
 import jakarta.validation.Valid;
@@ -34,7 +33,7 @@ public class ClubController {
     public CommonResponse<List<ClubDto.Response>> findClubs(@AuthenticationPrincipal PrincipalDetails principal,
                                                             @RequestParam("memberId") Long memberId) {
         if (!principal.getId().equals(memberId)) {
-            throw new MemberException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         List<ClubDto.Response> responseDto;
         responseDto = clubService.findMyClubs(memberId);
@@ -53,7 +52,7 @@ public class ClubController {
                                                            @PathVariable("clubId") Long clubId,
                                                            @RequestBody @Valid ClubDto.Update updateDto) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         updateDto.setClubId(clubId);
@@ -66,7 +65,7 @@ public class ClubController {
     public CommonResponse<InviteDto> inviteClub(@AuthenticationPrincipal PrincipalDetails principal,
                                                 @PathVariable("clubId") Long clubId) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         InviteDto responseDto = clubService.inviteClub(clubMemberId,clubId);
@@ -102,7 +101,7 @@ public class ClubController {
                                                                               @PathVariable("clubId") Long clubId,
                                                                               @RequestBody @Valid ClubAuthorityDto.Create createDto) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         createDto.setClubId(clubId);
@@ -115,7 +114,7 @@ public class ClubController {
     public CommonResponse<List<ClubAuthorityDto.Response>> findManagerAuthorities(@AuthenticationPrincipal PrincipalDetails principal,
                                                                                   @PathVariable("clubId") Long clubId) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         List<ClubAuthorityDto.Response> responseDto = clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId));
@@ -128,7 +127,7 @@ public class ClubController {
                                                                               @PathVariable("clubId") Long clubId,
                                                                               @RequestBody @Valid ClubAuthorityDto.Update updateDto) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         updateDto.setClubId(clubId);
@@ -142,7 +141,7 @@ public class ClubController {
                                                    @PathVariable("clubId") Long clubId,
                                                    @RequestBody @Valid ClubAuthorityDto.Delete deleteDto) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         deleteDto.setClubId(clubId);
@@ -155,7 +154,7 @@ public class ClubController {
                                                                           @PathVariable("clubId") Long clubId,
                                                                           @RequestBody MultipartFile image) {
         if (!principal.getClubId().equals(clubId)) {
-            throw new ClubException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         ClubDto.Response responseDto = clubService.changeClubRepresentativeImage(clubMemberId, clubId, image);

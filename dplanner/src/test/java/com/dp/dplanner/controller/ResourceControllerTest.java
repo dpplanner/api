@@ -5,7 +5,7 @@ import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.ResourceException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.service.ResourceService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -128,7 +128,7 @@ public class ResourceControllerTest {
                 .build();
 
 
-        doThrow(new ResourceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).createResource(anyLong(), any(Create.class));
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).createResource(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/resources")
@@ -136,7 +136,7 @@ public class ResourceControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(resourceService, times(1)).createResource(anyLong(), any(Create.class));
 
@@ -159,13 +159,13 @@ public class ResourceControllerTest {
     @Test
     public void ResourceController_getResources_FORBIDDEN() throws Throwable {
 
-        doThrow(new ResourceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).getResourceByClubId(clubMemberId, clubId);
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).getResourceByClubId(clubMemberId, clubId);
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/resources")
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(resourceService, times(1)).getResourceByClubId(clubMemberId, clubId);
 
@@ -192,13 +192,13 @@ public class ResourceControllerTest {
     {
         Long resourceId = 1L;
 
-        doThrow(new ResourceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).getResourceById(clubMemberId, resourceId);
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(resourceService).getResourceById(clubMemberId, resourceId);
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/resources/{resourceId}",resourceId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(resourceService, times(1)).getResourceById(clubMemberId, resourceId);
 
@@ -255,7 +255,7 @@ public class ResourceControllerTest {
                 .build();
 
 
-        doThrow(new ResourceException(UPDATE_AUTHORIZATION_DENIED)).when(resourceService).updateResource(anyLong(), any(Update.class));
+        doThrow(new ServiceException(UPDATE_AUTHORIZATION_DENIED)).when(resourceService).updateResource(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/resources/{resourceId}", resourceId)
@@ -263,7 +263,7 @@ public class ResourceControllerTest {
                         .content(gson.toJson(updateDto))
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(resourceService, times(1)).updateResource(anyLong(), any(Update.class));
     }
@@ -288,13 +288,13 @@ public class ResourceControllerTest {
     {
         Long resourceId = 1L;
 
-        doThrow(new ResourceException(DELETE_AUTHORIZATION_DENIED)).when(resourceService).deleteResource(clubMemberId, resourceId);
+        doThrow(new ServiceException(DELETE_AUTHORIZATION_DENIED)).when(resourceService).deleteResource(clubMemberId, resourceId);
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/resources/{resourceId}",resourceId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(resourceService, times(1)).deleteResource(clubMemberId, resourceId);
 

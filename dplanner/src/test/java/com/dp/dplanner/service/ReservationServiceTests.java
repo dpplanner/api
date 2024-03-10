@@ -194,7 +194,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
         assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
                 .isEqualTo(RESERVATION_UNAVAILABLE);
@@ -213,7 +213,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
         assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
                 .isEqualTo(RESERVATION_UNAVAILABLE);
@@ -234,7 +234,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
         assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
                 .isEqualTo(RESERVATION_UNAVAILABLE);
@@ -251,7 +251,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ResourceException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(otherClubMember.getId(), createDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 리소스를 조회하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다.")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -268,7 +268,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -287,7 +287,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(unconfirmedId, createDto));
         assertThat(exception.getErrorResult()).as("승인되지 않은 클럽회원일 경우 CLUBMEMBER_NOT_CONFIRMED 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_CONFIRMED);
@@ -305,7 +305,7 @@ public class ReservationServiceTests {
         ReservationDto.Create createDto = getCreateDto(
                 resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
 
-        BaseException exception = assertThrows(ResourceException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
         assertThat(exception.getErrorResult()).as("리소스가 없으면 RESOURCE_NOT_FOUND 에러를 던진다")
                 .isEqualTo(RESOURCE_NOT_FOUND);
@@ -477,7 +477,7 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.updateReservation(clubMember.getId(), updateDto));
         assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다")
                 .isEqualTo(RESERVATION_UNAVAILABLE);
@@ -497,7 +497,7 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.updateReservation(clubMember.getId(), updateDto));
         assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다")
                 .isEqualTo(RESERVATION_UNAVAILABLE);
@@ -518,7 +518,7 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.updateReservation(otherClubMember.getId(), updateDto));
         assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
@@ -538,7 +538,7 @@ public class ReservationServiceTests {
                 false, getTime(20), getTime(22)
         );
 
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.updateReservation(clubMember.getId(), updateDto));
         assertThat(exception.getErrorResult()).as("예야 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던져야 한다")
                 .isEqualTo(RESERVATION_NOT_FOUND);
@@ -614,7 +614,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.cancelReservation(clubMember.getId(), deleteDto));
         assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(DELETE_AUTHORIZATION_DENIED);
@@ -630,7 +630,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.cancelReservation(clubMember.getId(), deleteDto));
         assertThat(exception.getErrorResult()).as("예약 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던진다")
                 .isEqualTo(RESERVATION_NOT_FOUND);
@@ -720,7 +720,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.deleteReservation(clubMember.getId(), deleteDto));
         assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -737,7 +737,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.deleteReservation(clubMember.getId(), deleteDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다.")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -755,7 +755,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.deleteReservation(clubMember.getId(), deleteDto));
         assertThat(exception.getErrorResult()).as("예약 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던진다.")
                 .isEqualTo(RESERVATION_NOT_FOUND);
@@ -866,7 +866,7 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(otherClubReservationId));
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.confirmAllReservations(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -882,7 +882,7 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(reservationId));
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.confirmAllReservations(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -999,7 +999,7 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(otherClubReservationId));
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.rejectAllReservations(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -1015,7 +1015,7 @@ public class ReservationServiceTests {
         //when
         //then
         List<ReservationDto.Request> requestDto = ReservationDto.Request.ofList(List.of(reservationId));
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.rejectAllReservations(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -1066,7 +1066,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findReservationById(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -1084,7 +1084,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findReservationById(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("예약 데이터가 없으면 RESERVATION_NOT_FOUND 에외를 던진다")
                 .isEqualTo(RESERVATION_NOT_FOUND);
@@ -1100,7 +1100,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = new ReservationDto.Request(reservationId);
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findReservationById(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -1162,7 +1162,7 @@ public class ReservationServiceTests {
                 .startDateTime(getTime(20))
                 .endDateTime(getTime(22))
                 .build();
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -1181,7 +1181,7 @@ public class ReservationServiceTests {
                 .startDateTime(getTime(20))
                 .endDateTime(getTime(22))
                 .build();
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findAllReservationsByPeriod(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -1262,7 +1262,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(otherClubResource.getId()).build();
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
@@ -1277,7 +1277,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Request requestDto = ReservationDto.Request.builder().resourceId(resource.getId()).build();
-        BaseException exception = assertThrows(ClubMemberException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.findAllNotConfirmedReservations(clubMember.getId(), requestDto));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
@@ -1317,7 +1317,7 @@ public class ReservationServiceTests {
 
         // 실행
         // 검증
-        BaseException exception = assertThrows(ReservationException.class,
+        BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.returnReservation(clubMember.getId(), returnDto));
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);

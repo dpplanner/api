@@ -3,10 +3,10 @@ package com.dp.dplanner.exception;
 import lombok.Getter;
 
 @Getter
-public class ClubMemberException extends BaseException {
+public class ServiceException  extends BaseException{
     private final ErrorResult errorResult;
 
-    public ClubMemberException(ErrorResult errorResult) {
+    public ServiceException(ErrorResult errorResult) {
         super(errorResult);
         this.errorResult = errorResult;
     }

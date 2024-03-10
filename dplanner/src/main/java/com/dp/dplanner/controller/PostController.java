@@ -2,8 +2,8 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.dto.PostMemberLikeDto;
+import com.dp.dplanner.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.PostException;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.PostService;
 import jakarta.validation.Valid;
@@ -34,7 +34,7 @@ public class PostController {
                                                @RequestPart @Valid final Create create,
                                                @RequestPart(required = false) final List<MultipartFile> files) {
         if (!principal.getClubId().equals(create.getClubId())) {
-            throw new PostException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubMemberId = principal.getClubMemberId();
         create.setFiles(files);
@@ -50,7 +50,7 @@ public class PostController {
 
         Long clubMemberId = principal.getClubMemberId();
         if (!principal.getClubId().equals(clubId)) {
-            throw new PostException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
 
         SliceResponse response = postService.getPostsByClubId(clubMemberId, clubId, pageable);
@@ -65,7 +65,7 @@ public class PostController {
                                             @PathVariable final Long clubMemberId,
                                             @PageableDefault final Pageable pageable) {
         if (!principal.getClubMemberId().equals(clubMemberId)) {
-            throw new PostException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubId = principal.getClubId();
 

@@ -9,9 +9,7 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
-import com.dp.dplanner.exception.ClubException;
-import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.PostException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -176,7 +174,7 @@ public class PostService {
     private void checkIsSameClub(Long clubMemberId, Long clubId) {
         ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(clubId)) {
-            throw new ClubMemberException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 
@@ -184,7 +182,7 @@ public class PostService {
 
         if (!clubMember.getId().equals(clubMemberId)) {
             if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
-                throw new PostException(DELETE_AUTHORIZATION_DENIED);
+                throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
             }
         }
 
@@ -192,19 +190,19 @@ public class PostService {
     private void checkUpdatable(ClubMember clubMember, Long clubMemberId) {
 
         if (!clubMember.getId().equals(clubMemberId)){
-            throw new PostException(UPDATE_AUTHORIZATION_DENIED);
+            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
     private Post getPost(Long postId) {
-        return postRepository.findById(postId).orElseThrow(() -> new PostException(POST_NOT_FOUND));
+        return postRepository.findById(postId).orElseThrow(() -> new ServiceException(POST_NOT_FOUND));
     }
 
     private Club getClub(Long clubId) {
-        return clubRepository.findById(clubId).orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+        return clubRepository.findById(clubId).orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
     }
 
     private ClubMember getClubMember(Long clubMemberId) {
-        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
     }
 
     private SliceResponse getSliceResponse(Pageable pageable, Slice<Object[]> postSlice) {

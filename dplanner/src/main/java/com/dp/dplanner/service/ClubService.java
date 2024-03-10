@@ -7,10 +7,7 @@ import com.dp.dplanner.dto.ClubAuthorityDto;
 import com.dp.dplanner.dto.ClubDto;
 import com.dp.dplanner.dto.ClubMemberDto;
 import com.dp.dplanner.dto.InviteDto;
-import com.dp.dplanner.exception.ClubAuthorityException;
-import com.dp.dplanner.exception.ClubException;
-import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.MemberException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -47,7 +44,7 @@ public class ClubService {
     public ClubDto.Response createClub(Long memberId, ClubDto.Create createDto) {
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(MEMBER_NOT_FOUND));
 
         Club club = createDto.toEntity();
         clubRepository.save(club);
@@ -66,7 +63,7 @@ public class ClubService {
 
         ClubDto.ResponseMapping club = clubRepository.findClubDtoByClubId(clubId);
         if (club == null) {
-            throw new ClubException(CLUB_NOT_FOUND);
+            throw new ServiceException(CLUB_NOT_FOUND);
         }
         return ClubDto.Response.of(club);
     }
@@ -74,7 +71,7 @@ public class ClubService {
     public List<ClubDto.Response> findMyClubs(Long memberId) {
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(MEMBER_NOT_FOUND));
 
         List<ClubDto.ResponseMapping> myClubs = clubRepository.findMyClubs(member.getId());
         return myClubs.stream().map(ClubDto.Response::of).collect(Collectors.toList());
@@ -85,7 +82,7 @@ public class ClubService {
     @RequiredAuthority(role = ADMIN)
     public ClubDto.Response updateClubInfo(Long clubMemberId, ClubDto.Update updateDto) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         checkSameClub(clubMember,updateDto.getClubId());
 //        checkUpdatable(clubMember, updateDto.getClubId());
@@ -99,7 +96,7 @@ public class ClubService {
     public ClubAuthorityDto.Response createClubAuthority(Long clubMemberId, ClubAuthorityDto.Create createDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         checkSameClub(clubMember,createDto.getClubId());
 //        checkUpdatable(clubMember, createDto.getClubId());
@@ -117,13 +114,13 @@ public class ClubService {
     public ClubAuthorityDto.Response updateClubAuthority(Long clubMemberId, ClubAuthorityDto.Update updateDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         checkSameClub(clubMember,updateDto.getClubId());
 //        checkUpdatable(clubMember, updateDto.getClubId());
 
         ClubAuthority authority = clubAuthorityRepository.findById(updateDto.getId())
-                .orElseThrow(() -> new ClubAuthorityException(CLUB_AUTHORITY_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUB_AUTHORITY_NOT_FOUND));
 
         authority.update(updateDto.toClubAuthorityTypeList(), updateDto.getName(), updateDto.getDescription());
 
@@ -136,12 +133,12 @@ public class ClubService {
     public void deleteClubAuthority(Long clubMemberId, ClubAuthorityDto.Delete deleteDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         checkSameClub(clubMember, deleteDto.getClubId());
 
         ClubAuthority authority = clubAuthorityRepository.findById(deleteDto.getId())
-                .orElseThrow(() -> new ClubAuthorityException(CLUB_AUTHORITY_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUB_AUTHORITY_NOT_FOUND));
 
         checkSameClub(clubMember, authority.getClub().getId());
 
@@ -154,7 +151,7 @@ public class ClubService {
     public List<ClubAuthorityDto.Response> findClubManagerAuthorities(Long clubMemberId, ClubAuthorityDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         checkSameClub(clubMember,requestDto.getClubId());
 //        checkReadable(clubMember, requestDto.getClubId());
@@ -169,9 +166,9 @@ public class ClubService {
     public InviteDto inviteClub(Long adminId,Long clubId) {
 
         ClubMember admin = clubMemberRepository.findById(adminId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
         if (!admin.isSameClub(clubId)) {
-            throw new ClubException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
 
         Club club = admin.getClub();
@@ -193,10 +190,10 @@ public class ClubService {
     public ClubMemberDto.Response joinClub(Long memberId, ClubMemberDto.Create createDto) {
 
         Club club = clubRepository.findById(createDto.getClubId())
-                .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() ->new MemberException(MEMBER_NOT_FOUND));
+                .orElseThrow(() ->new ServiceException(MEMBER_NOT_FOUND));
 
         member.updateRecentClub(club);
 
@@ -207,7 +204,7 @@ public class ClubService {
     @RequiredAuthority(role = ADMIN)
     public ClubDto.Response changeClubRepresentativeImage(Long adminId, Long clubId, MultipartFile image) {
         Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ClubException(CLUB_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
 
         String url = uploadService.uploadFile(image);
         club.updateUrl(url);
@@ -223,7 +220,7 @@ public class ClubService {
         checkSameClub(clubMember, clubId);
 
         if (!clubMember.checkRoleIs(ADMIN)) {
-            throw new ClubException(UPDATE_AUTHORIZATION_DENIED);
+            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
 
@@ -231,13 +228,13 @@ public class ClubService {
         checkSameClub(clubMember, clubId);
 
         if (clubMember.checkRoleIs(USER)) {
-            throw new ClubException(READ_AUTHORIZATION_DENIED);
+            throw new ServiceException(READ_AUTHORIZATION_DENIED);
         }
     }*/
 
     private static void checkSameClub(ClubMember clubMember, Long clubId) {
         if (!clubMember.isSameClub(clubId)) {
-            throw new ClubException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 }

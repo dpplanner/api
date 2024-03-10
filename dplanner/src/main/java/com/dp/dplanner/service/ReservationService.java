@@ -6,9 +6,7 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.ReservationDto;
-import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.ReservationException;
-import com.dp.dplanner.exception.ResourceException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,37 +44,37 @@ public class ReservationService {
         LocalDateTime endDateTime = createDto.getEndDateTime();
         // 이미 예약이 있는지 검사
         if (reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)) {
-            throw new ReservationException(RESERVATION_UNAVAILABLE);
+            throw new ServiceException(RESERVATION_UNAVAILABLE);
         }
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         if (!clubMember.isConfirmed()) {
-            throw new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED);
+            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
         }
         Reservation reservation;
 
         Resource resource = resourceRepository.findById(resourceId)
-                .orElseThrow(() -> new ResourceException(RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
 
         //일반 사용자 요청 처리
         if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
 
             if (!clubMember.isSameClub(resource)) {
-                throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
 
             // 락 여부 조사
             if (isLocked(resourceId, startDateTime, endDateTime)) {
-                throw new ReservationException(RESERVATION_UNAVAILABLE);
+                throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
 
             // 현재 시간과 예약 시작 시간 사이의 차이를 계산합니다.
             LocalDateTime now = LocalDateTime.now(clock);
             long secondsDifference = ChronoUnit.SECONDS.between(now, startDateTime);
             if (secondsDifference > 604800) { // 7 * 24 * 60 * 60 초
-                throw new ReservationException(RESERVATION_UNAVAILABLE);
+                throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
 
             // 예약을 생성합니다.
@@ -93,7 +91,7 @@ public class ReservationService {
         } else {
             // 사용자가 예약 관리 권한을 가진 경우
             if (!clubMember.isSameClub(resource)) {
-                throw new ResourceException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             // 예약을 생성하고 승인합니다.
             reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
@@ -112,14 +110,14 @@ public class ReservationService {
         LocalDateTime end = updateDto.getEndDateTime();
 
         if (!isUpdatable(reservationId, resourceId, start, end)) {
-            throw new ReservationException(RESERVATION_UNAVAILABLE);
+            throw new ServiceException(RESERVATION_UNAVAILABLE);
         }
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         if (!isReservationOwner(clubMemberId, reservation)) {
-            throw new ReservationException(UPDATE_AUTHORIZATION_DENIED);
+            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
         // 이미 확정된 상태에서, 예약 시간이 동일하다면 확정 상태 유지
         if (reservation.getStatus().equals(CONFIRMED) && reservation.getPeriod().equals(new Period(start, end))) {
@@ -161,10 +159,10 @@ public class ReservationService {
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
 
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
-                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         if (!isReservationOwner(clubMemberId, reservation)) {
-            throw new ReservationException(DELETE_AUTHORIZATION_DENIED);
+            throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
         }
 
         reservationRepository.delete(reservation);
@@ -187,13 +185,13 @@ public class ReservationService {
     public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
-                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         if (!manager.isSameClub(reservation)) {
-            throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
 
         messageService.createPrivateMessage(List.of(reservation.getClubMember().getId()),
@@ -207,7 +205,7 @@ public class ReservationService {
     public void confirmAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         List<Long> reservationIds = requestDto.stream()
                 .map(ReservationDto.Request::getReservationId)
@@ -217,7 +215,7 @@ public class ReservationService {
 
         reservations.forEach(reservation -> {
             if (!manager.isSameClub(reservation)) {
-                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             reservation.confirm();
         });
@@ -240,7 +238,7 @@ public class ReservationService {
     public void rejectAllReservations(Long managerId, List<ReservationDto.Request> requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         List<Long> reservationIds = requestDto.stream()
                 .map(ReservationDto.Request::getReservationId)
@@ -250,7 +248,7 @@ public class ReservationService {
 
         reservations.forEach(reservation -> {
             if (!manager.isSameClub(reservation)) {
-                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             reservation.reject();
         });
@@ -264,13 +262,13 @@ public class ReservationService {
     public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         Reservation reservation = reservationRepository.findById(requestDto.getReservationId())
-                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         if (!clubMember.isSameClub(reservation)) {
-            throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
 
         return ReservationDto.Response.of(reservation);
@@ -279,7 +277,7 @@ public class ReservationService {
     public List<ReservationDto.Response> findAllReservationsByPeriod(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         LocalDateTime start = requestDto.getStartDateTime();
         LocalDateTime end = requestDto.getEndDateTime();
@@ -288,7 +286,7 @@ public class ReservationService {
         reservations.forEach(reservation -> {
             System.out.println(reservation.getResource().getClub().getId() + " " + clubMember.getClub().getId());
             if (!clubMember.isSameClub(reservation)) {
-                    throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                    throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
                 }
         });
 
@@ -298,7 +296,7 @@ public class ReservationService {
     public List<ReservationDto.Response> findAllReservationsByPeriodAndStatus(Long clubMemberId, ReservationDto.Request requestDto, ReservationStatus status) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         LocalDateTime start = requestDto.getStartDateTime();
         LocalDateTime end = requestDto.getEndDateTime();
@@ -306,7 +304,7 @@ public class ReservationService {
 
         reservations.forEach(reservation -> {
             if (!clubMember.isSameClub(reservation)) {
-                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
         });
 
@@ -316,7 +314,7 @@ public class ReservationService {
     public List<ReservationDto.Response> findAllReservationsByPeriodForScheduler(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         LocalDateTime start = requestDto.getStartDateTime();
         LocalDateTime end = requestDto.getEndDateTime();
@@ -324,7 +322,7 @@ public class ReservationService {
 
         reservations.forEach(reservation -> {
             if (!clubMember.isSameClub(reservation)) {
-                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
         });
 
@@ -335,12 +333,12 @@ public class ReservationService {
     public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
         List<Reservation> reservations = reservationRepository.findAllNotConfirmed(requestDto.getResourceId());
 
         reservations.forEach(reservation -> {
             if (!manager.isSameClub(reservation)) {
-                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
         });
 
@@ -350,14 +348,14 @@ public class ReservationService {
     @Transactional
     public ReservationDto.Response returnReservation(Long clubMemberId, ReservationDto.Return returnDto) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         Reservation reservation = reservationRepository.findById(returnDto.getReservationId())
-                .orElseThrow(() -> new ReservationException(RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         if (!reservation.isReturned()) {
             if (!clubMember.isSameClub(reservation)) {
-                throw new ReservationException(DIFFERENT_CLUB_EXCEPTION);
+                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
 
             if (returnDto.getFiles() != null && returnDto.getFiles().size() != 0) {

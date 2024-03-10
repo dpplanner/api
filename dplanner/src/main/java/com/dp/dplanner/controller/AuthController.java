@@ -3,7 +3,7 @@ package com.dp.dplanner.controller;
 import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.dto.LoginDto;
 import com.dp.dplanner.dto.TokenDto;
-import com.dp.dplanner.exception.AuthenticationException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -31,7 +31,7 @@ public class AuthController {
             refreshedToken = authService.refreshToken(tokenDto);
             return CommonResponse.createSuccess(refreshedToken);
 
-        } catch (AuthenticationException e) {
+        } catch (ServiceException e) {
             response.setStatus(401);
             return CommonResponse.createFail(e.getMessage());
         }
