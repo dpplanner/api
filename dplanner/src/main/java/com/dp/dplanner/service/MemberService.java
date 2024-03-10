@@ -4,10 +4,8 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ClubDto;
-import com.dp.dplanner.exception.ClubException;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.MemberException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.firebase.FCMNotificationRequestDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
@@ -29,7 +27,7 @@ public class MemberService {
 
     @Transactional
     public void updateFCMToken(Long memberId, FCMNotificationRequestDto requestDto) {
-        Member member = memberRepository.findById(memberId).orElseThrow(() -> new MemberException(ErrorResult.MEMBER_NOT_FOUND));
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
         member.updateFCMToken(requestDto.getRefreshFcmToken());
     }
 
@@ -38,10 +36,10 @@ public class MemberService {
         Optional<ClubMember> clubMemberOptional = clubMemberRepository.findByClubIdAndMemberId(request.getClubId(), memberId);
 
         if (clubMemberOptional.isEmpty()) {
-            throw new ClubMemberException(ErrorResult.CLUBMEMBER_NOT_FOUND);
+            throw new ServiceException(ErrorResult.CLUBMEMBER_NOT_FOUND);
         }else {
-            Member member = memberRepository.findById(memberId).orElseThrow(() -> new MemberException(ErrorResult.MEMBER_NOT_FOUND));
-            Club club = clubRepository.findById(request.getClubId()).orElseThrow(() -> new ClubException(ErrorResult.CLUB_NOT_FOUND));
+            Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
+            Club club = clubRepository.findById(request.getClubId()).orElseThrow(() -> new ServiceException(ErrorResult.CLUB_NOT_FOUND));
             member.updateRecentClub(club);
         }
     }

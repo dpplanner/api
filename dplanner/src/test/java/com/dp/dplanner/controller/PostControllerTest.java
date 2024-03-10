@@ -5,10 +5,8 @@ import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.ClubException;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.PostException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.service.PostService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -144,11 +142,11 @@ public class PostControllerTest {
                 .clubId(clubId)
                 .build();
 
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).createPost(anyLong(), any(Create.class));
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(postService).createPost(anyLong(), any(Create.class));
 
         final ResultActions resultActions = mockCreatePost(createDto);
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
         verify(postService, times(1)).createPost(anyLong(),any(Create.class));
 
 
@@ -162,7 +160,7 @@ public class PostControllerTest {
                 .clubId(clubId)
                 .build();
 
-        doThrow(new ClubException(CLUB_NOT_FOUND)).when(postService).createPost(anyLong(), any(Create.class));
+        doThrow(new ServiceException(CLUB_NOT_FOUND)).when(postService).createPost(anyLong(), any(Create.class));
 
         final ResultActions resultActions = mockCreatePost(createDto);
 
@@ -214,14 +212,14 @@ public class PostControllerTest {
     @Test
     public void PostController_GetPostsByClubId_FORBIDDEN() throws Throwable {
 
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/posts/clubs/{clubId}",clubId)
                 .contentType(MediaType.APPLICATION_JSON)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
         verify(postService,times(1)).getPostsByClubId(anyLong(),anyLong(), any(Pageable.class));
 
     }
@@ -245,13 +243,13 @@ public class PostControllerTest {
     @Test
     public void PostController_GetMyPostsByClubId_FORBIDDEN() throws Throwable {
 
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/posts/clubMembers/{clubMemberId}", clubMemberId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
         verify(postService, times(1)).getMyPostsByClubId(anyLong(), anyLong(), any(Pageable.class));
 
     }
@@ -280,13 +278,13 @@ public class PostControllerTest {
     @Test
     public void PostController_GetPost_FORBIDDEN() throws Throwable {
 
-        doThrow(new ClubMemberException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostById(anyLong(), anyLong());
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(postService).getPostById(anyLong(), anyLong());
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/posts/{postId}", postId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
         verify(postService, times(1)).getPostById(clubMemberId, postId);
 
     }
@@ -308,13 +306,13 @@ public class PostControllerTest {
     @Test
     public void PostController_DeletePost_FORBIDDEN() throws Throwable {
 
-        doThrow(new PostException(DELETE_AUTHORIZATION_DENIED)).when(postService).deletePostById(anyLong(), anyLong());
+        doThrow(new ServiceException(DELETE_AUTHORIZATION_DENIED)).when(postService).deletePostById(anyLong(), anyLong());
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/posts/{postId}", postId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(postService, times(1)).deletePostById(clubMemberId, postId);
     }
@@ -338,14 +336,14 @@ public class PostControllerTest {
     public void PostController_updatePost_FORBIDDEN() throws Throwable {
 
 
-        doThrow(new PostException(UPDATE_AUTHORIZATION_DENIED)).when(postService).updatePost(anyLong(), any(Update.class));
+        doThrow(new ServiceException(UPDATE_AUTHORIZATION_DENIED)).when(postService).updatePost(anyLong(), any(Update.class));
 
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.multipart(HttpMethod.PUT,"/posts/{postId}", postId)
                         .file(new MockMultipartFile("update", "", MediaType.APPLICATION_JSON_VALUE, "{\"id\" : 1, \"content\":\"hello\"}".getBytes()))
                         .contentType(MediaType.MULTIPART_FORM_DATA_VALUE));
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(postService, times(1)).updatePost(anyLong(), any(Update.class));
     }

@@ -2,7 +2,7 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.ClubDto;
 import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.AuthenticationException;
+import com.dp.dplanner.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.firebase.FCMNotificationRequestDto;
 import com.dp.dplanner.security.PrincipalDetails;
@@ -22,7 +22,7 @@ public class MemberController {
                                          @PathVariable Long memberId,
                                          @RequestBody FCMNotificationRequestDto requestDto) {
         if (!principal.getId().equals(memberId)) {
-            throw new AuthenticationException(ErrorResult.INVALID_TOKEN);
+            throw new ApiException(ErrorResult.INVALID_TOKEN);
         }
         memberService.updateFCMToken(memberId, requestDto);
 
@@ -36,7 +36,7 @@ public class MemberController {
                                      @RequestBody ClubDto.Request request) {
 
         if (!principal.getId().equals(memberId)) {
-            throw new AuthenticationException(ErrorResult.INVALID_TOKEN);
+            throw new ApiException(ErrorResult.INVALID_TOKEN);
         }
         memberService.changeRecentClub(memberId, request);
 

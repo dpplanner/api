@@ -11,8 +11,7 @@ import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.PostMemberLikeDto;
 import com.dp.dplanner.dto.Status;
 import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.ClubMemberException;
-import com.dp.dplanner.exception.PostException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -195,7 +194,7 @@ public class PostServiceTest {
     public void PostService_GetPostById_Throw_POST_NOT_FOUND() {
         when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
-        BaseException postException = assertThrows(PostException.class, () -> postService.getPostById(clubMemberId, postId));
+        BaseException postException = assertThrows(ServiceException.class, () -> postService.getPostById(clubMemberId, postId));
         assertThat(postException.getErrorResult()).isEqualTo(POST_NOT_FOUND);
     }
 
@@ -204,7 +203,7 @@ public class PostServiceTest {
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.empty());
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> postService.getPostById(clubMemberId, postId));
+        BaseException clubMemberException = assertThrows(ServiceException.class, () -> postService.getPostById(clubMemberId, postId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(CLUBMEMBER_NOT_FOUND);
 
     }
@@ -219,7 +218,7 @@ public class PostServiceTest {
         ReflectionTestUtils.setField(post, "club", newClub);
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
 
-        BaseException clubMemberException = assertThrows(ClubMemberException.class, () -> postService.getPostById(clubMemberId, postId));
+        BaseException clubMemberException = assertThrows(ServiceException.class, () -> postService.getPostById(clubMemberId, postId));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);
 
     }
@@ -283,7 +282,7 @@ public class PostServiceTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
-        BaseException postException = assertThrows(PostException.class, () -> postService.updatePost(clubMemberId+1, updateDto));
+        BaseException postException = assertThrows(ServiceException.class, () -> postService.updatePost(clubMemberId+1, updateDto));
         assertThat(postException.getErrorResult()).isEqualTo(UPDATE_AUTHORIZATION_DENIED);
 
     }
@@ -323,7 +322,7 @@ public class PostServiceTest {
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(clubMemberService.hasAuthority(clubMember.getId(), ClubAuthorityType.POST_ALL)).thenReturn(false);
 
-        BaseException postException = assertThrows(PostException.class, () -> postService.deletePostById(clubMemberId, postId));
+        BaseException postException = assertThrows(ServiceException.class, () -> postService.deletePostById(clubMemberId, postId));
         assertThat(postException.getErrorResult()).isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 

@@ -3,8 +3,8 @@ package com.dp.dplanner.security.config;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.ClubMemberException;
 import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.security.PrincipalDetails;
@@ -59,7 +59,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         member = optionalMember.orElseGet(() -> createMember(attributes));
         Club recentClub = member.getRecentClub();
         if (recentClub != null) {
-            ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(recentClub.getId(), member.getId()).orElseThrow(() -> new ClubMemberException(ErrorResult.CLUBMEMBER_NOT_FOUND));
+            ClubMember clubMember = clubMemberRepository.findByClubIdAndMemberId(recentClub.getId(), member.getId()).orElseThrow(() -> new ServiceException(ErrorResult.CLUBMEMBER_NOT_FOUND));
             return PrincipalDetails.create(member,recentClub,clubMember, attributes.getAttributes());
         }
 

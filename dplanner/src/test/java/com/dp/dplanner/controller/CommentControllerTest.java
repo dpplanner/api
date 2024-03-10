@@ -2,9 +2,9 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommentDto.Create;
 import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.CommentException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.service.CommentService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -104,7 +104,7 @@ public class CommentControllerTest {
                 .content("test")
                 .build();
 
-        doThrow(new CommentException(ErrorResult.CREATE_COMMENT_DENIED)).when(commentService).createComment(anyLong(), any(Create.class));
+        doThrow(new ServiceException(ErrorResult.CREATE_COMMENT_DENIED)).when(commentService).createComment(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/comments")
@@ -175,7 +175,7 @@ public class CommentControllerTest {
                 .content("update")
                 .build();
 
-        doThrow(new CommentException(UPDATE_AUTHORIZATION_DENIED)).when(commentService).updateComment(anyLong(), any(Update.class));
+        doThrow(new ServiceException(UPDATE_AUTHORIZATION_DENIED)).when(commentService).updateComment(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/comments/{commentId}",commentId)
@@ -183,7 +183,7 @@ public class CommentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(commentService, times(1)).updateComment(anyLong(), any(Update.class));
     }
@@ -204,12 +204,12 @@ public class CommentControllerTest {
     @Test
     public void CommentController_deleteComment_FORBIDDEN() throws Throwable
     {
-        doThrow(new CommentException(DELETE_AUTHORIZATION_DENIED)).when(commentService).deleteComment(clubMemberId, commentId);
+        doThrow(new ServiceException(DELETE_AUTHORIZATION_DENIED)).when(commentService).deleteComment(clubMemberId, commentId);
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/comments/{commentId}", commentId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(commentService, times(1)).deleteComment(clubMemberId, commentId);
 

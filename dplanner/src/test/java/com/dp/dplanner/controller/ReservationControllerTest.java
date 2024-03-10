@@ -388,14 +388,14 @@ public class ReservationControllerTest {
     private static Stream<Arguments> throwException() {
 
         return Stream.of(
-                Arguments.of(new ReservationException(RESERVATION_UNAVAILABLE), status().isBadRequest()),
-                Arguments.of(new ClubMemberException(CLUBMEMBER_NOT_FOUND), status().isNotFound()),
-                Arguments.of(new ClubMemberException(CLUBMEMBER_NOT_CONFIRMED), status().isUnauthorized()),
-                Arguments.of(new ResourceException(RESOURCE_NOT_FOUND), status().isNotFound()),
-                Arguments.of(new ResourceException(DIFFERENT_CLUB_EXCEPTION), status().isForbidden()),
-                Arguments.of(new ReservationException(DIFFERENT_CLUB_EXCEPTION), status().isForbidden()),
-                Arguments.of(new ReservationException(RESERVATION_NOT_FOUND),status().isNotFound()),
-                Arguments.of(new ReservationException(UPDATE_AUTHORIZATION_DENIED),status().isForbidden())
+                Arguments.of(new ServiceException(RESERVATION_UNAVAILABLE), status().isBadRequest()),
+                Arguments.of(new ServiceException(CLUBMEMBER_NOT_FOUND), status().isNotFound()),
+                Arguments.of(new ServiceException(CLUBMEMBER_NOT_CONFIRMED), status().isNotFound()),
+                Arguments.of(new ServiceException(RESOURCE_NOT_FOUND), status().isNotFound()),
+                Arguments.of(new ServiceException(DIFFERENT_CLUB_EXCEPTION), status().isNotFound()),
+                Arguments.of(new ServiceException(DIFFERENT_CLUB_EXCEPTION), status().isNotFound()),
+                Arguments.of(new ServiceException(RESERVATION_NOT_FOUND),status().isNotFound()),
+                Arguments.of(new ServiceException(UPDATE_AUTHORIZATION_DENIED),status().isNotFound())
         );
     }
 

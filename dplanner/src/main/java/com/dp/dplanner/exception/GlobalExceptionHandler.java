@@ -28,87 +28,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, commonResponse, headers, status, request);
     }
 
-    @ExceptionHandler({Exception.class})
-    public CommonResponse handleException(final Exception exception,HttpServletResponse response) {
-        log.warn("Exception occur");
-        response.setStatus(500);
-        return this.makeErrorResponseEntity(exception.getMessage());
-    }
-
-    @ExceptionHandler({PostException.class})
-    public CommonResponse handleRestApiException(final PostException exception, HttpServletResponse response) {
-        log.warn("PostException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({ClubMemberException.class})
-    public CommonResponse handleRestApiException(final ClubMemberException exception, HttpServletResponse response) {
-        log.warn("ClubMemberException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({MemberException.class})
-    public CommonResponse handleRestApiException(final MemberException exception, HttpServletResponse response) {
-        log.warn("MemberException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({ClubException.class})
-    public CommonResponse handleRestApiException(final ClubException exception,HttpServletResponse response) {
-        log.warn("ClubException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({CommentException.class})
-    public CommonResponse handleRestApiException(final CommentException exception,HttpServletResponse response) {
-        log.warn("CommentException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({ResourceException.class})
-    public CommonResponse handleRestApiException(final ResourceException exception,HttpServletResponse response) {
-        log.warn("ResourceException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-    @ExceptionHandler({LockException.class})
-    public CommonResponse handleRestApiException(final LockException exception,HttpServletResponse response) {
-        log.warn("LockException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-    @ExceptionHandler({ReservationException.class})
-    public CommonResponse handleRestApiException(final ReservationException exception,HttpServletResponse response) {
-        log.warn("ReservationException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({InviteCodeException.class})
-    public CommonResponse handleRestApiException(final InviteCodeException exception,HttpServletResponse response) {
-        log.warn("InviteCodeException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({AuthenticationException.class})
-    public CommonResponse handleRestApiException(final AuthenticationException exception,HttpServletResponse response) {
-        log.warn("AuthenticationException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({ClubAuthorityException.class})
-    public CommonResponse handleRestApiException(final ClubAuthorityException exception,HttpServletResponse response) {
-        log.warn("ClubAuthorityException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-    @ExceptionHandler({MessageException.class})
-    public CommonResponse handleRestApiException(final MessageException exception,HttpServletResponse response) {
-        log.warn("MessageException occurs : {}", exception.getErrorResult().getMessage());
-        return this.makeErrorResponseEntity(exception,response);
-    }
-
-
-    private CommonResponse makeErrorResponseEntity(BaseException baseException, HttpServletResponse response) {
-        response.setStatus(baseException.getErrorResult().getHttpStatus().value());
-        return CommonResponse.createFail(baseException.getMessage());
+    @ExceptionHandler(Throwable.class)
+    public CommonResponse handleException(Throwable throwable, HttpServletResponse response) {
+        log.error("throwable {}", throwable);
+        if (throwable instanceof ApiException) {
+            var e = (ApiException) throwable;
+            response.setStatus(e.getErrorResult().getHttpStatus().value());
+            return this.makeErrorResponseEntity(e.getMessage());
+        } else if (throwable instanceof ServiceException) {
+            var e = (ServiceException) throwable;
+            response.setStatus(e.getErrorResult().getHttpStatus().value());
+            return this.makeErrorResponseEntity(e.getMessage());
+        }else{
+            var e = (ServiceException) throwable;
+            response.setStatus(500);
+            return this.makeErrorResponseEntity(e.getMessage());
+        }
     }
 
     private CommonResponse makeErrorResponseEntity(String errorDescription) {

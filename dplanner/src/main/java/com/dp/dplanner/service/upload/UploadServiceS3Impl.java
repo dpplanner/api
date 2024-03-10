@@ -34,8 +34,7 @@ public class UploadServiceS3Impl implements UploadService {
             return amazonS3Client.getUrl(bucket, fileName).toString().split("//")[1];
 
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("S3 Upload fail");
+            throw new RuntimeException("S3 Upload fail",e);
         }
 
     }

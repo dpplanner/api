@@ -4,7 +4,7 @@ import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
-import com.dp.dplanner.exception.ClubMemberException;
+import com.dp.dplanner.exception.ServiceException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -83,7 +83,7 @@ public class RequiredAuthorityAspectTests {
     }
 
     @Test
-    @DisplayName("권한이 없는 매니저가 요청하면 ClubMemberException")
+    @DisplayName("권한이 없는 매니저가 요청하면 ServiceException")
     public void requestByUnauthorizedManagerThenException() throws Exception {
         //given
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
@@ -96,11 +96,11 @@ public class RequiredAuthorityAspectTests {
         //when
         //then
         assertThatThrownBy(() -> targetClass.targetMethod(manager.getId()))
-                .isInstanceOf(ClubMemberException.class);
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test
-    @DisplayName("일반 회원이 요청하면 ClubMemberException")
+    @DisplayName("일반 회원이 요청하면 ServiceException")
     public void requestByUserThenException() throws Exception {
         //given
         ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
@@ -111,7 +111,7 @@ public class RequiredAuthorityAspectTests {
         //when
         //then
         assertThatThrownBy(() -> targetClass.targetMethod(clubMember.getId()))
-                .isInstanceOf(ClubMemberException.class);
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class RequiredAuthorityAspectTests {
     }
 
     @Test
-    @DisplayName("관리자 역할이 아니면 ClubMemberException")
+    @DisplayName("관리자 역할이 아니면 ServiceException")
     public void requestRoleByManagerUser() throws Exception
     {
         //given
@@ -150,10 +150,10 @@ public class RequiredAuthorityAspectTests {
         //when
         //then
         assertThatThrownBy(() -> targetClass2.targetMethod(clubMember.getId()))
-                .isInstanceOf(ClubMemberException.class);
+                .isInstanceOf(ServiceException.class);
 
         assertThatThrownBy(() -> targetClass2.targetMethod(manager.getId()))
-                .isInstanceOf(ClubMemberException.class);
+                .isInstanceOf(ServiceException.class);
     }
 
     private static ClubAuthority createClubAuthority(Club club, String name, String description, List<ClubAuthorityType> clubAuthorityTypes) {

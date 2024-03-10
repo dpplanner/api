@@ -6,7 +6,7 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.LockException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.service.LockService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -139,7 +139,7 @@ public class LockControllerTest {
                 .build();
 
 
-        doThrow(new LockException(PERIOD_OVERLAPPED_EXCEPTION)).when(lockService).createLock(anyLong(), any(Create.class));
+        doThrow(new ServiceException(PERIOD_OVERLAPPED_EXCEPTION)).when(lockService).createLock(anyLong(), any(Create.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post("/locks/resources/{resourceId}",resourceId)
@@ -221,13 +221,13 @@ public class LockControllerTest {
     {
         Long lockId = -1L;
 
-        doThrow(new LockException(DIFFERENT_CLUB_EXCEPTION)).when(lockService).getLock(clubMemberId, lockId);
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(lockService).getLock(clubMemberId, lockId);
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.get("/locks/{lockId}", lockId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(lockService, times(1)).getLock(clubMemberId, lockId);
     }
@@ -245,7 +245,7 @@ public class LockControllerTest {
                 .build();
 
 
-        doThrow(new LockException(PERIOD_OVERLAPPED_EXCEPTION)).when(lockService).updateLock(anyLong(), any(Update.class));
+        doThrow(new ServiceException(PERIOD_OVERLAPPED_EXCEPTION)).when(lockService).updateLock(anyLong(), any(Update.class));
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.put("/locks/{lockId}", lockId)
@@ -280,14 +280,14 @@ public class LockControllerTest {
     {
         Long lockId = -1L;
 
-        doThrow(new LockException(DIFFERENT_CLUB_EXCEPTION)).when(lockService).deleteLock(clubMemberId, lockId);
+        doThrow(new ServiceException(DIFFERENT_CLUB_EXCEPTION)).when(lockService).deleteLock(clubMemberId, lockId);
 
 
         ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.delete("/locks/{lockId}", lockId)
         );
 
-        resultActions.andExpect(status().isForbidden());
+        resultActions.andExpect(status().isNotFound());
 
         verify(lockService,times(1)).deleteLock(clubMemberId,lockId);
     }

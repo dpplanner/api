@@ -141,13 +141,13 @@ public class CommentService {
 
     private static void checkIsSameClub(Long clubId, ClubMember clubMember) {
         if (!clubMember.isSameClub(clubId)) {
-            throw new CommentException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
 
     private void checkIsParent(Comment parent,Long postId) {
         if ((parent.getParent() != null) || !(postId.equals(parent.getPost().getId()))) {
-            throw new CommentException(CREATE_COMMENT_DENIED); // 원본 댓글에만 대댓 가능 , 해당 댓글이 같은 post에서 작성된 것인지
+            throw new ServiceException(CREATE_COMMENT_DENIED); // 원본 댓글에만 대댓 가능 , 해당 댓글이 같은 post에서 작성된 것인지
         }
     }
 
@@ -155,7 +155,7 @@ public class CommentService {
 
         if (!clubMember.getId().equals(clubMemberId)) {
             if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
-                throw new CommentException(DELETE_AUTHORIZATION_DENIED);
+                throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
             }
         }
 
@@ -163,20 +163,20 @@ public class CommentService {
 
     private void checkUpdatable(Long clubMemberId, Comment comment) {
         if (!comment.getClubMember().getId().equals(clubMemberId)) {
-            throw new CommentException(UPDATE_AUTHORIZATION_DENIED);
+            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
 
     private Comment getComment(Long commentId) {
-        return commentRepository.findById(commentId).orElseThrow(() -> new CommentException(COMMENT_NOT_FOUND));
+        return commentRepository.findById(commentId).orElseThrow(() -> new ServiceException(COMMENT_NOT_FOUND));
     }
 
     private Post getPost(Long postId) {
-        return postRepository.findById(postId).orElseThrow(()->new PostException(POST_NOT_FOUND));
+        return postRepository.findById(postId).orElseThrow(()->new ServiceException(POST_NOT_FOUND));
     }
 
     private ClubMember getClubMember(Long clubMemberId) {
-        return clubMemberRepository.findById(clubMemberId).orElseThrow(()->new ClubMemberException(CLUBMEMBER_NOT_FOUND));
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(()->new ServiceException(CLUBMEMBER_NOT_FOUND));
     }
 
     private List<Response> getResponseList(List<Object[]> results) {

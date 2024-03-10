@@ -7,7 +7,7 @@ import com.dp.dplanner.dto.CommentDto;
 import com.dp.dplanner.dto.CommentMemberLikeDto;
 import com.dp.dplanner.dto.Status;
 import com.dp.dplanner.exception.BaseException;
-import com.dp.dplanner.exception.CommentException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
@@ -283,7 +283,7 @@ public class CommentServiceTest {
 
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
 
-        BaseException commentException = assertThrows(CommentException.class, () -> commentService.updateComment(clubMemberId, updateDto));
+        BaseException commentException = assertThrows(ServiceException.class, () -> commentService.updateComment(clubMemberId, updateDto));
         assertThat(commentException.getErrorResult()).isEqualTo(UPDATE_AUTHORIZATION_DENIED);
     }
 
@@ -372,7 +372,7 @@ public class CommentServiceTest {
         when(clubMemberRepository.findById(usualClubMemberId)).thenReturn(Optional.ofNullable(usualClubMember));
         when(clubMemberService.hasAuthority(usualClubMemberId, POST_ALL)).thenReturn(false);
 
-        BaseException commentException = assertThrows(CommentException.class, () -> commentService.deleteComment(usualClubMemberId, commentId));
+        BaseException commentException = assertThrows(ServiceException.class, () -> commentService.deleteComment(usualClubMemberId, commentId));
         assertThat(commentException.getErrorResult()).isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 

@@ -5,7 +5,7 @@ import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.LockException;
+import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -92,7 +92,7 @@ public class LockService {
     private void checkIsSameClub(Long clubMemberId, Resource resource) {
         ClubMember clubMember = getClubMember(clubMemberId);
         if (!clubMember.isSameClub(resource)) {
-            throw new LockException(DIFFERENT_CLUB_EXCEPTION);
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
 
     }
@@ -104,19 +104,19 @@ public class LockService {
         List<Lock> locksBetween = lockRepository.findBetween(startDateTime, endDateTime, resourceId);
 
         if (locksBetween.stream().filter(lock -> !lock.equals(target)).count() != 0) {
-            throw new LockException(PERIOD_OVERLAPPED_EXCEPTION);
+            throw new ServiceException(PERIOD_OVERLAPPED_EXCEPTION);
         }
     }
 
     private Lock getLock(Long lockId) {
-        return lockRepository.findById(lockId).orElseThrow(()->new LockException(LOCK_NOT_FOUND));
+        return lockRepository.findById(lockId).orElseThrow(()->new ServiceException(LOCK_NOT_FOUND));
     }
 
     private Resource getResource(Long resourceId) {
-        return resourceRepository.findById(resourceId).orElseThrow(() -> new LockException(RESOURCE_NOT_FOUND));
+        return resourceRepository.findById(resourceId).orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
     }
 
     private ClubMember getClubMember(Long clubMemberId) {
-        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new LockException(CLUBMEMBER_NOT_FOUND));
+        return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
     }
 }

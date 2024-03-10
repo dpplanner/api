@@ -2,7 +2,7 @@ package com.dp.dplanner.controller;
 
 import com.dp.dplanner.dto.CommentMemberLikeDto;
 import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.CommentException;
+import com.dp.dplanner.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
@@ -86,7 +86,7 @@ public class CommentController {
     public CommonResponse<List<Response>> getMyComments(@AuthenticationPrincipal PrincipalDetails principal,
                                                         @PathVariable final Long clubMemberId) {
         if (!principal.getClubMemberId().equals(clubMemberId)) {
-            throw new CommentException(ErrorResult.REQUEST_IS_INVALID);
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubId = principal.getClubId();
 
