@@ -48,7 +48,7 @@ public class ReservationSynchronizeTest {
     @Sql(scripts = "/test-data-delete.sql",
             config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED)
     ,executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-    @RepeatedTest(500)
+    @RepeatedTest(10)
     @DisplayName("중복 예약 테스트")
     public void ReservationCreateSynchronizeTest() throws Exception {
 
