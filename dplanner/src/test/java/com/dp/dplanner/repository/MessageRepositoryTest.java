@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.context.annotation.Import;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(MessageRepository.class)
 public class MessageRepositoryTest {
 
     @Autowired
@@ -87,7 +87,8 @@ public class MessageRepositoryTest {
 
 
         // When: findAll 메서드 호출
-        List<PrivateMessage> privateMessages = messageRepository.findAll(clubMemberId);
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        List<PrivateMessage> privateMessages = messageRepository.findAll(clubMemberId,sixMonthsAgo);
 
         // Then: 결과 검증
         assertThat(privateMessages.size()).isEqualTo(2);
@@ -118,7 +119,8 @@ public class MessageRepositoryTest {
         long wrongClubMemberId = 999L;
 
         // When: findAll 메서드 호출
-        List<PrivateMessage> privateMessages = messageRepository.findAll(wrongClubMemberId);
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        List<PrivateMessage> privateMessages = messageRepository.findAll(wrongClubMemberId,sixMonthsAgo);
 
         // Then: 결과 검증
         assertThat(privateMessages.size()).isEqualTo(0);

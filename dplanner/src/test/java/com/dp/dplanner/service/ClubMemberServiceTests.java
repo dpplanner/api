@@ -970,7 +970,9 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
 
         List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
-        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(createClub("otherClub"), 3, "unconfirmed");
+        Club otherClub = createClub("otherClub");
+        ReflectionTestUtils.setField(otherClub, "id", 123L);
+        List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(otherClub, 3, "unconfirmed");
         given(clubMemberRepository.findAllById(unconfirmedClubMemberIds)).willReturn(unconfirmedClubMembers);
 
         //when

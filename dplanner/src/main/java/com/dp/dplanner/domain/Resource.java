@@ -7,9 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static jakarta.persistence.FetchType.*;
 
 @Entity
@@ -34,11 +31,11 @@ public class Resource extends BaseEntity{
     @JoinColumn(name = "club_id")
     private Club club;
 
-    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
-    private List<Lock> locks = new ArrayList<>();
+//    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
+//    private List<Lock> locks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
-    private List<Reservation> reservations = new ArrayList<>();
+//    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
+//    private List<Reservation> reservations = new ArrayList<>();
 
     @Builder
     public Resource(String name, String info, Club club,boolean returnMessageRequired,String notice,ResourceType resourceType) {

@@ -13,8 +13,8 @@ public interface LockRepository extends JpaRepository<Lock, Long> {
     @Query("select l " +
             "from Lock l " +
             "where l.resource.id = :resourceId " +
-            "and (l.period.startDateTime <= :start and :start < l.period.endDateTime) " +
-            "or (:start <= l.period.startDateTime AND l.period.startDateTime < :end ) " +
+            "and ((l.period.startDateTime <= :start and :start < l.period.endDateTime) " +
+            "or (:start <= l.period.startDateTime AND l.period.startDateTime < :end )) " +
             "order by l.period.startDateTime asc , l.period.endDateTime asc")
     List<Lock> findBetween(@Param(value = "start") LocalDateTime start, @Param(value = "end") LocalDateTime end, @Param(value = "resourceId") Long resourceId);
 
@@ -24,8 +24,8 @@ public interface LockRepository extends JpaRepository<Lock, Long> {
                     "select l " +
                     "from Lock l " +
                     "where l.resource.id = :resourceId " +
-                    "and (l.period.startDateTime <= :start and :start < l.period.endDateTime) " +
-                    "or (:start <= l.period.startDateTime and l.period.startDateTime < :end) " +
+                    "and ((l.period.startDateTime <= :start and :start < l.period.endDateTime) " +
+                    "or (:start <= l.period.startDateTime and l.period.startDateTime < :end)) " +
                     "order by l.period.startDateTime asc , l.period.endDateTime asc)"
     )
     boolean existsBetween(@Param(value = "start") LocalDateTime start, @Param(value = "end") LocalDateTime end,@Param(value = "resourceId") Long resourceId);

@@ -23,10 +23,8 @@ import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ReservationService {
-
     private final MessageService messageService;
     private final ClubMemberRepository clubMemberRepository;
     private final ResourceRepository resourceRepository;
@@ -36,9 +34,7 @@ public class ReservationService {
     private final ReservationInviteeRepository reservationInviteeRepository;
     private final Clock clock;
 
-    @Transactional
-    public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
-
+    public synchronized ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
         Long resourceId = createDto.getResourceId();
         LocalDateTime startDateTime = createDto.getStartDateTime();
         LocalDateTime endDateTime = createDto.getEndDateTime();
@@ -78,15 +74,12 @@ public class ReservationService {
             }
 
             // 예약을 생성합니다.
-            reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
-
+            reservation = reservationRepository.saveAndFlush(createDto.toEntity(clubMember, resource));
             // 관리자에게 메시지를 전송합니다.
-            if (!reservation.getStatus().equals(CONFIRMED)) {
-                List<Long> adminClubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
-                        .stream().map(ClubMember::getId).toList();
+            List<Long> adminClubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
+                    .stream().map(ClubMember::getId).toList();
 
-                messageService.createPrivateMessage(adminClubMemberIds, Message.requestMessage());
-            }
+            messageService.createPrivateMessage(adminClubMemberIds, Message.requestMessage());
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
         } else {
             // 사용자가 예약 관리 권한을 가진 경우
@@ -94,9 +87,10 @@ public class ReservationService {
                 throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             // 예약을 생성하고 승인합니다.
-            reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
+            reservation = createDto.toEntity(clubMember, resource);
+            reservation.confirm();
+            reservationRepository.saveAndFlush(reservation);
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
-            confirmIfAuthorized(clubMember, reservation);
         }
         return ReservationDto.Response.of(reservation);
     }
@@ -258,7 +252,7 @@ public class ReservationService {
                 Message.discardMessage());
         // todo 거절 사유 보내기
     }
-
+    @Transactional(readOnly = true)
     public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -273,7 +267,7 @@ public class ReservationService {
 
         return ReservationDto.Response.of(reservation);
     }
-
+    @Transactional(readOnly = true)
     public List<ReservationDto.Response> findAllReservationsByPeriod(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -292,7 +286,7 @@ public class ReservationService {
 
         return ReservationDto.Response.ofList(reservations);
     }
-
+    @Transactional(readOnly = true)
     public List<ReservationDto.Response> findAllReservationsByPeriodAndStatus(Long clubMemberId, ReservationDto.Request requestDto, ReservationStatus status) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -310,7 +304,7 @@ public class ReservationService {
 
         return ReservationDto.Response.ofList(reservations);
     }
-
+    @Transactional(readOnly = true)
     public List<ReservationDto.Response> findAllReservationsByPeriodForScheduler(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
@@ -330,6 +324,7 @@ public class ReservationService {
     }
 
     @RequiredAuthority(authority = SCHEDULE_ALL)
+    @Transactional(readOnly = true)
     public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto) {
 
         ClubMember manager = clubMemberRepository.findById(managerId)
@@ -452,6 +447,6 @@ public class ReservationService {
                         }
                     }
                 });
-        reservationInviteeRepository.saveAll(reservationInvitees);
+        reservationInviteeRepository.saveAllAndFlush(reservationInvitees);
     }
 }

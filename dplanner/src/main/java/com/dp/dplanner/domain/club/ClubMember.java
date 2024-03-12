@@ -111,14 +111,14 @@ public class ClubMember {
     }
 
     public boolean isSameClub(ClubMember clubMember) {
-        return this.club.equals(clubMember.getClub());
+        return this.club.getId().equals(clubMember.getClub().getId());
     }
 
     public boolean isSameClub(Resource resource) {
-        return this.club.equals(resource.getClub());
+        return this.club.getId().equals(resource.getClub().getId());
     }
     public boolean isSameClub(Reservation reservation) {
-        return this.club.equals(reservation.getResource().getClub());
+        return this.club.getId().equals(reservation.getResource().getClub().getId());
     }
 
     public void update(String name, String info) {

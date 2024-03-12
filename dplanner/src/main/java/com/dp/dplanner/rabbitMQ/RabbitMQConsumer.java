@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
+//@Service
 @Profile("!test")
 @Slf4j
 @RequiredArgsConstructor

@@ -40,7 +40,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             response.setStatus(e.getErrorResult().getHttpStatus().value());
             return this.makeErrorResponseEntity(e.getMessage());
         }else{
-            var e = (ServiceException) throwable;
+            var e = throwable;
             response.setStatus(500);
             return this.makeErrorResponseEntity(e.getMessage());
         }

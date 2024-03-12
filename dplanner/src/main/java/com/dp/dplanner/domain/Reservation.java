@@ -60,7 +60,6 @@ public class Reservation extends BaseEntity{
 
     private void setResource(Resource resource) {
         this.resource = resource;
-        resource.getReservations().add(this);
     }
 
     public void confirm() {
