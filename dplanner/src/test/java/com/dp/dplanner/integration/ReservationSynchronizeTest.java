@@ -1,11 +1,6 @@
 package com.dp.dplanner.integration;
 
 import com.dp.dplanner.TestConfig;
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.Period;
-import com.dp.dplanner.domain.Resource;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.repository.*;
 import com.dp.dplanner.service.ReservationService;
@@ -13,11 +8,9 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionManager;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -48,46 +41,21 @@ public class ReservationSynchronizeTest {
     ResourceRepository resourceRepository;
     @Autowired
     ClubMemberRepository clubMemberRepository;
-    @Autowired
-    TransactionManager tm;
 
 
-    Member member;
-    Club club;
-    ClubMember clubMember;
-    Resource resource;
-
-    TransactionTemplate transaction;
-
-    @BeforeEach
-    void setUp() {
-
-        transaction = new TransactionTemplate((PlatformTransactionManager) tm);
-        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-
-        member = Member.builder().name("testMember").build();
-        club = Club.builder().clubName("testClub").build();
-        transaction.execute(status -> memberRepository.saveAndFlush(member));
-        transaction.execute(status -> clubRepository.saveAndFlush(club));
-
-        resource = Resource.builder().club(club).name("testResource").build();
-        transaction.execute(status -> resourceRepository.saveAndFlush(resource));
-
-        clubMember = ClubMember.builder().member(member).club(club).build();
-        clubMember.confirm();
-        transaction.execute(status -> clubMemberRepository.saveAndFlush(clubMember));
-
-
-    }
-
-    @RepeatedTest(10)
+    @Sql(scripts = "/test-data.sql",
+            config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED))
+    @Sql(scripts = "/test-data-delete.sql",
+            config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED)
+    ,executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+    @RepeatedTest(500)
     @DisplayName("중복 예약 테스트")
-    public void ReservationCreateSynchronizeTest() throws Exception
-    {
+    public void ReservationCreateSynchronizeTest() throws Exception {
+
         //given
-        int threadCount = 10;
-        Long clubMemberId = clubMember.getId();
-        Long resourceId = resource.getId();
+        int threadCount = 20;
+        Long clubMemberId = 1L;
+        Long resourceId = 1L;
 
         AtomicInteger failCount = new AtomicInteger();
         AtomicInteger successCount = new AtomicInteger();
@@ -126,7 +94,7 @@ public class ReservationSynchronizeTest {
         System.out.println("successCount = " + successCount);
         System.out.println("failCount = " + failCount);
 
-        assertThat(failCount.get()).isEqualTo(threadCount-1);
+        assertThat(failCount.get()).isEqualTo(threadCount - 1);
         assertThat(successCount.get()).isEqualTo(1);
 
     }
@@ -156,10 +124,6 @@ public class ReservationSynchronizeTest {
      */
     private static LocalDateTime getTime(int hour) {
         return LocalDateTime.of(2023, 8, 10, hour, 0);
-    }
-
-    private static Period getPeriod(int start, int end) {
-        return new Period(getTime(start), getTime(end));
     }
 
 }
