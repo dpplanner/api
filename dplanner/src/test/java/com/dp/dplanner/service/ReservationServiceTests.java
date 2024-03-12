@@ -66,11 +66,15 @@ public class ReservationServiceTests {
     @BeforeEach
     void setUp() {
         Club club = Club.builder().build();
+        ReflectionTestUtils.setField(club, "id", 56L);
+
         resource = createResource(club, 111L);
         clubMember = createClubMember(club, 11L);
         sameClubMember = createClubMember(club, 22L);
 
         Club otherClub = Club.builder().build();
+        ReflectionTestUtils.setField(otherClub, "id", 98L);
+
         otherClubResource = createResource(otherClub, 33L);
         otherClubMember = createClubMember(otherClub, 44L);
 
