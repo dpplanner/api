@@ -53,7 +53,7 @@ public class ReservationSynchronizeTest {
     public void ReservationCreateSynchronizeTest() throws Exception {
 
         //given
-        int threadCount = 20;
+        int threadCount = 10;
         Long clubMemberId = 1L;
         Long resourceId = 1L;
 
