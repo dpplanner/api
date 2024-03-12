@@ -11,7 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Controller
+//@Controller
 @Profile("!test")
 @RequiredArgsConstructor
 public class ReservationRabbitMQController {
@@ -33,7 +33,7 @@ public class ReservationRabbitMQController {
     private String routingKey3;
 
 
-    @PostMapping(value = "/reservations")
+//    @PostMapping(value = "/reservations")
     public ResponseEntity createReservation(@AuthenticationPrincipal PrincipalDetails principal,
                                             @RequestBody RabbitMQDto messageDto) {
 

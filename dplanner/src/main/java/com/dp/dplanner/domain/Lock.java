@@ -35,7 +35,6 @@ public class Lock extends BaseEntity{
 
     private void setResource(Resource resource) {
         this.resource = resource;
-        resource.getLocks().add(this);
     }
 
     public void update(Period period, String message) {

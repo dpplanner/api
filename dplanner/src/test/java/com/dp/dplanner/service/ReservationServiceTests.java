@@ -96,7 +96,7 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(reservationRepository.saveAndFlush(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
         given(clock.getZone()).willReturn(ZoneId.systemDefault());
 
@@ -127,7 +127,7 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(clubMemberRepository.findById(invitee.getId())).willReturn(Optional.ofNullable(invitee));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.save(any(Reservation.class))).willReturn(reservation);
+        given(reservationRepository.saveAndFlush(any(Reservation.class))).willReturn(reservation);
         given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
         given(clock.getZone()).willReturn(ZoneId.systemDefault());
 
@@ -154,7 +154,7 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(reservationRepository.saveAndFlush(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         clubMember.setAdmin();
 
@@ -173,7 +173,7 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(reservationRepository.saveAndFlush(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         clubMember.setManager();
         clubMember.updateClubAuthority(clubAuthority);

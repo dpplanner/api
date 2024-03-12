@@ -24,6 +24,15 @@ public class ReservationController {
     private final ReservationService reservationService;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    @PostMapping(value = "/reservations", name="create")
+    public CommonResponse<Response> createReservation(@AuthenticationPrincipal PrincipalDetails principal,
+                                                      @RequestBody ReservationDto.Create createDto) {
+        Long clubMemberId = principal.getClubMemberId();
+        Response response = reservationService.createReservation(clubMemberId, createDto);
+
+        return CommonResponse.createSuccess(response);
+    }
+
     @PutMapping(value = "/reservations/{reservationId}/update", name = "update")
     public CommonResponse<Response> updateReservations(@AuthenticationPrincipal PrincipalDetails principal,
                                                        @PathVariable Long reservationId,
