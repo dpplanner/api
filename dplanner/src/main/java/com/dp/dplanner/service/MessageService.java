@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,15 +20,16 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class MessageService {
 
     private final MessageRepository messageRepository;
     private final ClubMemberRepository clubMemberRepository;
 
+    @Transactional(readOnly = true)
     public MessageDto.ResponseList findMyMessage(Long clubMemberId) {
 
-        List<PrivateMessage> messages = messageRepository.findAll(clubMemberId);
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        List<PrivateMessage> messages = messageRepository.findAll(clubMemberId,sixMonthsAgo);
         long notReadCount = 0;
         List<MessageDto.Response> responseList = new ArrayList<>();
 
