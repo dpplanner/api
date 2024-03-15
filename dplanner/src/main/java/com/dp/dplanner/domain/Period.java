@@ -1,5 +1,7 @@
 package com.dp.dplanner.domain;
 
+import com.dp.dplanner.exception.ErrorResult;
+import com.dp.dplanner.exception.ServiceException;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -25,7 +27,7 @@ public class Period{
 
     private void check(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         if (startDateTime.isAfter(endDateTime) || startDateTime.equals(endDateTime)) {
-            throw new RuntimeException();
+            throw new ServiceException(ErrorResult.REQUEST_IS_INVALID);
         }
     }
 

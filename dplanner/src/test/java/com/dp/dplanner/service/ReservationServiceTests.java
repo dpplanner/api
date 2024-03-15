@@ -7,6 +7,7 @@ import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.*;
+import com.dp.dplanner.redis.RedisReservationService;
 import com.dp.dplanner.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -49,6 +50,8 @@ public class ReservationServiceTests {
     MessageService messageService;
     @Mock
     ReservationInviteeRepository reservationInviteeRepository;
+    @Mock
+    RedisReservationService redisReservationService;
 
     @InjectMocks
     ReservationService reservationService;
@@ -96,7 +99,8 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.saveAndFlush(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
         given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
         given(clock.getZone()).willReturn(ZoneId.systemDefault());
 
@@ -127,7 +131,8 @@ public class ReservationServiceTests {
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(clubMemberRepository.findById(invitee.getId())).willReturn(Optional.ofNullable(invitee));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.saveAndFlush(any(Reservation.class))).willReturn(reservation);
+        given(reservationRepository.save(any(Reservation.class))).willReturn(reservation);
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
         given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
         given(clock.getZone()).willReturn(ZoneId.systemDefault());
 
@@ -154,7 +159,8 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.saveAndFlush(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
 
         clubMember.setAdmin();
 
@@ -173,7 +179,8 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        given(reservationRepository.saveAndFlush(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
 
         clubMember.setManager();
         clubMember.updateClubAuthority(clubAuthority);
@@ -186,7 +193,27 @@ public class ReservationServiceTests {
         //then
         assertThat(responseDto.getStatus()).as("예약은 승인된 상태여야 한다").isEqualTo(CONFIRMED.name());
     }
-    
+
+    @Test
+    @DisplayName("레디스에 이미 해당 예약에 대한 키가 있으면 REQUEST_IS_INVALID.")
+    public void createReservationConcurrentRequestThenException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(false);
+        given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
+        given(clock.getZone()).willReturn(ZoneId.systemDefault());
+
+        //when
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> reservationService.createReservation(clubMember.getId(), createDto));
+
+        //then
+        assertThat(runtimeException.getMessage()).isEqualTo(RESERVATION_UNAVAILABLE.getMessage());
+
+    }
+
     @Test
     @DisplayName("요청한 시간에 다른 예약이 있으면 RESERVATION_UNAVAILABLE")
     public void createReservationWhenPeriodOverlappedThenException() throws Exception {
@@ -321,6 +348,7 @@ public class ReservationServiceTests {
      */
     @Test
     @DisplayName("사용자는 본인의 예약을 수정할 수 있다.")
+    @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationByUser() throws Exception {
         //given
         Long reservationId = 1L;
@@ -348,6 +376,26 @@ public class ReservationServiceTests {
     }
 
     @Test
+    @DisplayName("사용자는 본인의 예약을 수정할 수 있다. 예약 시간은 수정 불가능 하다.")
+    public void updateReservationExceptPeriod() throws Exception {
+        //given
+        Long reservationId = 1L;
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+
+        //when
+        ReservationDto.Update updateDto = getUpdateDto(
+                reservationId, resource.getId(), "newTitle", "newUsage",
+                false, getTime(20), getTime(22)
+        );
+
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> reservationService.updateReservation(clubMember.getId(), updateDto));
+        //then
+        assertThat(runtimeException.getMessage()).isEqualTo(REQUEST_IS_INVALID.getMessage());
+
+    }
+
+    @Test
     @DisplayName("사용자는 invtiee 정보를 수정할 수 있다.")
     public void updateReservationWithInviteeByUser() throws Exception {
 
@@ -362,7 +410,7 @@ public class ReservationServiceTests {
         //when
         ReservationDto.Update updateDto = getUpdateDto(
                 reservationId, resource.getId(), "newTitle", "newUsage",
-                false, getTime(20), getTime(22)
+                false, getTime(20), getTime(21)
         );
         updateDto.setReservationInvitees(List.of(invitee.getId()));
 
@@ -377,7 +425,8 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("사용자가 승인된 예약을 수정하면 승인 대기상태로 전환된다.")
+    @DisplayName("사용자가 승인된 예약의 시간을 수정하면 승인 대기상태로 전환된다.")
+    @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateConfirmedReservationByUserThenNotConfirmed() throws Exception {
         //given
         Long reservationId = 1L;
@@ -421,6 +470,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("관리자가 승인된 예약을 수정시 승인대기를 하지 않는다")
+    @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationByAdminThenConfirmed() throws Exception {
         //given
         clubMember.setAdmin();
@@ -444,6 +494,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("권한이 있는 매니저가 승인된 예약을 수정시 승인대기를 하지 않는다")
+    @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationByManagerHasSCHEDULE_ALLThenConfirmed() throws Exception {
         //given
         clubMember.setManager();
@@ -468,6 +519,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("예약 시간 수정시 다른 예약이 있으면 RESERVATION_UNAVAILABLE")
+    @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationWhenOverlappedWithOtherReservationThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -489,6 +541,7 @@ public class ReservationServiceTests {
 
     @Test
     @DisplayName("수정하려는 시간에 락이 걸려있으면 RESERVATION_UNAVAILABLE")
+    @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationWhenLockedThenException() throws Exception {
         //given
         Long reservationId = 1L;

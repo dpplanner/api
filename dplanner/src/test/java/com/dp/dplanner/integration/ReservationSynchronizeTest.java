@@ -2,6 +2,7 @@ package com.dp.dplanner.integration;
 
 import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.dto.ReservationDto;
+import com.dp.dplanner.redis.RedisReservationService;
 import com.dp.dplanner.repository.*;
 import com.dp.dplanner.service.ReservationService;
 import org.junit.jupiter.api.*;
@@ -34,6 +35,9 @@ public class ReservationSynchronizeTest {
     ReservationService reservationService;
 
     @Autowired
+    RedisReservationService redisReservationService;
+
+    @Autowired
     MemberRepository memberRepository;
     @Autowired
     ClubRepository clubRepository;
@@ -50,6 +54,7 @@ public class ReservationSynchronizeTest {
     ,executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @RepeatedTest(10)
     @DisplayName("중복 예약 테스트")
+    @Disabled("로컬에서 테스트")
     public void ReservationCreateSynchronizeTest() throws Exception {
 
         //given
@@ -62,11 +67,8 @@ public class ReservationSynchronizeTest {
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        assert clubMemberId != null;
-        assert resourceId != null;
 
         //when
-
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                         try {
@@ -91,8 +93,7 @@ public class ReservationSynchronizeTest {
 
         latch.await(1,TimeUnit.SECONDS);
 
-        System.out.println("successCount = " + successCount);
-        System.out.println("failCount = " + failCount);
+        redisReservationService.deleteReservation(LocalDateTime.of(2023, 8, 10, 20, 0), LocalDateTime.of(2023, 8, 10, 21, 0), 1L);
 
         assertThat(failCount.get()).isEqualTo(threadCount - 1);
         assertThat(successCount.get()).isEqualTo(1);

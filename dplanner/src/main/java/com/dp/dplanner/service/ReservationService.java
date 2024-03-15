@@ -7,6 +7,7 @@ import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.dto.AttachmentDto;
 import com.dp.dplanner.dto.ReservationDto;
 import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.redis.RedisReservationService;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,13 +19,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.dp.dplanner.domain.ReservationStatus.*;
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+    private final RedisReservationService redisReservationService;
     private final MessageService messageService;
     private final ClubMemberRepository clubMemberRepository;
     private final ResourceRepository resourceRepository;
@@ -34,7 +35,9 @@ public class ReservationService {
     private final ReservationInviteeRepository reservationInviteeRepository;
     private final Clock clock;
 
-    public synchronized ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
+    @Transactional
+    public ReservationDto.Response createReservation(Long clubMemberId, ReservationDto.Create createDto) {
+
         Long resourceId = createDto.getResourceId();
         LocalDateTime startDateTime = createDto.getStartDateTime();
         LocalDateTime endDateTime = createDto.getEndDateTime();
@@ -69,12 +72,16 @@ public class ReservationService {
             // 현재 시간과 예약 시작 시간 사이의 차이를 계산합니다.
             LocalDateTime now = LocalDateTime.now(clock);
             long secondsDifference = ChronoUnit.SECONDS.between(now, startDateTime);
-            if (secondsDifference > 604800) { // 7 * 24 * 60 * 60 초
+            if (secondsDifference > 604800) { // 7 * 24 * 60 * 60 초, 일주일
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
-
+            // 레디스 확인
+            Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
+            if(!cache){
+                throw new ServiceException(RESERVATION_UNAVAILABLE);
+            }
             // 예약을 생성합니다.
-            reservation = reservationRepository.saveAndFlush(createDto.toEntity(clubMember, resource));
+            reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
             // 관리자에게 메시지를 전송합니다.
             List<Long> adminClubMemberIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL)
                     .stream().map(ClubMember::getId).toList();
@@ -86,15 +93,19 @@ public class ReservationService {
             if (!clubMember.isSameClub(resource)) {
                 throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
+            // 레디스 확인
+            Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
+            if(!cache){
+                throw new ServiceException(RESERVATION_UNAVAILABLE);
+            }
             // 예약을 생성하고 승인합니다.
             reservation = createDto.toEntity(clubMember, resource);
             reservation.confirm();
-            reservationRepository.saveAndFlush(reservation);
+            reservationRepository.save(reservation);
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
         }
         return ReservationDto.Response.of(reservation);
     }
-
     @Transactional
     public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto) {
 
@@ -102,10 +113,11 @@ public class ReservationService {
         Long resourceId = updateDto.getResourceId();
         LocalDateTime start = updateDto.getStartDateTime();
         LocalDateTime end = updateDto.getEndDateTime();
-
-        if (!isUpdatable(reservationId, resourceId, start, end)) {
-            throw new ServiceException(RESERVATION_UNAVAILABLE);
-        }
+        
+// 예약 시간 수정 불가능하기 때문에 시간 및 락 검사할 필요 없음
+//        if (!isUpdatable(reservationId, resourceId, start, end)) {
+//            throw new ServiceException(RESERVATION_UNAVAILABLE);
+//        }
 
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
@@ -113,8 +125,8 @@ public class ReservationService {
         if (!isReservationOwner(clubMemberId, reservation)) {
             throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
-        // 이미 확정된 상태에서, 예약 시간이 동일하다면 확정 상태 유지
-        if (reservation.getStatus().equals(CONFIRMED) && reservation.getPeriod().equals(new Period(start, end))) {
+
+        if (reservation.getPeriod().equals(new Period(start, end))) {
                 reservation.updateNotChangeStatus(
                         updateDto.getTitle(),
                         updateDto.getUsage(),
@@ -127,16 +139,8 @@ public class ReservationService {
             reservationInviteeRepository.deleteReservationInviteeByReservationId(reservationId);
             createReservationInvitee(updateDto.getReservationInvitees(), reservation.getClubMember(), reservation);
         }else{
-            reservation.update(
-                    updateDto.getTitle(),
-                    updateDto.getUsage(),
-                    updateDto.getStartDateTime(),
-                    updateDto.getEndDateTime(),
-                    updateDto.isSharing()
-            );
-            reservation.clearInvitee();
-            reservationInviteeRepository.deleteReservationInviteeByReservationId(reservationId);
-            createReservationInvitee(updateDto.getReservationInvitees(), reservation.getClubMember(), reservation);
+            // 예약 시간 수정 불가능
+            throw new ServiceException(REQUEST_IS_INVALID);
         }
 
         confirmIfAuthorized(reservation.getClubMember(), reservation);
@@ -144,11 +148,6 @@ public class ReservationService {
         return ReservationDto.Response.of(reservation);
     }
 
-    /**
-     * 예약 취소 요청 보내면 바로 삭제 (원래 기획 의도랑 달라짐, CANCELD-> 관리자 확인 후 삭제 였는데 바로 삭제로)
-     * @param clubMemberId
-     * @param deleteDto
-     */
     @Transactional
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
 
@@ -158,15 +157,9 @@ public class ReservationService {
         if (!isReservationOwner(clubMemberId, reservation)) {
             throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
         }
-
+        redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         reservationRepository.delete(reservation);
 
-//        if (reservation.isConfirmed() || reservation.getStatus().equals(CANCELED)) {
-//            reservation.cancel();
-//        }
-//        else {
-//            reservationRepository.delete(reservation);
-//        }
     }
 
     /**
@@ -190,6 +183,7 @@ public class ReservationService {
 
         messageService.createPrivateMessage(List.of(reservation.getClubMember().getId()),
                 Message.discardMessage());
+        redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         reservationRepository.delete(reservation);
 
     }
@@ -214,7 +208,6 @@ public class ReservationService {
             reservation.confirm();
         });
 
-//        confirmReservations(reservations, true);
 
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
                Message.confirmMessage());
@@ -245,9 +238,9 @@ public class ReservationService {
                 throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             reservation.reject();
+            redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         });
 
-//        confirmReservations(reservations, false);
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
                 Message.discardMessage());
         // todo 거절 사유 보내기
@@ -447,6 +440,6 @@ public class ReservationService {
                         }
                     }
                 });
-        reservationInviteeRepository.saveAllAndFlush(reservationInvitees);
+        reservationInviteeRepository.saveAll(reservationInvitees);
     }
 }
