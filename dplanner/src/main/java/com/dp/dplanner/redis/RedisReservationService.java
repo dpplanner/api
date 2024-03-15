@@ -35,13 +35,10 @@ public class RedisReservationService {
             String key = generateKey(startDateTime.plusHours(i),resourceId);
             String value = "r"; // reserved
             map.put(key, value);
-            System.out.println("--------------" + key);
-
         }
 
         Boolean ret = redisTemplate.opsForValue()
                 .multiSetIfAbsent(map);
-        System.out.println("--------------" + ret.toString());
 
         if(ret){
             expireReservation(startDateTime, endDateTime, resourceId);
