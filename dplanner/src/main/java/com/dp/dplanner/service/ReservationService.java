@@ -58,7 +58,6 @@ public class ReservationService {
 
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
-        log.info("---------------Create  Reservation-----------");
         //일반 사용자 요청 처리
         if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
 
@@ -78,9 +77,7 @@ public class ReservationService {
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
             // 레디스 확인
-            log.info("---------------CACHE  Reservation-----------");
             Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
-            log.info("----------- cahce 결과 {}"  + cache);
 
             if(!cache){
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
@@ -99,10 +96,8 @@ public class ReservationService {
                 throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             // 레디스 확인
-            log.info("---------------CACHE  Reservation-----------");
 
             Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
-            log.info("----------- cahce 결과 {}"  + cache);
             if(!cache){
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }

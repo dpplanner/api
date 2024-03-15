@@ -4,7 +4,6 @@ import com.dp.dplanner.dto.CommonResponse;
 import com.dp.dplanner.dto.LoginDto;
 import com.dp.dplanner.dto.TokenDto;
 import com.dp.dplanner.exception.ServiceException;
-import com.dp.dplanner.redis.RedisReservationService;
 import com.dp.dplanner.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -12,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 
 
 @RestController
@@ -22,18 +20,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    private final RedisReservationService redisReservationService;
 
-    @GetMapping("/cache/{time}")
-    public ResponseEntity redis(@PathVariable("time") Integer time) {
-
-        Boolean ret = redisReservationService.saveReservation(LocalDateTime.of(2023, 8, 10, time, 0),
-                LocalDateTime.of(2023, 8, 10, time + 3, 0),
-                1L);
-
-
-        return ResponseEntity.ok(ret);
-    }
 
     @GetMapping("/token")
     public ResponseEntity<Void> issueToken() {

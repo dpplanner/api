@@ -31,18 +31,15 @@ public class RedisReservationService {
         if(endHour == 0){
             endHour = 24;
         }
-        log.info("--------start Hour , end Hour" + startHour + ":" + endHour);
         Map<String, String> map = new HashMap<>();
         for (int i = 0; i < (endHour - startHour); i++) {
             String key = generateKey(startDateTime.plusHours(i),resourceId);
             String value = "r"; // reserved
             map.put(key, value);
-            log.info("--------------key---------" + key);
         }
 
         Boolean ret = redisTemplate.opsForValue()
                 .multiSetIfAbsent(map);
-        log.info("---------------cahcejk result" + ret);
 
         if(ret){
             expireReservation(startDateTime, endDateTime, resourceId);
