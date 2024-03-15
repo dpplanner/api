@@ -17,6 +17,16 @@ spring:
             scope:
               - profile
               - email
+  data:
+    redis:
+      port: 6379
+      host: localhost
+      password:
+      repositories:
+        enabled: false
+
+expire:
+  defaultTime: 60
 
 cloud:
   aws:
