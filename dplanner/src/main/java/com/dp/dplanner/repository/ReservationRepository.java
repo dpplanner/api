@@ -32,6 +32,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                     "from Reservation r " +
                     "where r.resource.id = :resourceId " +
                     "and r.id != :reservationId " +
+                    "and r.status != 'REJECTED' " +
                     "and ((r.period.startDateTime <= :start and :start < r.period.endDateTime) " +
                     "or (:start <= r.period.startDateTime and r.period.startDateTime < :end))" +
                     ")"
