@@ -19,6 +19,8 @@ spring:
     properties:
       hibernate:
         default_batch_fetch_size: 500
+  cache:
+    type: redis
   data:
     redis:
       port: 6379
@@ -48,4 +50,4 @@ server:
 
 logging:
   level:
-    root: debug
+    root: info
