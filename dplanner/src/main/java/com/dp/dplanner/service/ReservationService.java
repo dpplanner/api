@@ -10,6 +10,7 @@ import com.dp.dplanner.exception.ServiceException;
 import com.dp.dplanner.redis.RedisReservationService;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationService {
     private final RedisReservationService redisReservationService;
     private final MessageService messageService;
@@ -56,7 +58,7 @@ public class ReservationService {
 
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
-
+        log.info("---------------Create  Reservation-----------");
         //일반 사용자 요청 처리
         if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
 
@@ -76,7 +78,10 @@ public class ReservationService {
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
             // 레디스 확인
+            log.info("---------------CACHE  Reservation-----------");
             Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
+            log.info("----------- cahce 결과 {}"  + cache);
+
             if(!cache){
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
@@ -94,7 +99,10 @@ public class ReservationService {
                 throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
             }
             // 레디스 확인
+            log.info("---------------CACHE  Reservation-----------");
+
             Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
+            log.info("----------- cahce 결과 {}"  + cache);
             if(!cache){
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }

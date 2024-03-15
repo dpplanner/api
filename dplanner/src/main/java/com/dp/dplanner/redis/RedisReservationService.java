@@ -1,6 +1,7 @@
 package com.dp.dplanner.redis;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RedisReservationService {
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -29,16 +31,18 @@ public class RedisReservationService {
         if(endHour == 0){
             endHour = 24;
         }
-
+        log.info("--------start Hour , end Hour" + startHour + ":" + endHour);
         Map<String, String> map = new HashMap<>();
         for (int i = 0; i < (endHour - startHour); i++) {
             String key = generateKey(startDateTime.plusHours(i),resourceId);
             String value = "r"; // reserved
             map.put(key, value);
+            log.info("--------------key---------" + key);
         }
 
         Boolean ret = redisTemplate.opsForValue()
                 .multiSetIfAbsent(map);
+        log.info("---------------cahcejk result" + ret);
 
         if(ret){
             expireReservation(startDateTime, endDateTime, resourceId);
