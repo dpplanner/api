@@ -36,14 +36,17 @@ dependencies {
 	// RabbitMQ
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 
-	//Swagger
+	// Swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
 
-	//fcm
+	// Fcm
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
 
-	//redis
+	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+	// Actuator
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
