@@ -14,18 +14,18 @@ switch_container() {
       BEFORE_COMPOSE_COLOR="green"
       AFTER_COMPOSE_COLOR="blue"
 
-      sleep 10
+      sleep 30
 
-      health_check "http://127.0.0.1:8081/actuator/health"
+      health_check "http://127.0.0.1:9001/actuator/health"
   else
       echo "### BLUE => GREEN ###"
       docker-compose -p "${APP_NAME}-green" -f docker-compose.green.yml up -d
       BEFORE_COMPOSE_COLOR="blue"
       AFTER_COMPOSE_COLOR="green"
 
-      sleep 10
+      sleep 30
 
-      health_check "http://127.0.0.1:8080/actuator/health"
+      health_check "http://127.0.0.1:9000/actuator/health"
   fi
 }
 
@@ -50,7 +50,10 @@ health_check() {
     done;
 
     echo "Failed to check service after $MAX_RETRIES attempts."
-    return 1
+    docker-compose -p "${APP_NAME}-${AFTER_COMPOSE_COLOR}" -f "docker-compose.${AFTER_COMPOSE_COLOR}.yml" down
+    echo "### DEPLOY FAILED ###"
+    exit 1
+
 }
 
 switch_conf() {
