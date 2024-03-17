@@ -5,4 +5,9 @@ services:
     image: dplanner/api:latest
     container_name: dplanner-green
     ports:
-      - '8080:8080'
+      - '9000:8080'
+
+networks:
+  default:
+    external:
+      name: dplanner-private-network
