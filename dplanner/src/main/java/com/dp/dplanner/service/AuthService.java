@@ -2,13 +2,13 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.LoginDto;
-import com.dp.dplanner.dto.TokenDto;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.LoginDto;
+import com.dp.dplanner.adapter.dto.TokenDto;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MemberRepository;
-import com.dp.dplanner.security.JwtTokenProvider;
-import com.dp.dplanner.security.PrincipalDetails;
+import com.dp.dplanner.config.security.JwtTokenProvider;
+import com.dp.dplanner.config.security.PrincipalDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

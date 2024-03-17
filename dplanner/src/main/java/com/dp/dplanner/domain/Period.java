@@ -1,7 +1,7 @@
 package com.dp.dplanner.domain;
 
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
 import lombok.Getter;

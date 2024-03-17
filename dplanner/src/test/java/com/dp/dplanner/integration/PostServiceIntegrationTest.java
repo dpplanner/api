@@ -22,7 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import static com.dp.dplanner.dto.PostDto.*;
+import static com.dp.dplanner.adapter.dto.PostDto.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest

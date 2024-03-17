@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static com.dp.dplanner.dto.AttachmentDto.*;
+import static com.dp.dplanner.adapter.dto.AttachmentDto.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.when;
 

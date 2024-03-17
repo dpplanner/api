@@ -1,8 +1,8 @@
 package com.dp.dplanner.integration;
 
 import com.dp.dplanner.TestConfig;
-import com.dp.dplanner.dto.ReservationDto;
-import com.dp.dplanner.redis.RedisReservationService;
+import com.dp.dplanner.adapter.dto.ReservationDto;
+import com.dp.dplanner.service.RedisReservationService;
 import com.dp.dplanner.repository.*;
 import com.dp.dplanner.service.ReservationService;
 import org.junit.jupiter.api.*;

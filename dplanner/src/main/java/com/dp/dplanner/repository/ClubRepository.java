@@ -1,7 +1,7 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.dto.ClubDto;
+import com.dp.dplanner.adapter.dto.ClubDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,7 +1,6 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Member;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

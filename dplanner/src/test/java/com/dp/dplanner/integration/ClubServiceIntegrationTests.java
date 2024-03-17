@@ -6,7 +6,7 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.ClubAuthorityDto;
+import com.dp.dplanner.adapter.dto.ClubAuthorityDto;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.service.ClubService;
 import jakarta.persistence.EntityManager;

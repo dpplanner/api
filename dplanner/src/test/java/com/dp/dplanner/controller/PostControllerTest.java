@@ -1,12 +1,13 @@
 package com.dp.dplanner.controller;
 
+import com.dp.dplanner.adapter.controller.PostController;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.controller.GlobalExceptionHandler;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.PostService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -36,7 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.dp.dplanner.dto.PostDto.*;
+import static com.dp.dplanner.adapter.dto.PostDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;

@@ -2,7 +2,7 @@ package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
-import com.dp.dplanner.dto.ClubMemberDto;
+import com.dp.dplanner.adapter.dto.ClubMemberDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

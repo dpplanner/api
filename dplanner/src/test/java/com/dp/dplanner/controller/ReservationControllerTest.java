@@ -1,16 +1,19 @@
 package com.dp.dplanner.controller;
 
+import com.dp.dplanner.adapter.controller.GlobalExceptionHandler;
+import com.dp.dplanner.adapter.controller.ReservationController;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.dto.ReservationDto;
-import com.dp.dplanner.dto.ReservationDto.Request;
+import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.dto.ReservationDto;
+import com.dp.dplanner.adapter.dto.ReservationDto.Request;
 import com.dp.dplanner.exception.*;
 import com.dp.dplanner.service.ReservationService;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
@@ -40,7 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.dp.dplanner.dto.ReservationDto.*;
+import static com.dp.dplanner.adapter.dto.ReservationDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

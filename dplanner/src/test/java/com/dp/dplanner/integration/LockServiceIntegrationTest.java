@@ -12,7 +12,7 @@ import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.BaseException;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.LockService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.dp.dplanner.dto.LockDto.*;
+import static com.dp.dplanner.adapter.dto.LockDto.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

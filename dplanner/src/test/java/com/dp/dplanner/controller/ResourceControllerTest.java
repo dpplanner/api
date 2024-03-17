@@ -1,11 +1,12 @@
 package com.dp.dplanner.controller;
 
+import com.dp.dplanner.adapter.controller.ResourceController;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.controller.GlobalExceptionHandler;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.ResourceService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -29,7 +30,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
-import static com.dp.dplanner.dto.ResourceDto.*;
+import static com.dp.dplanner.adapter.dto.ResourceDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

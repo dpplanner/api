@@ -1,12 +1,13 @@
 package com.dp.dplanner.controller;
 
+import com.dp.dplanner.adapter.controller.LockController;
 import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.controller.GlobalExceptionHandler;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.LockService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -30,7 +31,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
-import static com.dp.dplanner.dto.LockDto.*;
+import static com.dp.dplanner.adapter.dto.LockDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

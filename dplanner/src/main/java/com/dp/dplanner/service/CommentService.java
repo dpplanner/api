@@ -6,12 +6,12 @@ import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
-import com.dp.dplanner.dto.CommentMemberLikeDto;
-import com.dp.dplanner.exception.*;
+import com.dp.dplanner.adapter.dto.CommentMemberLikeDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.CommentMemberLikeRepository;
 import com.dp.dplanner.repository.CommentRepository;
 import com.dp.dplanner.repository.PostRepository;
+import com.dp.dplanner.service.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.POST_ALL;
-import static com.dp.dplanner.dto.CommentDto.*;
+import static com.dp.dplanner.adapter.dto.CommentDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service

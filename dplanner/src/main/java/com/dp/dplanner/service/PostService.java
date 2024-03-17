@@ -1,15 +1,15 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
-import com.dp.dplanner.dto.AttachmentDto;
-import com.dp.dplanner.dto.PostMemberLikeDto;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.AttachmentDto;
+import com.dp.dplanner.adapter.dto.PostMemberLikeDto;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
-import static com.dp.dplanner.dto.PostDto.*;
+import static com.dp.dplanner.adapter.dto.PostDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 

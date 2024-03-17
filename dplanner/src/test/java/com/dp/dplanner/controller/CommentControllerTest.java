@@ -1,10 +1,11 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.dto.CommentDto.Create;
-import com.dp.dplanner.dto.CommonResponse;
+import com.dp.dplanner.adapter.controller.CommentController;
+import com.dp.dplanner.adapter.dto.CommentDto.Create;
+import com.dp.dplanner.adapter.dto.CommonResponse;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.controller.GlobalExceptionHandler;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.CommentService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
@@ -28,7 +29,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
-import static com.dp.dplanner.dto.CommentDto.*;
+import static com.dp.dplanner.adapter.dto.CommentDto.*;
 import static com.dp.dplanner.exception.ErrorResult.DELETE_AUTHORIZATION_DENIED;
 import static com.dp.dplanner.exception.ErrorResult.UPDATE_AUTHORIZATION_DENIED;
 import static org.mockito.ArgumentMatchers.any;

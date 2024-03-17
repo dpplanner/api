@@ -6,7 +6,7 @@ import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.domain.message.PrivateMessage;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MessageRepository;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,13 +1,12 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
-import com.dp.dplanner.dto.AttachmentDto;
-import com.dp.dplanner.dto.ReservationDto;
-import com.dp.dplanner.exception.ServiceException;
-import com.dp.dplanner.redis.RedisReservationService;
+import com.dp.dplanner.adapter.dto.AttachmentDto;
+import com.dp.dplanner.adapter.dto.ReservationDto;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

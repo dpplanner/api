@@ -1,11 +1,11 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
-import static com.dp.dplanner.dto.ResourceDto.*;
+import static com.dp.dplanner.adapter.dto.ResourceDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service

@@ -1,10 +1,10 @@
 package com.dp.dplanner.integration;
 
 import com.dp.dplanner.TestConfig;
-import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

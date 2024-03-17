@@ -3,7 +3,7 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.InviteCode;
 import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.dto.InviteDto;
+import com.dp.dplanner.adapter.dto.InviteDto;
 import com.dp.dplanner.repository.InviteCodeRepository;
 import com.dp.dplanner.util.InviteCodeGenerator;
 import org.junit.jupiter.api.DisplayName;

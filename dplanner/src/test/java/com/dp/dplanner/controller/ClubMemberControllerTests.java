@@ -1,12 +1,13 @@
 package com.dp.dplanner.controller;
 
+import com.dp.dplanner.adapter.controller.ClubMemberController;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.ClubMemberDto;
-import com.dp.dplanner.dto.CommonResponse;
-import com.dp.dplanner.exception.GlobalExceptionHandler;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.ClubMemberDto;
+import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.controller.GlobalExceptionHandler;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.ClubMemberService;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.reflect.TypeToken;

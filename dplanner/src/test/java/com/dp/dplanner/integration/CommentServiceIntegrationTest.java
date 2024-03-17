@@ -7,7 +7,7 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.dto.CommentDto;
+import com.dp.dplanner.adapter.dto.CommentDto;
 import com.dp.dplanner.service.CommentService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;

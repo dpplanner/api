@@ -4,7 +4,7 @@ import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.FileType;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.Reservation;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.AttachmentRepository;
 import com.dp.dplanner.repository.PostRepository;
 import com.dp.dplanner.repository.ReservationRepository;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.dp.dplanner.dto.AttachmentDto.*;
+import static com.dp.dplanner.adapter.dto.AttachmentDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service

@@ -1,6 +1,6 @@
 package com.dp.dplanner.controller;
 
-import com.dp.dplanner.security.PrincipalDetails;
+import com.dp.dplanner.config.security.PrincipalDetails;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;

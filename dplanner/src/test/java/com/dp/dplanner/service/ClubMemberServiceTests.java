@@ -2,12 +2,13 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
-import com.dp.dplanner.dto.ClubMemberDto;
+import com.dp.dplanner.adapter.dto.ClubMemberDto;
 import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.service.exception.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;

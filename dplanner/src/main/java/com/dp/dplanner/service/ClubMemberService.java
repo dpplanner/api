@@ -1,11 +1,11 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.domain.message.Message;
-import com.dp.dplanner.dto.ClubMemberDto;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.adapter.dto.ClubMemberDto;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;

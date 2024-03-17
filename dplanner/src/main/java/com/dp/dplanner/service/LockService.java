@@ -1,11 +1,11 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.aop.annotation.RequiredAuthority;
+import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
-import com.dp.dplanner.exception.ServiceException;
+import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ResourceRepository;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
-import static com.dp.dplanner.dto.LockDto.*;
+import static com.dp.dplanner.adapter.dto.LockDto.*;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
 @Service
