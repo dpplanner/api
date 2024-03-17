@@ -1,0 +1,8 @@
+version: '3.1'
+
+services:
+  api:
+    image: dplanner/api:latest
+    container_name: dplanner-blue
+    ports:
+      - '8081:8080'
