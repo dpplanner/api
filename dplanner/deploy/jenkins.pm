@@ -77,7 +77,7 @@ pipeline {
                 sshagent(credentials:['aws_key']) {
                     sh '''
                         ssh -o StrictHostKeyChecking=no ubuntu@3.39.102.31 uptime
-                        scp /var/jenkins_home/workspace/dplanner-CICD@3/dplanner/build/libs/dplanner-0.0.1-SNAPSHOT.jar ubuntu@3.39.102.31:/home/ubuntu/dplanner
+                        scp /var/jenkins_home/workspace/dplanner-CICD@/dplanner/build/libs/dplanner-0.0.1-SNAPSHOT.jar ubuntu@3.39.102.31:/home/ubuntu/dplanner
                         ssh -t ubuntu@3.39.102.31 ./deploy.sh
                     '''
                 }

@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_VERSION = 'latest'
+        REMOTE_HOST = '3.39.102.31'
+        REMOTE_USER = 'ubuntu'
+    }
+
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    sshagent(credentials:['aws_key']) {
+                        sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} uptime"
+                        sh "ssh -t ${REMOTE_USER}@${REMOTE_HOST} sudo docker pull dplanner/api:${DOCKER_IMAGE_VERSION}"
+                        sh "ssh -t ${REMOTE_USER}@${REMOTE_HOST} sudo sh ./deploy.docker.sh"
+                    }
+                }
+            }
+        }
+    }
+}

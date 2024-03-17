@@ -1,0 +1,94 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_VERSION = 'latest'
+    }
+
+    stages {
+        stage('Git Clone') {
+            steps {
+                git branch: 'main', url: 'https://github.com/dpplanner/api.git'
+            }
+        }
+
+
+        stage('firebase sdk Download') {
+            steps {
+                withCredentials([file(credentialsId: 'firebase-adminsdk', variable: 'firebaseSDK')]) {
+                    script {
+
+                        echo 'Current user: ' + sh(script: 'whoami', returnStdout: true).trim()
+                        echo 'Current directory: ' + sh(script: 'pwd', returnStdout: true).trim()
+
+                        // Adjust permissions of destination directory
+
+                        sh 'chmod -R +w dplanner/src/main/resources/'
+                        sh 'chown -R jenkins dplanner/src/main/resources/'
+
+
+                        sh 'cp $firebaseSDK dplanner/src/main/resources/dplanner-c2b9a-firebase-adminsdk-drga5-5c3beeb1bb.json'
+                    }
+                }
+            }
+        }
+
+        stage('Environment Variable Substitute') {
+            steps {
+                script {
+                    echo 'Current user: ' + sh(script: 'whoami', returnStdout: true).trim()
+                    echo 'Current directory: ' + sh(script: 'pwd', returnStdout: true).trim()
+
+                    sh 'sed -i "s/\\${DB_USER}/${DB_USER}/" ./dplanner/src/main/resources/application-production.yml'
+                    sh 'sed -i "s/\\${DB_PASSWORD}/${DB_PASSWORD}/" ./dplanner/src/main/resources/application-production.yml'
+                    sh 'sed -i "s/\\${AWS_S3_ACCESSKEY}/${AWS_S3_ACCESSKEY}/" ./dplanner/src/main/resources/application-production.yml'
+                    sh 'sed -i "s/\\${AWS_S3_SECRETKEY}/${AWS_S3_SECRETKEY}/" ./dplanner/src/main/resources/application-production.yml'
+                    sh 'sed -i "s#\\${DB_URL}#${DB_URL}#" ./dplanner/src/main/resources/application-production.yml'
+                }
+            }
+        }
+
+        stage('Build Gradle') {
+            steps {
+                dir('./dplanner') {
+                    sh 'chmod +x ./gradlew'
+                    sh './gradlew clean build'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('./dplanner') {
+                    sh 'sudo docker build --no-cache -t dplanner/api:$DOCKER_IMAGE_VERSION -f ./deploy/Dockerfile . --platform linux/x86_64'
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-login', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    script {
+                        sh 'sudo docker login -u $USERNAME -p $PASSWORD'
+                    }
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    sh 'sudo docker push dplanner/api:$DOCKER_IMAGE_VERSION'
+                }
+            }
+        }
+
+        stage('Clean Docker Image') {
+            steps {
+                script {
+                    sh 'sudo docker rmi dplanner/api:$DOCKER_IMAGE_VERSION'
+                }
+            }
+        }
+    }
+}
