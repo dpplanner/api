@@ -10,6 +10,10 @@ import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -247,6 +251,33 @@ public class ReservationService {
                 Message.discardMessage());
         // todo 거절 사유 보내기
     }
+
+    public ReservationDto.SliceResponse findMyReservationsUpComing(Long clubMemberId, Pageable pageable) {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
+        Pageable upComing = PageRequest.of(pageable.getPageNumber(), 20, Sort.by(Sort.Direction.ASC, "period.startDateTime"));
+        LocalDateTime now = LocalDateTime.now();
+
+        Slice<Reservation> reservations = reservationRepository.findMyReservationsAfter(clubMember.getId(), now, upComing);
+
+        return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), upComing, reservations.hasNext());
+    }
+
+
+    public ReservationDto.SliceResponse findMyReservationsPrevious(Long clubMemberId, Pageable pageable) {
+
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
+        Pageable previous= PageRequest.of(pageable.getPageNumber(),20, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
+        LocalDateTime now = LocalDateTime.now();
+
+        Slice<Reservation> reservations = reservationRepository.findMyReservationsBefore(clubMember.getId(), now, previous);
+
+        return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), previous, reservations.hasNext());
+
+    }
+
     @Transactional(readOnly = true)
     public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {
 

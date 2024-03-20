@@ -2,6 +2,8 @@ package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.ReservationStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -92,6 +94,28 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "order by r.period.startDateTime asc, r.period.endDateTime asc")
     List<Reservation> findAllNotConfirmed(@Param("resourceId") Long resourceId);
 
+
+    @Query("""
+            SELECT r
+            FROM Reservation r
+            WHERE (r.clubMember.id = :clubMemberId or r.id in (SELECT ri.reservation.id FROM ReservationInvitee ri WHERE ri.clubMember.id = :clubMemberId))
+            and r.period.startDateTime >= :startDateTime
+            """)
+    Slice<Reservation> findMyReservationsAfter(@Param("clubMemberId") Long clubMemberId, @Param("startDateTime") LocalDateTime startDateTime, Pageable pageable);
+
+    @Query("""
+            SELECT r
+            FROM Reservation r
+            WHERE (r.clubMember.id = :clubMemberId or r.id in (SELECT ri.reservation.id FROM ReservationInvitee ri WHERE ri.clubMember.id = :clubMemberId))
+            and r.period.startDateTime < :startDateTime
+            """)
+    Slice<Reservation> findMyReservationsBefore(@Param("clubMemberId") Long clubMemberId, @Param("startDateTime") LocalDateTime startDateTime, Pageable pageable);
+
+
+
+    /**
+     *  스케줄링 관련 메서드
+     */
     @Query("""
            SELECT r
            FROM Reservation r
@@ -116,4 +140,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             """
     )
     List<Reservation> findAllNotReturned(@Param("now") LocalDateTime now);
+
+    /**
+     *  스케줄링 관련 메서드
+     */
 }

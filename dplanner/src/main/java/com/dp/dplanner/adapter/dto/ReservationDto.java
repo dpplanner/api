@@ -7,6 +7,7 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -165,6 +166,17 @@ public class ReservationDto {
         }
 
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    public static class SliceResponse {
+        private List<Response> content;
+        private Pageable pageable;
+        private boolean hasNext;
+    }
+
 
     @Getter
     @Setter

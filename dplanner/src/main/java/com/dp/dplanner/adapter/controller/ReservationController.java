@@ -1,12 +1,16 @@
 package com.dp.dplanner.adapter.controller;
 
 
+import com.dp.dplanner.adapter.exception.ApiException;
 import com.dp.dplanner.domain.ReservationStatus;
 import com.dp.dplanner.adapter.dto.CommonResponse;
 import com.dp.dplanner.adapter.dto.ReservationDto;
 import com.dp.dplanner.config.security.PrincipalDetails;
+import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -115,12 +119,12 @@ public class ReservationController {
     }
 
 
-    @GetMapping(value = "/reservations", params = {"resourceId", "start", "end","status"})
+    @GetMapping(value = "/reservations", params = {"resourceId", "start", "end", "status"})
     public CommonResponse<List<Response>> getReservationsByPeriod(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                     @RequestParam Long resourceId,
-                                                                     @RequestParam String start,
-                                                                     @RequestParam String end,
-                                                                     @RequestParam String status) {
+                                                                  @RequestParam Long resourceId,
+                                                                  @RequestParam String start,
+                                                                  @RequestParam String end,
+                                                                  @RequestParam String status) {
 
         Long clubMemberId = principal.getClubMemberId();
 
@@ -144,20 +148,24 @@ public class ReservationController {
 
     }
 
-// REQUEST STATUS로 조회
-//    @GetMapping(value = "/reservations", params = {"resourceId","status"})
-//    public CommonResponse<List<Response>> getAllReservationsNotConfirmed(@AuthenticationPrincipal PrincipalDetails principal,
-//                                                                         @RequestParam String status,
-//                                                                         @RequestParam Long resourceId) {
-//        Long clubMemberId = principal.getClubMemberId();
-//
-//        Request requestDto = Request.builder().resourceId(resourceId).build();
-//        List<Response> response = null;
-//        if(status.equals("NOT CONFIRMED")){
-//            response = reservationService.findAllNotConfirmedReservations(clubMemberId, requestDto);
-//
-//        }
-//
-//        return CommonResponse.createSuccess(response);
-//    }
+    @GetMapping(value = "reservations/my-reservations",params = "status")
+    public CommonResponse<ReservationDto.SliceResponse> getMyReservations(@AuthenticationPrincipal PrincipalDetails principalDetails,
+                                                            @RequestParam(name = "status") String status,
+                                                            @PageableDefault Pageable pageable) {
+
+        Long clubMemberId = principalDetails.getClubMemberId();
+
+        ReservationDto.SliceResponse response= null;
+        if(status.equals("previous") ){
+            response = reservationService.findMyReservationsPrevious(clubMemberId, pageable);
+        }else if(status.equals("upcoming")){
+            response = reservationService.findMyReservationsUpComing(clubMemberId, pageable);
+        }
+        else{
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
+        return CommonResponse.createSuccess(response);
+
+    }
 }
