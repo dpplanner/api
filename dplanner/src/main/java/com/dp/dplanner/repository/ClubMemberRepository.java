@@ -17,6 +17,9 @@ import java.util.Optional;
 @Repository
 public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
+    @Query("select cm from ClubMember cm join fetch cm.member where cm.id =:clubMemberId")
+    Optional<ClubMember> findById(@Param("clubMemberId") Long clubMemberId);
+
     Optional<ClubMember> findByClubIdAndMemberId(Long clubId, Long memberId);
 
     @Query("select cm from ClubMember cm where cm.club = :club order by cm.isConfirmed desc, cm.name")

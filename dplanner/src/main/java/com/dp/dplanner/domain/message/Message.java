@@ -16,6 +16,7 @@ public class Message {
     public static final String RESERVATION_REMOVED = "예약이 삭제되었습니다."; // 삭제랑 취소? 차이가 불분명
     public static final String RESERVATION_INVITED = "예약에 초대되었습니다!";
     public static final String RESERVATION_REQUEST = "예약 요청이 있습니다!";
+    public static final String RESERVATION_ALERT = "오늘 신청한 예약이 있어요!";
     public static final String RESERVATION_ABOUT_TO_START = "예약이 곧 시작됩니다.";
     public static final String RESERVATION_ABOUT_TO_FINISH = "예약이 곧 종료됩니다. 예약이 종료되면 반납 메시지를 보내주세요.";
     public static final String REQUEST_TO_SEND_RETURN_MESSAGE = "반납 메시지를 보내주세요.";
@@ -41,7 +42,7 @@ public class Message {
         return Message.builder()
                 .title(RESERVATION_DISCARD)
                 .content(RESERVATION_DISCARD)
-                .redirectUrl("redirectUrl")
+                .redirectUrl("/reservation_list'")
                 .build();
     }
 
@@ -49,7 +50,7 @@ public class Message {
         return Message.builder()
                 .title(RESERVATION_REQUEST_APPROVED)
                 .content(RESERVATION_REQUEST_APPROVED)
-                .redirectUrl("redirectUrl")
+                .redirectUrl("/reservation_list")
                 .build();
     }
 
@@ -65,7 +66,7 @@ public class Message {
         return Message.builder()
                 .title(RESERVATION_INVITED)
                 .content(RESERVATION_INVITED)
-                .redirectUrl("redirectUrl")
+                .redirectUrl("/reservation_list")
                 .build();
     }
 
@@ -73,7 +74,7 @@ public class Message {
         return Message.builder()
                 .title(RESERVATION_ABOUT_TO_START)
                 .content(RESERVATION_ABOUT_TO_START)
-                .redirectUrl("redirectUrl")
+                .redirectUrl("/reservation_list")
                 .build();
     }
 
@@ -81,7 +82,7 @@ public class Message {
         return Message.builder()
                 .title(RESERVATION_ABOUT_TO_FINISH)
                 .content(RESERVATION_ABOUT_TO_FINISH)
-                .redirectUrl("redirectUrl")
+                .redirectUrl("/reservation_list")
                 .build();
     }
 
@@ -97,7 +98,7 @@ public class Message {
         return Message.builder()
                 .title(REQUEST_TO_SEND_RETURN_MESSAGE)
                 .content(REQUEST_TO_SEND_RETURN_MESSAGE)
-                .redirectUrl("redirectUrl")
+                .redirectUrl("/reservation_list")
                 .build();
     }
 

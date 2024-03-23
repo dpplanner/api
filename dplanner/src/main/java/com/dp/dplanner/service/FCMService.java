@@ -1,49 +1,46 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.adapter.dto.FCMNotificationRequestDto;
-import com.dp.dplanner.service.exception.ServiceException;
-import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.domain.message.PrivateMessage;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FCMService {
 
     private final FirebaseMessaging firebaseMessaging;
-    private final MemberRepository memberRepository;
 
-    public void sendNotificationByToken(FCMNotificationRequestDto requestDto) {
-        Member member = memberRepository.findById(requestDto.getMemberId()).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
+    public void sendNotification(PrivateMessage privateMessage) {
 
-        if (member.getFcmToken() != null) {
+        String fcmToken = privateMessage.getClubMember().getMember().getFcmToken();
+        if (fcmToken != null) {
             Notification notification = Notification.builder()
-                    .setTitle(requestDto.getTitle())
-                    .setBody(requestDto.getBody())
+                    .setTitle(privateMessage.getTitle())
+                    .setBody(privateMessage.getContent())
                     .build();
 
             Message message = Message.builder()
                     .setNotification(notification)
-                    .setToken(member.getFcmToken())
+                    .setToken(fcmToken)
                     .build();
-            try{
+            try {
                 firebaseMessaging.send(message);
             } catch (FirebaseMessagingException e) {
-                throw new RuntimeException("FCM sending failure. memberId : " + member.getId());
+                log.error("FirebaseMessagingException {}", fcmToken);
             }
         }
     }
 
-    public void sendNotifications(List<FCMNotificationRequestDto> requestDtoList) {
-        requestDtoList.stream().forEach(this::sendNotificationByToken);
+    public void sendNotifications(List<PrivateMessage> requestDtoList) {
+        requestDtoList.stream().forEach(this::sendNotification);
     }
 
 }

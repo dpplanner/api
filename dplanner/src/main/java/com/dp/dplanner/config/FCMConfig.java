@@ -16,7 +16,7 @@ import java.util.List;
 public class FCMConfig {
     @Bean
     FirebaseMessaging firebaseMessaging() throws IOException {
-        ClassPathResource resource = new ClassPathResource("dplanner-c2b9a-firebase-adminsdk-drga5-5c3beeb1bb.json");
+        ClassPathResource resource = new ClassPathResource("dplanner-firebase-adminsdk.json");
         InputStream serviceAccount = resource.getInputStream();
 
         FirebaseApp firebaseApp = null;
@@ -36,7 +36,6 @@ public class FCMConfig {
             firebaseApp = FirebaseApp.initializeApp(options);
 
         }
-
         return FirebaseMessaging.getInstance(firebaseApp);
     }
 }

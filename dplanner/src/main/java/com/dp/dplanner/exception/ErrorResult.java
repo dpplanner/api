@@ -48,6 +48,7 @@ public enum ErrorResult {
     LOCK_NOT_FOUND(HttpStatus.NOT_FOUND,"lock is not found, request is invalid" ),
     CLUB_AUTHORITY_NOT_FOUND(HttpStatus.NOT_FOUND,"club authority is not found, request is invalid" ),
     MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "message is not found, request is invalid"),
+    FCMTOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "fcmtoken is invalid"),
 
 
     /**

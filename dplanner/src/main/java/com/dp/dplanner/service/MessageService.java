@@ -21,7 +21,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 @Service
 @RequiredArgsConstructor
 public class MessageService {
-
+    private final FCMService fcmService;
     private final MessageRepository messageRepository;
     private final ClubMemberRepository clubMemberRepository;
 
@@ -49,6 +49,7 @@ public class MessageService {
     @Transactional
     public void createPrivateMessage(List<Long> clubMemberIds, Message message) {
 
+        List<PrivateMessage> privateMessages = new ArrayList<>();
         clubMemberIds.forEach(clubMemberId -> {
             ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(ErrorResult.CLUBMEMBER_NOT_FOUND));
 
@@ -59,9 +60,10 @@ public class MessageService {
                     .redirectUrl(message.getRedirectUrl())
                     .build();
 
-            messageRepository.save(privateMessage);
+            privateMessages.add(privateMessage);
         });
-
+        messageRepository.saveAll(privateMessages);
+        fcmService.sendNotifications(privateMessages);
     }
     @Transactional
     public void readMessage(Long clubMemberId, Long messageId)  {

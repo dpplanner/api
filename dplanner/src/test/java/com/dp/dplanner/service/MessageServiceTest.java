@@ -5,7 +5,6 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
-import com.dp.dplanner.domain.message.PrivateMessage;
 import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MessageRepository;
@@ -26,6 +25,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class MessageServiceTest {
 
+    @Mock
+    FCMService fcmService;
     @Mock
     MessageRepository messageRepository;
 
@@ -62,7 +63,9 @@ public class MessageServiceTest {
         messageService.createPrivateMessage(clubMemberIds, message);
 
         // Then
-        verify(messageRepository, times(2)).save(any(PrivateMessage.class));
+//        verify(messageRepository, times(2)).save(any(PrivateMessage.class));
+        verify(messageRepository, times(1)).saveAll(any());
+
     }
 
     @Test
