@@ -136,7 +136,10 @@ public class RequiredAuthorityAspectTests {
     public void requestRoleByManagerUser() throws Exception
     {
         //given
-        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
+        Member member2 = Member.builder().build();
+        entityManager.persist(member2);
+
+        ClubMember clubMember = ClubMember.builder().club(club).member(member2).build();
         entityManager.persist(clubMember);
 
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
@@ -145,8 +148,7 @@ public class RequiredAuthorityAspectTests {
 
         assert clubMember.getRole().equals(ClubRole.USER);
         assert manager.getRole().equals(ClubRole.MANAGER);
-
-
+        assert !clubMember.getId().equals(manager.getId());
         //when
         //then
         assertThatThrownBy(() -> targetClass2.targetMethod(clubMember.getId()))
