@@ -28,29 +28,31 @@ public class ScheduleTasks {
     @Scheduled(cron = "0 0 * * * *")
     public void task0() {
         try{
-            Set<Long> clubMemberIds = new HashSet<>();
-            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllAboutToStart(now, now.plusMinutes(60));
 
             reservations.forEach(
                     reservation -> {
-                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
-                            clubMemberIds.add(reservation.getClubMember().getId());
-                            clubMembers.add(reservation.getClubMember());
-                        }
+                        List<ClubMember> clubMembers = new ArrayList<>();
+                        clubMembers.add(reservation.getClubMember());
+
                         reservation.getReservationInvitees().forEach(
                                 invitee -> {
-                                    if (!clubMemberIds.contains(invitee.getClubMember().getId())) {
-                                        clubMemberIds.add(invitee.getClubMember().getId());
-                                        clubMembers.add(invitee.getClubMember());
-                                    }
+                                    clubMembers.add(invitee.getClubMember());
                                 }
                         );
+
+                        messageService.createPrivateMessage(clubMembers,
+                                Message.aboutToStartMessage(
+                                        Message.MessageContentBuildDto.builder().
+                                                clubMemberName(reservation.getClubMember().getName()).
+                                                start(reservation.getPeriod().getStartDateTime()).
+                                                end(reservation.getPeriod().getEndDateTime()).
+                                                resourceName(reservation.getResource().getName()).
+                                                build()));
                     }
             );
 
-            messageService.createPrivateMessage(clubMembers, Message.aboutToStartMessage());
             log.info("ScheduleTasks0");
         }catch (RuntimeException ex){
             log.error("ScheduleTasks0");
@@ -61,29 +63,30 @@ public class ScheduleTasks {
     @Scheduled(cron = "0 50 * * * *")
     public void task1() {
         try {
-            Set<Long> clubMemberIds = new HashSet<>();
-            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllAboutToStart(now, now.plusMinutes(10));
 
             reservations.forEach(
                     reservation -> {
-                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
-                            clubMemberIds.add(reservation.getClubMember().getId());
-                            clubMembers.add(reservation.getClubMember());
-                        }
+                        List<ClubMember> clubMembers = new ArrayList<>();
+                        clubMembers.add(reservation.getClubMember());
+
                         reservation.getReservationInvitees().forEach(
                                 invitee -> {
-                                    if (!clubMemberIds.contains(invitee.getClubMember().getId())) {
-                                        clubMemberIds.add(invitee.getClubMember().getId());
-                                        clubMembers.add(invitee.getClubMember());
-                                    }
+                                    clubMembers.add(invitee.getClubMember());
                                 }
                         );
+
+                        messageService.createPrivateMessage(clubMembers,
+                                Message.aboutToStartMessage(
+                                        Message.MessageContentBuildDto.builder().
+                                                clubMemberName(reservation.getClubMember().getName()).
+                                                start(reservation.getPeriod().getStartDateTime()).
+                                                end(reservation.getPeriod().getEndDateTime()).
+                                                resourceName(reservation.getResource().getName()).
+                                                build()));
                     }
             );
-
-            messageService.createPrivateMessage(clubMembers, Message.aboutToStartMessage());
             log.info("ScheduleTasks1");
         } catch (RuntimeException exception) {
             log.error("ScheduleTasks1");
@@ -94,29 +97,24 @@ public class ScheduleTasks {
     @Scheduled(fixedRate = 600000)
     public void task2() {
         try{
-            Set<Long> clubMemberIds = new HashSet<>();
-            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllAboutToFinish(now, now.plusMinutes(10));
 
             reservations.forEach(
                     reservation -> {
-                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
-                            clubMemberIds.add(reservation.getClubMember().getId());
-                            clubMembers.add(reservation.getClubMember());
-                        }
-                        reservation.getReservationInvitees().forEach(
-                                invitee -> {
-                                    if (!clubMemberIds.contains(invitee.getClubMember().getId())) {
-                                        clubMemberIds.add(invitee.getClubMember().getId());
-                                        clubMembers.add(invitee.getClubMember());
-                                    }
-                                }
-                        );
+                        List<ClubMember> clubMembers = new ArrayList<>();
+                        clubMembers.add(reservation.getClubMember());
+
+                        messageService.createPrivateMessage(clubMembers,
+                                Message.aboutToFinishMessage(
+                                        Message.MessageContentBuildDto.builder().
+                                                clubMemberName(reservation.getClubMember().getName()).
+                                                start(reservation.getPeriod().getStartDateTime()).
+                                                end(reservation.getPeriod().getEndDateTime()).
+                                                resourceName(reservation.getResource().getName()).
+                                                build()));
                     }
             );
-
-            messageService.createPrivateMessage(clubMembers, Message.aboutToFinishMessage());
             log.info("ScheduleTasks2");
         }catch (RuntimeException ex){
             log.error("ScheduleTasks2");
@@ -127,21 +125,24 @@ public class ScheduleTasks {
     @Scheduled(cron = "0 0 * * * *")
     public void task3() {
         try{
-            Set<Long> clubMemberIds = new HashSet<>();
-            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllNotReturned(now);
 
             reservations.forEach(
                     reservation -> {
-                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
-                            clubMemberIds.add(reservation.getClubMember().getId());
-                            clubMembers.add(reservation.getClubMember());
-                        }
+                        List<ClubMember> clubMembers = new ArrayList<>();
+                        clubMembers.add(reservation.getClubMember());
+                        messageService.createPrivateMessage(clubMembers,
+                                Message.requestReturnMessage(
+                                        Message.MessageContentBuildDto.builder().
+                                                clubMemberName(reservation.getClubMember().getName()).
+                                                start(reservation.getPeriod().getStartDateTime()).
+                                                end(reservation.getPeriod().getEndDateTime()).
+                                                resourceName(reservation.getResource().getName()).
+                                                build()));
                     }
             );
 
-            messageService.createPrivateMessage(clubMembers, Message.requestReturnMessage());
             log.info("ScheduleTasks3");
         }catch (RuntimeException ex){
             log.error("ScheduleTasks3");

@@ -90,7 +90,15 @@ public class ReservationService {
             // 관리자에게 메시지를 전송합니다.
             List<ClubMember> adminClubMembers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL);
 
-            messageService.createPrivateMessage(adminClubMembers, Message.requestMessage());
+            messageService.createPrivateMessage(adminClubMembers,
+                    Message.requestMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    clubMemberName(reservation.getClubMember().getName()).
+                                    start(reservation.getPeriod().getStartDateTime()).
+                                    end(reservation.getPeriod().getEndDateTime()).
+                                    resourceName(reservation.getResource().getName()).
+                                    build()));
+
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
         } else {
             // 사용자가 예약 관리 권한을 가진 경우
@@ -182,7 +190,14 @@ public class ReservationService {
         }
 
         messageService.createPrivateMessage(List.of(reservation.getClubMember()),
-                Message.cancelMessage());
+                Message.cancelMessage(
+                        Message.MessageContentBuildDto.builder().
+                                clubMemberName(reservation.getClubMember().getName()).
+                                start(reservation.getPeriod().getStartDateTime()).
+                                end(reservation.getPeriod().getEndDateTime()).
+                                resourceName(reservation.getResource().getName()).
+                                build()));
+
         redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         reservationRepository.delete(reservation);
 
@@ -209,14 +224,30 @@ public class ReservationService {
         });
 
 
-        messageService.createPrivateMessage(reservations.stream().map(Reservation::getClubMember).collect(Collectors.toList()),
-               Message.confirmMessage());
+        for (Reservation reservation : reservations) {
+            messageService.createPrivateMessage(List.of(reservation.getClubMember()),
+                    Message.confirmMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    clubMemberName(reservation.getClubMember().getName()).
+                                    start(reservation.getPeriod().getStartDateTime()).
+                                    end(reservation.getPeriod().getEndDateTime()).
+                                    resourceName(reservation.getResource().getName()).
+                                    build()));
 
-        reservations.forEach(reservation -> {
             List<ClubMember> invitees = reservation.getReservationInvitees().stream()
                     .map(ReservationInvitee::getClubMember)
                     .collect(Collectors.toList());
-            messageService.createPrivateMessage(invitees, Message.invitedMessage());
+            messageService.createPrivateMessage(invitees,
+                    Message.invitedMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    clubMemberName(reservation.getClubMember().getName()).
+                                    start(reservation.getPeriod().getStartDateTime()).
+                                    end(reservation.getPeriod().getEndDateTime()).
+                                    resourceName(reservation.getResource().getName()).
+                                    build()));
+        }
+
+        reservations.forEach(reservation -> {
         });
     }
 
@@ -241,8 +272,16 @@ public class ReservationService {
             redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         });
 
-        messageService.createPrivateMessage(reservations.stream().map(Reservation::getClubMember).collect(Collectors.toList()),
-                Message.rejectMessage());
+        for (Reservation reservation : reservations) {
+            messageService.createPrivateMessage(List.of(reservation.getClubMember()),
+                    Message.rejectMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    clubMemberName(reservation.getClubMember().getName()).
+                                    start(reservation.getPeriod().getStartDateTime()).
+                                    end(reservation.getPeriod().getEndDateTime()).
+                                    resourceName(reservation.getResource().getName()).
+                                    build()));
+        }
     }
 
     public ReservationDto.SliceResponse findMyReservationsUpComing(Long clubMemberId, Pageable pageable) {
@@ -377,7 +416,14 @@ public class ReservationService {
             reservation.returned(returnDto.getReturnMessage());
 
             List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(clubMember.getClub().getId(), SCHEDULE_ALL);
-            messageService.createPrivateMessage(managers, Message.checkReturnMessage());
+            messageService.createPrivateMessage(managers,
+                    Message.checkReturnMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    clubMemberName(reservation.getClubMember().getName()).
+                                    start(reservation.getPeriod().getStartDateTime()).
+                                    end(reservation.getPeriod().getEndDateTime()).
+                                    resourceName(reservation.getResource().getName()).
+                                    build()));
 
         }
 

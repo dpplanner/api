@@ -60,7 +60,12 @@ public class ClubMemberService {
 
         List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), MEMBER_ALL);
 
-        messageService.createPrivateMessage(managers, Message.clubJoinMessage());
+        messageService.createPrivateMessage(managers,
+                Message.clubJoinMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .clubMemberName(clubMember.getName())
+                                .clubName(club.getClubName()).
+                                build()));
 
         return ClubMemberDto.Response.of(savedMember);
     }

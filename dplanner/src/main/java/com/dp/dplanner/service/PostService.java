@@ -124,7 +124,11 @@ public class PostService {
         Post post = getPost(postId);
         checkDeletable(clubMember, post.getClubMember().getId());
         if (!clubMember.equals(post.getClubMember())) {
-            messageService.createPrivateMessage(List.of(post.getClubMember()), Message.postDeletedMessage());
+            messageService.createPrivateMessage(List.of(post.getClubMember()),
+                    Message.postDeletedMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    postTitle(post.getTitle()).
+                                    build()));
         }
         postRepository.delete(post);
 
@@ -169,8 +173,15 @@ public class PostService {
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
         Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
 
-        List<ClubMember> clubMembers = clubMemberRepository.findAllByClub(post.getClub());
-        messageService.createPrivateMessage(clubMembers, Message.noticeRegisterdMessage());
+        if (post.getIsFixed()) {
+            List<ClubMember> clubMembers = clubMemberRepository.findAllByClub(post.getClub());
+            messageService.createPrivateMessage(clubMembers,
+                    Message.noticeRegisterdMessage(
+                            Message.MessageContentBuildDto.builder()
+                                    .clubName(post.getClub().getClubName())
+                                    .build()));
+
+        }
 
         return Response.of(post,likeCount,commentCount,likeStatus);
     }
