@@ -168,11 +168,6 @@ public class ReservationService {
 
     }
 
-    /**
-     * 관리자 혹은 매니저가 직접 예약 삭제
-     * @param managerId
-     * @param deleteDto
-     */
     @Transactional
     @RequiredAuthority(authority = SCHEDULE_ALL)
     public void deleteReservation(Long managerId, ReservationDto.Delete deleteDto) {
@@ -249,14 +244,13 @@ public class ReservationService {
 
         messageService.createPrivateMessage(reservations.stream().map(reservation -> reservation.getClubMember().getId()).collect(Collectors.toList()),
                 Message.discardMessage());
-        // todo 거절 사유 보내기
     }
 
     public ReservationDto.SliceResponse findMyReservationsUpComing(Long clubMemberId, Pageable pageable) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
-        Pageable upComing = PageRequest.of(pageable.getPageNumber(), 20, Sort.by(Sort.Direction.ASC, "period.startDateTime"));
+        Pageable upComing = PageRequest.of(pageable.getPageNumber(), 100, Sort.by(Sort.Direction.ASC, "period.startDateTime"));
         LocalDateTime now = LocalDateTime.now();
 
         Slice<Reservation> reservations = reservationRepository.findMyReservationsAfter(clubMember.getId(), now, upComing);
@@ -264,12 +258,11 @@ public class ReservationService {
         return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), upComing, reservations.hasNext());
     }
 
-
     public ReservationDto.SliceResponse findMyReservationsPrevious(Long clubMemberId, Pageable pageable) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
-        Pageable previous= PageRequest.of(pageable.getPageNumber(),20, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
+        Pageable previous= PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
         LocalDateTime now = LocalDateTime.now();
 
         Slice<Reservation> reservations = reservationRepository.findMyReservationsBefore(clubMember.getId(), now, previous);
@@ -293,6 +286,7 @@ public class ReservationService {
 
         return ReservationDto.Response.of(reservation);
     }
+
     @Transactional(readOnly = true)
     public List<ReservationDto.Response> findAllReservationsByPeriod(Long clubMemberId, ReservationDto.Request requestDto) {
 
@@ -312,41 +306,36 @@ public class ReservationService {
 
         return ReservationDto.Response.ofList(reservations);
     }
+
     @Transactional(readOnly = true)
-    public List<ReservationDto.Response> findAllReservationsByPeriodAndStatus(Long clubMemberId, ReservationDto.Request requestDto, ReservationStatus status) {
+    public List<ReservationDto.Response> findAllReservationsForScheduler(Long clubMemberId, ReservationDto.Request requestDto) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
-        LocalDateTime start = requestDto.getStartDateTime();
-        LocalDateTime end = requestDto.getEndDateTime();
-        List<Reservation> reservations = reservationRepository.findAllBetweenAndStatus(start, end, requestDto.getResourceId(),status);
+        Resource resource = resourceRepository.findById(requestDto.getResourceId())
+                .orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
 
-        reservations.forEach(reservation -> {
-            if (!clubMember.isSameClub(reservation)) {
-                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-            }
-        });
-
-        return ReservationDto.Response.ofList(reservations);
-    }
-    @Transactional(readOnly = true)
-    public List<ReservationDto.Response> findAllReservationsByPeriodForScheduler(Long clubMemberId, ReservationDto.Request requestDto) {
-
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        if (!clubMember.isSameClub(resource)) {
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
+        }
 
         LocalDateTime start = requestDto.getStartDateTime();
         LocalDateTime end = requestDto.getEndDateTime();
         List<Reservation> reservations = reservationRepository.findAllBetweenForScheduler(start, end, requestDto.getResourceId());
 
-        reservations.forEach(reservation -> {
-            if (!clubMember.isSameClub(reservation)) {
-                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-            }
-        });
-
         return ReservationDto.Response.ofList(reservations);
+    }
+
+    @RequiredAuthority(authority = SCHEDULE_ALL)
+    @Transactional(readOnly = true)
+    public ReservationDto.SliceResponse findAllReservationsByStatus(Long managerId, ReservationDto.Request requestDto, String status, Pageable pageable) {
+
+        Pageable pageableAmin = PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
+
+        Slice<Reservation> reservations = reservationRepository.findReservationsAdmin(requestDto.getClubId(), ReservationStatus.valueOf(status), pageableAmin);
+
+        return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), pageableAmin, reservations.hasNext());
     }
 
     @RequiredAuthority(authority = SCHEDULE_ALL)
@@ -394,35 +383,12 @@ public class ReservationService {
         }
 
         return ReservationDto.Response.of(reservation);
-
     }
 
 
     /**
      * utility methods
      */
-//    private void confirmReservations(List<Reservation> reservations, boolean isConfirm) {
-//
-//        Map<Boolean, List<Reservation>> partitioned = partitionCanceledReservations(reservations);
-//        List<Reservation> canceled = partitioned.get(true);
-//        List<Reservation> notCanceled = partitioned.get(false);
-//
-//        if (isConfirm) {
-//            reservationRepository.deleteAll(canceled);
-//            notCanceled.forEach(Reservation::confirm);
-//        } else {
-//            reservationRepository.deleteAll(notCanceled);
-//            canceled.forEach(Reservation::confirm);
-//        }
-//    }
-
-//    private Map<Boolean, List<Reservation>> partitionCanceledReservations(List<Reservation> reservations) {
-//
-//        return reservations.stream()
-//                .collect(Collectors.partitioningBy(
-//                        reservation -> reservation.getStatus().equals(CANCELED)
-//                ));
-//    }
 
 
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
@@ -432,15 +398,9 @@ public class ReservationService {
     }
 
     //ToDO refactor
-
     private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
         return reservation.getClubMember().getId().equals(clubMemberId);
     }
-
-//    private boolean isReservable(Long resourceId, LocalDateTime start, LocalDateTime end) {
-//        return !(reservationRepository.existsBetween(start, end, resourceId)
-//                || isLocked(resourceId, start, end));
-//    }
 
     private boolean isUpdatable(Long reservationId, Long resourceId, LocalDateTime start, LocalDateTime end) {
         return !(reservationRepository.existsOthersBetween(start, end, resourceId, reservationId)

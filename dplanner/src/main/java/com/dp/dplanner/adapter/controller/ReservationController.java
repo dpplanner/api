@@ -2,7 +2,6 @@ package com.dp.dplanner.adapter.controller;
 
 
 import com.dp.dplanner.adapter.exception.ApiException;
-import com.dp.dplanner.domain.ReservationStatus;
 import com.dp.dplanner.adapter.dto.CommonResponse;
 import com.dp.dplanner.adapter.dto.ReservationDto;
 import com.dp.dplanner.config.security.PrincipalDetails;
@@ -118,34 +117,39 @@ public class ReservationController {
         return CommonResponse.createSuccess(response);
     }
 
-
-    @GetMapping(value = "/reservations", params = {"resourceId", "start", "end", "status"})
-    public CommonResponse<List<Response>> getReservationsByPeriod(@AuthenticationPrincipal PrincipalDetails principal,
-                                                                  @RequestParam Long resourceId,
-                                                                  @RequestParam String start,
-                                                                  @RequestParam String end,
-                                                                  @RequestParam String status) {
+    @GetMapping(value = "/reservations/scheduler", params = {"resourceId", "start", "end"})
+    public CommonResponse<List<Response>> getReservations(@AuthenticationPrincipal PrincipalDetails principal,
+                                                     @RequestParam Long resourceId,
+                                                     @RequestParam String start,
+                                                     @RequestParam String end) {
 
         Long clubMemberId = principal.getClubMemberId();
-
         Request requestDto = new Request(
                 resourceId,
                 LocalDateTime.parse(start, formatter),
                 LocalDateTime.parse(end, formatter)
         );
-        List<Response> response = null;
-        if (status.equals("ALL")){
-            response = reservationService.findAllReservationsByPeriod(clubMemberId, requestDto);
-        } else if (status.equals(ReservationStatus.REQUEST.name()) || status.equals(ReservationStatus.CONFIRMED.name()) || status.equals(ReservationStatus.REJECTED.name())) {
-            response = reservationService.findAllReservationsByPeriodAndStatus(clubMemberId, requestDto, ReservationStatus.valueOf(status));
-        } else if(status.equals("SCHEDULER")){
-            // 스케줄러에서 확인 가능한 예약 조회 (REJECTED 상태가 아닌 예약만 조회)
-            response = reservationService.findAllReservationsByPeriodForScheduler(clubMemberId, requestDto);
-        }
-
+        List<Response> response = reservationService.findAllReservationsForScheduler(clubMemberId, requestDto);
 
         return CommonResponse.createSuccess(response);
+    }
 
+    @GetMapping(value = "/reservations/admin", params = {"clubId", "status"})
+    public CommonResponse<SliceResponse> getReservationsAdmin(@AuthenticationPrincipal PrincipalDetails principal,
+                                                  @RequestParam Long clubId,
+                                                  @RequestParam String status,
+                                                  @PageableDefault Pageable pageable) {
+
+        Long clubMemberId = principal.getClubMemberId();
+        if (!clubId.equals(principal.getClubId())) {
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
+        Request requestDto = Request.builder().clubId(clubId).build();
+
+        SliceResponse response = reservationService.findAllReservationsByStatus(clubMemberId, requestDto, status, pageable);
+
+        return CommonResponse.createSuccess(response);
     }
 
     @GetMapping(value = "reservations/my-reservations",params = "status")

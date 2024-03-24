@@ -84,6 +84,7 @@ public class ReservationDto {
     public static class Request {
         private Long reservationId;
         private Long resourceId;
+        private Long clubId;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")

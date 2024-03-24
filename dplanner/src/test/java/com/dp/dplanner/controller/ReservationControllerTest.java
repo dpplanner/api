@@ -328,6 +328,7 @@ public class ReservationControllerTest {
     }
 
     @Test
+    @Disabled("api 삭제")
     public void ReservationController_getAllReservationsByPeriod_OK() throws Throwable {
 
 

@@ -84,7 +84,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                               @Param("end") LocalDateTime endDateTime,
                                               @Param("resourceId") Long resourceId);
 
-
     @Query("select r " +
             "from Reservation r " +
             "join fetch r.clubMember cm " +
@@ -94,6 +93,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "order by r.period.startDateTime asc, r.period.endDateTime asc")
     List<Reservation> findAllNotConfirmed(@Param("resourceId") Long resourceId);
 
+    @Query("""
+            SELECT r
+            FROM Reservation r
+            JOIN FETCH r.clubMember cm
+            JOIN FETCH r.resource res
+            WHERE res.club.id = :clubId and r.status = :status
+            """)
+    Slice<Reservation> findReservationsAdmin(@Param("clubId") Long clubId, @Param("status") ReservationStatus status, Pageable pageable);
 
     @Query("""
             SELECT r
