@@ -47,11 +47,10 @@ public class MessageService {
     }
 
     @Transactional
-    public void createPrivateMessage(List<Long> clubMemberIds, Message message) {
+    public void createPrivateMessage(List<ClubMember> clubMembers, Message message) {
 
         List<PrivateMessage> privateMessages = new ArrayList<>();
-        clubMemberIds.forEach(clubMemberId -> {
-            ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(ErrorResult.CLUBMEMBER_NOT_FOUND));
+        clubMembers.forEach(clubMember -> {
 
             PrivateMessage privateMessage = PrivateMessage.builder()
                     .clubMember(clubMember)
@@ -65,6 +64,7 @@ public class MessageService {
         messageRepository.saveAll(privateMessages);
         fcmService.sendNotifications(privateMessages);
     }
+
     @Transactional
     public void readMessage(Long clubMemberId, Long messageId)  {
 

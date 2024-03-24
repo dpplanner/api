@@ -49,18 +49,15 @@ public class MessageServiceTest {
         // Given
         Long clubMemberId1 = 1L;
         Long clubMemberId2 = 2L;
-        List<Long> clubMemberIds = Arrays.asList(clubMemberId1, clubMemberId2);
 
         ClubMember clubMember1 = ClubMember.builder().club(club).member(Member.builder().build()).name("clubMember1").build();
         ClubMember clubMember2 = ClubMember.builder().club(club).member(Member.builder().build()).name("clubMember2").build();
+        List<ClubMember> clubMembers = Arrays.asList(clubMember1, clubMember2);
 
         Message message = new Message("title","content","redirectUrl");
 
-        when(clubMemberRepository.findById(clubMemberId1)).thenReturn(Optional.of(clubMember1));
-        when(clubMemberRepository.findById(clubMemberId2)).thenReturn(Optional.of(clubMember2));
-
         // When
-        messageService.createPrivateMessage(clubMemberIds, message);
+        messageService.createPrivateMessage(clubMembers, message);
 
         // Then
 //        verify(messageRepository, times(2)).save(any(PrivateMessage.class));
@@ -68,17 +65,4 @@ public class MessageServiceTest {
 
     }
 
-    @Test
-    void createPrivateMessageWithInvalidClubMember() {
-        // Given
-        Long invalidClubMemberId = 999L;
-        List<Long> clubMemberIds = Arrays.asList(invalidClubMemberId);
-
-        Message message = new Message("title","content","redirectUrl");
-
-        when(clubMemberRepository.findById(invalidClubMemberId)).thenReturn(Optional.empty());
-
-        // When, Then
-        assertThrows(ServiceException.class, () -> messageService.createPrivateMessage(clubMemberIds, message));
-    }
 }

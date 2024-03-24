@@ -1,6 +1,7 @@
 package com.dp.dplanner.service.scheduling;
 
 import com.dp.dplanner.domain.Reservation;
+import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.service.MessageService;
@@ -10,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,21 +29,28 @@ public class ScheduleTasks {
     public void task0() {
         try{
             Set<Long> clubMemberIds = new HashSet<>();
+            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllAboutToStart(now, now.plusMinutes(60));
 
             reservations.forEach(
                     reservation -> {
-                        clubMemberIds.add(reservation.getClubMember().getId());
+                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
+                            clubMemberIds.add(reservation.getClubMember().getId());
+                            clubMembers.add(reservation.getClubMember());
+                        }
                         reservation.getReservationInvitees().forEach(
                                 invitee -> {
-                                    clubMemberIds.add(invitee.getClubMember().getId());
+                                    if (!clubMemberIds.contains(invitee.getClubMember().getId())) {
+                                        clubMemberIds.add(invitee.getClubMember().getId());
+                                        clubMembers.add(invitee.getClubMember());
+                                    }
                                 }
                         );
                     }
             );
 
-            messageService.createPrivateMessage(clubMemberIds.stream().toList(), Message.aboutToStartMessage());
+            messageService.createPrivateMessage(clubMembers, Message.aboutToStartMessage());
             log.info("ScheduleTasks0");
         }catch (RuntimeException ex){
             log.error("ScheduleTasks0");
@@ -53,21 +62,28 @@ public class ScheduleTasks {
     public void task1() {
         try {
             Set<Long> clubMemberIds = new HashSet<>();
+            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllAboutToStart(now, now.plusMinutes(10));
 
             reservations.forEach(
                     reservation -> {
-                        clubMemberIds.add(reservation.getClubMember().getId());
+                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
+                            clubMemberIds.add(reservation.getClubMember().getId());
+                            clubMembers.add(reservation.getClubMember());
+                        }
                         reservation.getReservationInvitees().forEach(
                                 invitee -> {
-                                    clubMemberIds.add(invitee.getClubMember().getId());
+                                    if (!clubMemberIds.contains(invitee.getClubMember().getId())) {
+                                        clubMemberIds.add(invitee.getClubMember().getId());
+                                        clubMembers.add(invitee.getClubMember());
+                                    }
                                 }
                         );
                     }
             );
 
-            messageService.createPrivateMessage(clubMemberIds.stream().toList(), Message.aboutToStartMessage());
+            messageService.createPrivateMessage(clubMembers, Message.aboutToStartMessage());
             log.info("ScheduleTasks1");
         } catch (RuntimeException exception) {
             log.error("ScheduleTasks1");
@@ -79,21 +95,28 @@ public class ScheduleTasks {
     public void task2() {
         try{
             Set<Long> clubMemberIds = new HashSet<>();
+            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllAboutToFinish(now, now.plusMinutes(10));
 
             reservations.forEach(
                     reservation -> {
-                        clubMemberIds.add(reservation.getClubMember().getId());
+                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
+                            clubMemberIds.add(reservation.getClubMember().getId());
+                            clubMembers.add(reservation.getClubMember());
+                        }
                         reservation.getReservationInvitees().forEach(
                                 invitee -> {
-                                    clubMemberIds.add(invitee.getClubMember().getId());
+                                    if (!clubMemberIds.contains(invitee.getClubMember().getId())) {
+                                        clubMemberIds.add(invitee.getClubMember().getId());
+                                        clubMembers.add(invitee.getClubMember());
+                                    }
                                 }
                         );
                     }
             );
 
-            messageService.createPrivateMessage(clubMemberIds.stream().toList(), Message.aboutToFinishMessage());
+            messageService.createPrivateMessage(clubMembers, Message.aboutToFinishMessage());
             log.info("ScheduleTasks2");
         }catch (RuntimeException ex){
             log.error("ScheduleTasks2");
@@ -105,16 +128,20 @@ public class ScheduleTasks {
     public void task3() {
         try{
             Set<Long> clubMemberIds = new HashSet<>();
+            List<ClubMember> clubMembers = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> reservations = reservationRepository.findAllNotReturned(now);
 
             reservations.forEach(
                     reservation -> {
-                        clubMemberIds.add(reservation.getClubMember().getId());
+                        if (!clubMemberIds.contains(reservation.getClubMember().getId())) {
+                            clubMemberIds.add(reservation.getClubMember().getId());
+                            clubMembers.add(reservation.getClubMember());
+                        }
                     }
             );
 
-            messageService.createPrivateMessage(clubMemberIds.stream().toList(), Message.requestReturnMessage());
+            messageService.createPrivateMessage(clubMembers, Message.requestReturnMessage());
             log.info("ScheduleTasks3");
         }catch (RuntimeException ex){
             log.error("ScheduleTasks3");

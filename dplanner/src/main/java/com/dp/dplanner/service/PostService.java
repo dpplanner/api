@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.adapter.dto.PostDto.*;
@@ -123,7 +124,7 @@ public class PostService {
         Post post = getPost(postId);
         checkDeletable(clubMember, post.getClubMember().getId());
         if (!clubMember.equals(post.getClubMember())) {
-            messageService.createPrivateMessage(List.of(post.getClubMember().getId()), Message.postDeletedMessage());
+            messageService.createPrivateMessage(List.of(post.getClubMember()), Message.postDeletedMessage());
         }
         postRepository.delete(post);
 
@@ -167,6 +168,9 @@ public class PostService {
         Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
         Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
+
+        List<ClubMember> clubMembers = clubMemberRepository.findAllByClub(post.getClub());
+        messageService.createPrivateMessage(clubMembers, Message.noticeRegisterdMessage());
 
         return Response.of(post,likeCount,commentCount,likeStatus);
     }

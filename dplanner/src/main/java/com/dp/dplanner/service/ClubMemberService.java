@@ -58,8 +58,9 @@ public class ClubMemberService {
         ClubMember savedMember = clubMemberRepository.save(clubMember);
 
 
-        List<Long> managerIds = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), MEMBER_ALL).stream().map(ClubMember::getId).collect(Collectors.toList());
-        messageService.createPrivateMessage(managerIds, Message.clubJoinMessage());
+        List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), MEMBER_ALL);
+
+        messageService.createPrivateMessage(managers, Message.clubJoinMessage());
 
         return ClubMemberDto.Response.of(savedMember);
     }

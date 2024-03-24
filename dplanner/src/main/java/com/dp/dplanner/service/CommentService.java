@@ -52,7 +52,7 @@ public class CommentService {
         }
         Comment savedComment = commentRepository.save(createDto.toEntity(clubMember, post, parent));
 
-        messageService.createPrivateMessage(List.of(post.getClubMember().getId()), Message.commentMessage());
+        messageService.createPrivateMessage(List.of(post.getClubMember()), Message.commentMessage());
 
         return Response.of(savedComment,0L,false);
     }
