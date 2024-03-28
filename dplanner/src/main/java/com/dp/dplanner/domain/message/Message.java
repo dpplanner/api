@@ -1,8 +1,6 @@
 package com.dp.dplanner.domain.message;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -91,7 +89,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_REQUEST)
-                .content(String.format("%s님이 %s일 %s ~ %s %s 예약을 요청했습니다.",
+                .content(String.format("%s님이 %s %s ~ %s %s 예약을 요청했습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/reservation_list")
                 .build();
@@ -104,7 +102,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_REQUEST_APPROVED)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약이 승인되었습니다.",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약이 승인되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
                 .build();
@@ -117,7 +115,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_REJECTED)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약이 거절되었습니다.",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약이 거절되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation'")
                 .build();
@@ -131,7 +129,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_INVITED)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약에 초대되었습니다.",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약에 초대되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
                 .build();
@@ -144,7 +142,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_CANCELED)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약이 관리자에 의해 취소되었습니다.",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약이 관리자에 의해 취소되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation'")
                 .build();
@@ -159,7 +157,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_ABOUT_TO_START)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약이 10분 후에 시작됩니다.",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약이 10분 후에 시작됩니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
                 .build();
@@ -173,7 +171,7 @@ public class Message {
 
         return Message.builder()
                 .title(RESERVATION_ABOUT_TO_FINISH)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약이 10분 후에 종료됩니다.",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약이 10분 후에 종료됩니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
                 .build();
@@ -187,7 +185,7 @@ public class Message {
 
         return Message.builder()
                 .title(REQUEST_TO_SEND_RETURN_MESSAGE)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약에 대한 반납 메시지를 보내주세요!",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약에 대한 반납 메시지를 보내주세요!",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
                 .build();
@@ -201,7 +199,7 @@ public class Message {
 
         return Message.builder()
                 .title(REQUEST_TO_CHECK_RETURN_MESSAGE)
-                .content(String.format("%s님의 %s일 %s ~ %s %s 예약에 대한 반납 메시지가 도착했습니다.!",
+                .content(String.format("%s님의 %s %s ~ %s %s 예약에 대한 반납 메시지가 도착했습니다.!",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/reservation_list")
                 .build();
@@ -210,7 +208,9 @@ public class Message {
     @Getter
     @Setter
     @Builder
-    public static class MessageContentBuildDto{
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class MessageContentBuildDto {
         String clubName;
         String clubMemberName;
         String postTitle;

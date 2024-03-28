@@ -55,7 +55,7 @@ public class CommentService {
         messageService.createPrivateMessage(List.of(post.getClubMember()),
                 Message.commentMessage(
                         Message.MessageContentBuildDto.builder().
-                                clubName(savedComment.getClubMember().getName()).
+                                clubMemberName(savedComment.getClubMember().getName()).
                                 postTitle(post.getTitle()).
                                 build()));
 
