@@ -4,7 +4,7 @@ import com.dp.dplanner.adapter.dto.ClubDto;
 import com.dp.dplanner.adapter.dto.CommonResponse;
 import com.dp.dplanner.adapter.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
-import com.dp.dplanner.adapter.dto.FCMNotificationRequestDto;
+import com.dp.dplanner.adapter.dto.FCMDto;
 import com.dp.dplanner.config.security.PrincipalDetails;
 import com.dp.dplanner.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ public class MemberController {
     @PatchMapping("/members/{memberId}/refresh-fcmtoken")
     public CommonResponse updateFcmToken(@AuthenticationPrincipal PrincipalDetails principal,
                                          @PathVariable Long memberId,
-                                         @RequestBody FCMNotificationRequestDto requestDto) {
+                                         @RequestBody FCMDto.Request requestDto) {
         if (!principal.getId().equals(memberId)) {
             throw new ApiException(ErrorResult.INVALID_TOKEN);
         }

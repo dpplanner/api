@@ -6,7 +6,7 @@ import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.adapter.dto.ClubDto;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.service.exception.ServiceException;
-import com.dp.dplanner.adapter.dto.FCMNotificationRequestDto;
+import com.dp.dplanner.adapter.dto.FCMDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
@@ -26,7 +26,7 @@ public class MemberService {
     private final ClubRepository clubRepository;
 
     @Transactional
-    public void updateFCMToken(Long memberId, FCMNotificationRequestDto requestDto) {
+    public void updateFCMToken(Long memberId, FCMDto.Request requestDto) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
         member.updateFCMToken(requestDto.getRefreshFcmToken());
     }
