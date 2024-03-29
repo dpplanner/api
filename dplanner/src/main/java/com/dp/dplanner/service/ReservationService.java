@@ -247,8 +247,6 @@ public class ReservationService {
                                     build()));
         }
 
-        reservations.forEach(reservation -> {
-        });
     }
 
     @Transactional
