@@ -1,14 +1,14 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.adapter.dto.FCMDto;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.domain.message.PrivateMessage;
 import com.dp.dplanner.adapter.dto.MessageDto;
-import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.service.exception.ServiceException;
-import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +23,6 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 public class MessageService {
     private final FCMService fcmService;
     private final MessageRepository messageRepository;
-    private final ClubMemberRepository clubMemberRepository;
 
     @Transactional(readOnly = true)
     public MessageDto.ResponseList findMyMessage(Long clubMemberId) {
@@ -46,10 +45,12 @@ public class MessageService {
                 .build();
     }
 
+    @Async
     @Transactional
     public void createPrivateMessage(List<ClubMember> clubMembers, Message message) {
 
         List<PrivateMessage> privateMessages = new ArrayList<>();
+        List<Long> clubMemberIds = new ArrayList<>();
         clubMembers.forEach(clubMember -> {
 
             PrivateMessage privateMessage = PrivateMessage.builder()
@@ -60,9 +61,18 @@ public class MessageService {
                     .build();
 
             privateMessages.add(privateMessage);
+            clubMemberIds.add(clubMember.getId());
         });
+
         messageRepository.saveAll(privateMessages);
-        fcmService.sendNotifications(privateMessages);
+
+        fcmService.sendNotification(clubMemberIds,
+                FCMDto.Send.builder().
+                        title(message.getTitle()).
+                        content(message.getContent()).
+                        build());
+
+
     }
 
     @Transactional

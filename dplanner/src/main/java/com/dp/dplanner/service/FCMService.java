@@ -1,6 +1,7 @@
 package com.dp.dplanner.service;
 
-import com.dp.dplanner.domain.message.PrivateMessage;
+import com.dp.dplanner.adapter.dto.FCMDto;
+import com.dp.dplanner.repository.MemberRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -17,30 +18,30 @@ import java.util.List;
 public class FCMService {
 
     private final FirebaseMessaging firebaseMessaging;
+    private final MemberRepository memberRepository;
 
-    public void sendNotification(PrivateMessage privateMessage) {
 
-        String fcmToken = privateMessage.getClubMember().getMember().getFcmToken();
-        if (fcmToken != null) {
-            Notification notification = Notification.builder()
-                    .setTitle(privateMessage.getTitle())
-                    .setBody(privateMessage.getContent())
-                    .build();
+    public void sendNotification(List<Long> clubMemberIds, FCMDto.Send sendDto) {
 
-            Message message = Message.builder()
-                    .setNotification(notification)
-                    .setToken(fcmToken)
-                    .build();
+        List<String> fcmTokens = memberRepository.getFcmTokensUsingClubMemberIds(clubMemberIds);
+        for (String fcmToken : fcmTokens) {
             try {
-                firebaseMessaging.send(message);
-            } catch (FirebaseMessagingException e) {
-                log.error("FirebaseMessagingException {}", fcmToken);
+                if (fcmToken != null) {
+                    Notification notification = Notification.builder()
+                            .setTitle(sendDto.getTitle())
+                            .setBody(sendDto.getContent())
+                            .build();
+
+                    Message message = Message.builder()
+                            .setNotification(notification)
+                            .setToken(fcmToken)
+                            .build();
+                    firebaseMessaging.send(message);
+                }
+            }  catch (FirebaseMessagingException e) {
+                log.warn("send fcm notification error {}", fcmToken);
             }
+
         }
     }
-
-    public void sendNotifications(List<PrivateMessage> requestDtoList) {
-        requestDtoList.stream().forEach(this::sendNotification);
-    }
-
 }
