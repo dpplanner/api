@@ -26,10 +26,10 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
     List<ClubMember> findAllByClub(Club club);
 
 
-    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = true")
+    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = true order by cm.role, cm.name ")
     List<ClubMember> findAllConfirmedClubMemberByClub(@Param("club") Club club);
 
-    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = false")
+    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = false order by cm.name")
     List<ClubMember> findAllUnconfirmedClubMemberByClub(@Param("club") Club club);
 
     @Query("SELECT cm FROM ClubMember cm " +
