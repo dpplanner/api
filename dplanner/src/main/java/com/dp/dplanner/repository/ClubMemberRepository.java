@@ -65,7 +65,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     @Modifying
     @Query("""
-    update ClubMember cm set cm.clubAuthority = null where cm.clubAuthority = :authority
+    update ClubMember cm set cm.clubAuthority = null , cm.role = 'USER' where cm.clubAuthority = :authority
 """)
     void deleteClubAuthority(@Param("authority") ClubAuthority authority);
 }
