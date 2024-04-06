@@ -24,6 +24,7 @@ public class Post extends BaseEntity{
     @JoinColumn(name = "club_member_id")
     private ClubMember clubMember;
 
+    @Column(columnDefinition = "text")
     private String content;
     private String title;
     private Boolean isFixed;

@@ -21,7 +21,7 @@ public class Resource extends BaseEntity{
     private String name;
     private String info;
     private boolean returnMessageRequired = false;
-    @Column(length = 1024)
+    @Column(columnDefinition = "text")
     private String notice;
     @Enumerated(EnumType.STRING)
     private ResourceType resourceType;
