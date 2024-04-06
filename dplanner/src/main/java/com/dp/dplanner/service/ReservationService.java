@@ -115,7 +115,15 @@ public class ReservationService {
             reservation = createDto.toEntity(clubMember, resource);
             reservation.confirm();
             reservationRepository.save(reservation);
-            createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
+            List<ReservationInvitee> invitees = createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
+            messageService.createPrivateMessage(invitees.stream().map(ReservationInvitee::getClubMember).toList(),
+                    Message.invitedMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    clubMemberName(reservation.getClubMember().getName()).
+                                    start(reservation.getPeriod().getStartDateTime()).
+                                    end(reservation.getPeriod().getEndDateTime()).
+                                    resourceName(reservation.getResource().getName()).
+                                    build()));
         }
         return ReservationDto.Response.of(reservation);
     }
@@ -455,12 +463,12 @@ public class ReservationService {
     }
 
     /**
-     *
      * @param clubMemberIds : invitee ids
-     * @param inviter : inviter
-     * @param reservation : reservation
+     * @param inviter       : inviter
+     * @param reservation   : reservation
+     * @return
      */
-    private void createReservationInvitee(List<Long> clubMemberIds, ClubMember inviter, Reservation reservation) {
+    private List<ReservationInvitee> createReservationInvitee(List<Long> clubMemberIds, ClubMember inviter, Reservation reservation) {
         List<ReservationInvitee> reservationInvitees = new ArrayList<>();
         clubMemberIds
                 .forEach(inviteeId -> {
@@ -476,6 +484,6 @@ public class ReservationService {
                         }
                     }
                 });
-        reservationInviteeRepository.saveAll(reservationInvitees);
+        return reservationInviteeRepository.saveAll(reservationInvitees);
     }
 }
