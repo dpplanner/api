@@ -75,6 +75,22 @@ public class PostController {
 
     }
 
+    @GetMapping(value = "/clubMembers/{clubMemberId}/like")
+    public CommonResponse<SliceResponse> getLikedPosts(@AuthenticationPrincipal PrincipalDetails principal,
+                                                    @PathVariable final Long clubMemberId,
+                                                    @PageableDefault final Pageable pageable) {
+        if (!principal.getClubMemberId().equals(clubMemberId)) {
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
+        }
+        Long clubId = principal.getClubId();
+
+        SliceResponse response = postService.getLikePosts(clubMemberId, clubId, pageable);
+
+        return CommonResponse.createSuccess(response);
+
+    }
+
+
     @GetMapping(value = "/{postId}")
     public CommonResponse<Response> getPost(@AuthenticationPrincipal PrincipalDetails principal,
                                             @PathVariable final Long postId) {

@@ -85,6 +85,12 @@ public class PostService {
         return getSliceResponse(pageable, postSlice);
     }
 
+    public SliceResponse getLikePosts(Long clubMemberId, Long clubId, Pageable pageable) {
+        checkIsSameClub(clubMemberId, clubId);
+        Slice<Object[]> postSlice = postRepository.findLikePosts(clubMemberId, clubId, pageable);
+        return getSliceResponse(pageable, postSlice);
+    }
+
 
     @Transactional
     public Response updatePost(Long clubMemberId, Update update) {
@@ -173,7 +179,7 @@ public class PostService {
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
         Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
 
-        if (post.getIsFixed()) {
+/*        if (post.getIsFixed()) {
             List<ClubMember> clubMembers = clubMemberRepository.findAllByClub(post.getClub());
             messageService.createPrivateMessage(clubMembers,
                     Message.noticeRegisterdMessage(
@@ -181,7 +187,7 @@ public class PostService {
                                     .clubName(post.getClub().getClubName())
                                     .build()));
 
-        }
+        }*/
 
         return Response.of(post,likeCount,commentCount,likeStatus);
     }
@@ -192,7 +198,6 @@ public class PostService {
             throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
-
     private void checkDeletable(ClubMember clubMember, Long clubMemberId) {
 
         if (!clubMember.getId().equals(clubMemberId)) {
@@ -208,6 +213,7 @@ public class PostService {
             throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
+
     private Post getPost(Long postId) {
         return postRepository.findById(postId).orElseThrow(() -> new ServiceException(POST_NOT_FOUND));
     }
@@ -235,6 +241,5 @@ public class PostService {
         }
         return new SliceResponse(Response.ofList(postResponseDtos), pageable, postSlice.hasNext());
     }
-
 }
 
