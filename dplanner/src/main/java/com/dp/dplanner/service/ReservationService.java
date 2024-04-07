@@ -76,7 +76,8 @@ public class ReservationService {
             // 현재 시간과 예약 시작 시간 사이의 차이를 계산합니다.
             LocalDateTime now = LocalDateTime.now(clock);
             long secondsDifference = ChronoUnit.SECONDS.between(now, startDateTime);
-            if (secondsDifference > 604800) { // 7 * 24 * 60 * 60 초, 일주일
+            Long bookableSpan = resource.getBookableSpan();
+            if ((secondsDifference > (bookableSpan * 24 * 60 * 60))) { // ex) 7 * 24 * 60 * 60 초, 일주일
                 throw new ServiceException(RESERVATION_UNAVAILABLE);
             }
             // 레디스 확인

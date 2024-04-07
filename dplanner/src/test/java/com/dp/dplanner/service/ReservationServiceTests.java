@@ -1413,6 +1413,7 @@ public class ReservationServiceTests {
     private static Resource createResource(Club club, long value) {
         Resource resource = Resource.builder().club(club).build();
         ReflectionTestUtils.setField(resource, "id", value);
+        ReflectionTestUtils.setField(resource, "bookableSpan", 7L);
         return resource;
     }
 

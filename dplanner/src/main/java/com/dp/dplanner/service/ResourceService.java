@@ -47,7 +47,7 @@ public class ResourceService {
         Resource resource = getResource(updateDto.getId());
         checkIfSameClub(clubMemberId, resource.getClub().getId());
 
-        resource.update(updateDto.getName(), updateDto.getInfo(),updateDto.isReturnMessageRequired(),updateDto.getNotice(), ResourceType.valueOf(updateDto.getResourceType()));
+        resource.update(updateDto.getName(), updateDto.getInfo(), updateDto.isReturnMessageRequired(), updateDto.getNotice(), ResourceType.valueOf(updateDto.getResourceType()), updateDto.getBookableSpan());
 
         return Response.of(resource);
     }

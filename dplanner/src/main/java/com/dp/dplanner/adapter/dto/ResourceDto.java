@@ -22,6 +22,7 @@ public class ResourceDto {
         private String resourceType;
         private String notice;
         private boolean returnMessageRequired;
+        private Long bookableSpan;
 
         public Resource toEntity(Club club) {
             return Resource.builder()
@@ -31,6 +32,7 @@ public class ResourceDto {
                     .notice(notice)
                     .resourceType(ResourceType.valueOf(resourceType))
                     .returnMessageRequired(returnMessageRequired)
+                    .bookableSpan(bookableSpan)
                     .build();
         }
 
@@ -47,6 +49,7 @@ public class ResourceDto {
         private String resourceType;
         private String notice;
         private boolean returnMessageRequired;
+        private Long bookableSpan;
 
     }
 
@@ -64,6 +67,8 @@ public class ResourceDto {
         private String resourceType;
         private String notice;
         private Long clubId;
+        private Long bookableSpan;
+
 
         public static Response of(Resource resource) {
             return Response.builder()
@@ -74,6 +79,7 @@ public class ResourceDto {
                     .returnMessageRequired(resource.isReturnMessageRequired())
                     .notice(resource.getNotice())
                     .resourceType(resource.getResourceType().toString())
+                    .bookableSpan((resource.getBookableSpan()))
                     .build();
         }
 
