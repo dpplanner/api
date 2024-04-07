@@ -127,17 +127,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
            SELECT r
            FROM Reservation r
            LEFT JOIN FETCH r.reservationInvitees ri
-           WHERE r.status = 'CONFIRMED' AND (r.period.startDateTime BETWEEN :now AND :nowPlus10Minutes)
+           WHERE r.status = 'CONFIRMED' AND (r.period.startDateTime BETWEEN :now AND :plusMinutes)
            """)
-    List<Reservation> findAllAboutToStart(@Param("now") LocalDateTime now, @Param("nowPlus10Minutes") LocalDateTime nowPlus10Minutes);
+    List<Reservation> findAllAboutToStart(@Param("now") LocalDateTime now, @Param("plusMinutes") LocalDateTime plusMinutes);
 
     @Query("""
            SELECT r
            FROM Reservation r
            LEFT JOIN FETCH r.reservationInvitees ri
-           WHERE r.status = 'CONFIRMED' AND (r.period.endDateTime BETWEEN :now AND :nowPlus10Minutes)
+           WHERE r.status = 'CONFIRMED' AND (r.period.endDateTime BETWEEN :now AND :plusMinutes)
            """)
-    List<Reservation> findAllAboutToFinish(@Param("now") LocalDateTime now, @Param("nowPlus10Minutes") LocalDateTime nowPlus10Minutes);
+    List<Reservation> findAllAboutToFinish(@Param("now") LocalDateTime now, @Param("plusMinutes") LocalDateTime plusMinutes);
 
     @Query(
             """
