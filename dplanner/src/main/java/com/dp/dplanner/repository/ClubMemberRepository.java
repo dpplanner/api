@@ -34,7 +34,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
 
     @Query("SELECT cm FROM ClubMember cm " +
             "LEFT JOIN ClubAuthority ca ON cm.clubAuthority.id = ca.id " +
-            "WHERE cm.club.id = :clubId AND :authorityType MEMBER OF ca.clubAuthorityTypes")
+            "WHERE cm.club.id = :clubId AND ((:authorityType MEMBER OF ca.clubAuthorityTypes) or cm.role = 'ADMIN')")
     List<ClubMember> findClubMemberByClubIdAndClubAuthorityTypesContaining(
             @Param("clubId") Long clubId,
             @Param("authorityType") ClubAuthorityType authorityType
