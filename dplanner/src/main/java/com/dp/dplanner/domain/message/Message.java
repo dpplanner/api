@@ -148,6 +148,14 @@ public class Message {
                 .build();
     }
 
+    public static Message todayReservationMessage(MessageContentBuildDto contentDto) {
+
+        return Message.builder()
+                .title(RESERVATION_ALERT)
+                .content(String.format("오늘 신청한 예약이 있어요. 확인해 보세요!"))
+                .redirectUrl("/my_reservation")
+                .build();
+    }
 
     public static Message aboutToStartMessage(MessageContentBuildDto contentDto) {
 

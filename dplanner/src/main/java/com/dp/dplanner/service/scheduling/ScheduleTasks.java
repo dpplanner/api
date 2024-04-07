@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -24,16 +26,17 @@ public class ScheduleTasks {
     private final MessageService messageService;
     private final ReservationRepository reservationRepository;
 
-    // 예약 시작 1시간 전 알림
-    @Scheduled(cron = "0 0 * * * *")
+    // 매일 8시마다 오늘 예약 알림
+    @Scheduled(cron = "0 0 8 * * *")
     public void task0() {
         try{
             LocalDateTime now = LocalDateTime.now();
-            List<Reservation> reservations = reservationRepository.findAllAboutToStart(now, now.plusMinutes(60));
+            List<Reservation> reservations = reservationRepository.findAllAboutToStart(now, now.plusMinutes(960));
+
+            Set<ClubMember> clubMembers = new HashSet<>();
 
             reservations.forEach(
                     reservation -> {
-                        List<ClubMember> clubMembers = new ArrayList<>();
                         clubMembers.add(reservation.getClubMember());
 
                         reservation.getReservationInvitees().forEach(
@@ -42,16 +45,12 @@ public class ScheduleTasks {
                                 }
                         );
 
-                        messageService.createPrivateMessage(clubMembers,
-                                Message.aboutToStartMessage(
-                                        Message.MessageContentBuildDto.builder().
-                                                clubMemberName(reservation.getClubMember().getName()).
-                                                start(reservation.getPeriod().getStartDateTime()).
-                                                end(reservation.getPeriod().getEndDateTime()).
-                                                resourceName(reservation.getResource().getName()).
-                                                build()));
                     }
             );
+            messageService.createPrivateMessage(clubMembers.stream().toList(),
+                    Message.todayReservationMessage(
+                            Message.MessageContentBuildDto.builder().
+                                    build()));
 
             log.info("ScheduleTasks0");
         }catch (RuntimeException ex){
