@@ -4,17 +4,15 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.Resource;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import static com.dp.dplanner.domain.club.ClubRole.*;
 import static jakarta.persistence.FetchType.*;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 public class ClubMember {
 
     @Id
@@ -65,12 +63,12 @@ public class ClubMember {
         return clubMember;
     }
 
-    private void setMember(Member member) {
+    public void setMember(Member member) {
         this.member = member;
         member.getClubMembers().add(this);
     }
 
-    private void setClub(Club club) {
+    public void setClub(Club club) {
         this.club = club;
         club.getClubMembers().add(this);
     }
