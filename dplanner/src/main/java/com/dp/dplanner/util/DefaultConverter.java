@@ -1,6 +1,6 @@
 package com.dp.dplanner.util;
 
-import org.springframework.beans.BeanUtils;
+import cn.hutool.core.bean.BeanUtil;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.util.CollectionUtils;
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+
 
 public class DefaultConverter {
 
@@ -35,7 +36,7 @@ public class DefaultConverter {
                 while (iterator.hasNext()) {
                     S source = (S) iterator.next();
                     D dest = target.getDeclaredConstructor().newInstance();
-                    BeanUtils.copyProperties(source, dest, getNullProperties(source));
+                    BeanUtil.copyProperties(source, dest, getNullProperties(source));
                     list.add(dest);
                 }
 
@@ -69,7 +70,8 @@ public class DefaultConverter {
                 return null;
             }
             D dest = target.getDeclaredConstructor().newInstance();
-            BeanUtils.copyProperties(source, dest, getNullProperties(source));
+            BeanUtil.copyProperties(source, dest, getNullProperties(source));
+
             return dest;
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Cast " + source.getClass() + " to " + target + " error.", e);

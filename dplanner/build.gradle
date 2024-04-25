@@ -45,6 +45,8 @@ dependencies {
 	// Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	//BeanUtil
+	implementation group: 'cn.hutool', name: 'hutool-core', version: '5.8.5'
     compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
