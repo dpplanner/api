@@ -42,10 +42,9 @@ public class CommentService {
 
         ClubMember clubMember = getClubMember(clubMemberId);
         Post post = getPost(createDto.getPostId());
-        checkIsSameClub(post.getClub().getId(),clubMember);
+        checkIsSameClub(clubMember,post.getClub().getId());
 
         Comment parent = null;
-
         if (createDto.getParentId() != null) {
             parent = getComment(createDto.getParentId());
             checkIsParent(parent, post.getId());
@@ -66,7 +65,7 @@ public class CommentService {
 
         Post post = getPost(postId);
         ClubMember clubMember = getClubMember(clubMemberId);
-        checkIsSameClub(post.getClub().getId(), clubMember);
+        checkIsSameClub(clubMember, post.getClub().getId());
 
         List<Object[]> results = commentRepository.findCommentsUsingPostId(postId,clubMemberId);
         return getResponseList(results);
@@ -75,7 +74,7 @@ public class CommentService {
     public List<Response> getCommentsByClubMemberId(Long clubMemberId, Long clubId) {
 
         ClubMember clubMember = getClubMember(clubMemberId);
-        checkIsSameClub(clubId, clubMember);
+        checkIsSameClub(clubMember,clubId);
 
         List<Object[]> results = commentRepository.findCommentsByClubMemberId(clubMemberId);
         return getResponseList(results);
@@ -85,9 +84,8 @@ public class CommentService {
     public Response updateComment(Long clubMemberId, Update updateDto) {
 
         Comment comment = getComment(updateDto.getId());
-        checkUpdatable(clubMemberId, comment);
+        checkIsUpdatable(clubMemberId, comment);
         comment.update(updateDto.getContent());
-
         Long likeCount = commentMemberLikeRepository.countDistinctByCommentId(comment.getId());
 
         return Response.of(comment,likeCount,null);
@@ -98,8 +96,7 @@ public class CommentService {
 
         Comment comment = getComment(commentId);
         ClubMember clubMember = getClubMember(clubMemberId);
-        checkDeletable(comment.getClubMember().getId(), clubMember);
-
+        checkIsDeletable(comment.getClubMember().getId(), clubMember);
         if (comment.getChildren().size() != 0) {
             comment.delete(); // isDeleted = true
         }else{
@@ -121,19 +118,17 @@ public class CommentService {
 
         Comment comment = getComment(commentId);
         ClubMember clubMember = getClubMember(clubMemberId);
-        checkIsSameClub(comment.getClub().getId(), clubMember);
+        checkIsSameClub(clubMember,comment.getClub().getId());
 
         Optional<CommentMemberLike> find = commentMemberLikeRepository.findCommentMemberLikeByClubMemberIdAndCommentId(clubMemberId, commentId);
 
         if (find.isEmpty()) {
-
             CommentMemberLike commentMemberLike = commentMemberLikeRepository.save(
                     CommentMemberLike.builder()
                             .clubMember(clubMember)
                             .comment(comment)
                             .build()
             );
-
             return CommentMemberLikeDto.Response.like(commentMemberLike);
         }else{
             CommentMemberLike clubMemberLike = find.get();
@@ -144,34 +139,32 @@ public class CommentService {
     }
 
 
-    private static void checkIsSameClub(Long clubId, ClubMember clubMember) {
-        if (!clubMember.isSameClub(clubId)) {
+
+    /**
+     * utility methods
+     */
+    private static void checkIsSameClub(ClubMember clubMember,Long targetClubId) {
+        if (!clubMember.isSameClub(targetClubId)) {
             throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
-
-    private void checkIsParent(Comment parent,Long postId) {
+    private static void checkIsParent(Comment parent,Long postId) {
         if ((parent.getParent() != null) || !(postId.equals(parent.getPost().getId()))) {
             throw new ServiceException(CREATE_COMMENT_DENIED); // 원본 댓글에만 대댓 가능 , 해당 댓글이 같은 post에서 작성된 것인지
         }
     }
-
-    private void checkDeletable(Long clubMemberId, ClubMember clubMember) {
-
+    private static void checkIsUpdatable(Long clubMemberId, Comment comment) {
+        if (!comment.getClubMember().getId().equals(clubMemberId)) {
+            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
+        }
+    }
+    private void checkIsDeletable(Long clubMemberId, ClubMember clubMember) {
         if (!clubMember.getId().equals(clubMemberId)) {
             if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
                 throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
             }
         }
-
     }
-
-    private void checkUpdatable(Long clubMemberId, Comment comment) {
-        if (!comment.getClubMember().getId().equals(clubMemberId)) {
-            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
-        }
-    }
-
     private Comment getComment(Long commentId) {
         return commentRepository.findById(commentId).orElseThrow(() -> new ServiceException(COMMENT_NOT_FOUND));
     }

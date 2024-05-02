@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -57,7 +56,6 @@ public class ClubMemberService {
         ClubMember clubMember = createDto.toEntity(member, club);
         ClubMember savedMember = clubMemberRepository.save(clubMember);
 
-
         List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(club.getId(), MEMBER_ALL);
 
         messageService.createPrivateMessage(managers,
@@ -78,38 +76,22 @@ public class ClubMemberService {
         ClubMember requestClubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
-//        ClubMemberDto.ResponseMapping requestClubMember = clubMemberRepository.findClubMemberWithClubAuthority(requestDto.getId())
-//                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        if (!clubMember.isSameClub(requestClubMember)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
-
-        if (!requestClubMember.getIsConfirmed()) {
-            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
-        }
+        checkIsSameClub(clubMember, requestClubMember.getClub().getId());
+        checkIsConfirmed(requestClubMember);
 
         return ClubMemberDto.Response.of(requestClubMember);
     }
 
     /**
      * 일반적인 회원 목록 요청 처리
-     * @param clubMemberId
-     * @param clubId
-     * @return
      */
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId,Long clubId) {
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isSameClub(clubId)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
-
-        if (!clubMember.isConfirmed()) {
-            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
-        }
+        checkIsSameClub(clubMember, clubId);
+        checkIsConfirmed(clubMember);
 
         Club club = clubMember.getClub();
 
@@ -124,9 +106,7 @@ public class ClubMemberService {
         ClubMember manager = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
-        if (!manager.isSameClub(clubId)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
+        checkIsSameClub(manager, clubId);
 
         List<ClubMember> clubMembers = clubMemberRepository.findAllUnconfirmedClubMemberByClub(manager.getClub());
 
@@ -142,12 +122,7 @@ public class ClubMemberService {
 
         ClubMember clubMember = clubMemberRepository.findById(updateDto.getId())
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-
-        if (!clubMember.getIsConfirmed()) {
-            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
-        }
-
+        checkIsConfirmed(clubMember);
         clubMember.update(updateDto.getName(), updateDto.getInfo());
         return ClubMemberDto.Response.of(clubMember);
     }
@@ -169,29 +144,18 @@ public class ClubMemberService {
 
         ClubMember admin = clubMemberRepository.findById(adminId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        if (!admin.isSameClub(clubId)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
+        checkIsSameClub(admin, clubId);
 
         Long clubMemberId = updateDto.getId();
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        if (!clubMember.isSameClub(admin)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
-
-        if (!clubMember.isConfirmed()) {
-            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
-        }
+        checkIsSameClub(clubMember, clubId);
+        checkIsConfirmed(clubMember);
 
         if (updateDto.getClubAuthorityId() != null) {
             ClubAuthority clubAuthority = clubAuthorityRepository.findById(updateDto.getClubAuthorityId())
                     .orElseThrow(() -> new ServiceException(CLUB_AUTHORITY_NOT_FOUND));
-            if (!admin.isSameClub(clubAuthority.getClub().getId())) {
-                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-            }
+            checkIsSameClub(admin, clubAuthority.getClub().getId());
             clubMember.updateClubAuthority(clubAuthority);
         }
 
@@ -214,11 +178,7 @@ public class ClubMemberService {
         List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
 
         //TODO unconfirmedClubMembers 빈 리스트 일 때 응답 구분
-        unconfirmedClubMembers.forEach(clubMember -> {
-            if (!clubMember.isSameClub(manager)) {
-                throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-            }
-        });
+        unconfirmedClubMembers.forEach(clubMember -> checkIsSameClub(manager,clubMember.getClub().getId()));
 
         unconfirmedClubMembers.forEach(ClubMember::confirm);
     }
@@ -229,10 +189,7 @@ public class ClubMemberService {
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
         assert clubMemberId.equals(requestDto.getId());
-
-        if (clubMember.checkRoleIs(ADMIN)) {
-            throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
-        }
+        checkIsAdmin(clubMember);
 
         clubMemberRepository.delete(clubMember);
     }
@@ -243,10 +200,7 @@ public class ClubMemberService {
 
         ClubMember admin = clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        if (!admin.isSameClub(clubId)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
+        checkIsSameClub(admin, clubId);
 
         ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
@@ -264,10 +218,7 @@ public class ClubMemberService {
 
         ClubMember admin = clubMemberRepository.findById(adminId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        if (!admin.isSameClub(clubId)) {
-            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
-        }
+        checkIsSameClub(admin, clubId);
 
         List<Long> requestIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> clubMembers = clubMemberRepository.findAllById(requestIds);
@@ -306,7 +257,22 @@ public class ClubMemberService {
     /**
      * utility methods
      */
-    private static boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
+    private static void checkIsSameClub(ClubMember clubMember, Long targetClubId) {
+        if (!clubMember.isSameClub(targetClubId)) {
+            throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
+        }
+    }
+    private static void checkIsConfirmed(ClubMember clubMember) {
+        if (!clubMember.getIsConfirmed()) {
+            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
+        }
+    }
+    private static void checkIsAdmin(ClubMember clubMember) {
+        if (clubMember.checkRoleIs(ADMIN)) {
+            throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
+        }
+    }
+    private boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
 
         // 본인이 자기 자신 KickOut 하는 경우
         if (clubMember.equals(manager)) {
@@ -323,8 +289,7 @@ public class ClubMemberService {
 
         return false;
     }
-
-    private static boolean isMemberManager(ClubMember clubMember) {
+    private boolean isMemberManager(ClubMember clubMember) {
         return clubMember.checkRoleIs(MANAGER) && clubMember.hasAuthority(MEMBER_ALL);
     }
 }
