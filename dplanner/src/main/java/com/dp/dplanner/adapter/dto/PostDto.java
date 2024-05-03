@@ -68,6 +68,7 @@ public class PostDto {
         private String title;
         private Boolean isFixed;
         private Long clubId;
+        private Long clubMemberId;
         private String clubMemberName;
         private String profileUrl;
         private String clubRole;
@@ -89,6 +90,7 @@ public class PostDto {
                     .isFixed(post.getIsFixed())
                     .clubId(post.getClub().getId())
                     .clubMemberName(post.getClubMember().getName())
+                    .clubMemberId(post.getClubMember().getId())
                     .profileUrl(post.getClubMember().getUrl())
                     .clubRole(post.getClubMember().getRole().name())
                     .likeCount(likeCount)
@@ -99,12 +101,6 @@ public class PostDto {
                     .attachmentsUrl(post.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.toList()))
                     .build();
         }
-
-//        public static List<Response> ofList(List<Post> posts, List<Long> likeCounts, List<Long> commentCounts) {
-//            return IntStream.range(0,posts.size())
-//                    .mapToObj(index->of(posts.get(index),likeCounts.get(index),commentCounts.get(index),false))
-//                    .collect(Collectors.toList());
-//        }
 
         public static List<Response> ofList(List<PostResponseDto> postResponseDtos) {
             return IntStream.range(0, postResponseDtos.size())
