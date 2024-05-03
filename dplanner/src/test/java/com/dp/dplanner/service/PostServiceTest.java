@@ -53,7 +53,8 @@ public class PostServiceTest {
     ClubMemberRepository clubMemberRepository;
     @Mock
     AttachmentService attachmentService;
-
+    @Mock
+    MessageService messageService;
     @InjectMocks
     private PostService postService;
     Member member;

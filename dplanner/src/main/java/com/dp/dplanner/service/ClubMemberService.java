@@ -252,7 +252,7 @@ public class ClubMemberService {
             throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
         }
     }
-    private boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
+    private static boolean invalidKickOutRequest(ClubMember manager, ClubMember clubMember) {
 
         // 본인이 자기 자신 KickOut 하는 경우
         if (clubMember.equals(manager)) {
@@ -269,7 +269,7 @@ public class ClubMemberService {
 
         return false;
     }
-    private boolean isMemberManager(ClubMember clubMember) {
+    private static boolean isMemberManager(ClubMember clubMember) {
         return clubMember.checkRoleIs(MANAGER) && clubMember.hasAuthority(MEMBER_ALL);
     }
 }

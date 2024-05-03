@@ -44,6 +44,8 @@ public class CommentServiceTest {
     ClubMemberRepository clubMemberRepository;
     @Mock
     CommentMemberLikeRepository commentMemberLikeRepository;
+    @Mock
+    MessageService messageService;
     @InjectMocks
     CommentService commentService;
 
