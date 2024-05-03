@@ -4,6 +4,7 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.adapter.dto.CommentMemberLikeDto;
@@ -33,7 +34,6 @@ public class CommentService {
     private final PostRepository postRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final CommentMemberLikeRepository commentMemberLikeRepository;
-    private final ClubMemberService clubMemberService;
 
     private final MessageService messageService;
 
@@ -158,12 +158,17 @@ public class CommentService {
             throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
     }
-    private void checkIsDeletable(Long clubMemberId, ClubMember clubMember) {
-        if (!clubMember.getId().equals(clubMemberId)) {
-            if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
+    private void checkIsDeletable(Long writerClubMemberId, ClubMember clubMember) {
+        if (!clubMember.getId().equals(writerClubMemberId)) {
+            if(!hasAuthority(clubMember.getId(), POST_ALL)){
                 throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
             }
         }
+    }
+    private boolean hasAuthority(Long clubMemberId, ClubAuthorityType authority) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        return clubMember.hasAuthority(authority);
     }
     private Comment getComment(Long commentId) {
         return commentRepository.findById(commentId).orElseThrow(() -> new ServiceException(COMMENT_NOT_FOUND));

@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.ClubRole;
 import com.dp.dplanner.exception.BaseException;
 import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
@@ -112,7 +113,7 @@ public class ResourceServiceTest {
                 .info("test")
                 .clubId(clubId)
                 .build();
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         assertThatThrownBy(() -> resourceService.createResource(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
@@ -139,8 +140,6 @@ public class ResourceServiceTest {
     
     @Test
     public void ResourceService_deleteResource_ReturnVoid(){
-
-//        clubMember.setAdmin();
 
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));

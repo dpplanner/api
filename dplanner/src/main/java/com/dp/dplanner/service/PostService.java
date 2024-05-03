@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Attachment;
 import com.dp.dplanner.domain.Post;
@@ -36,7 +37,6 @@ public class PostService {
     private final PostMemberLikeRepository postMemberLikeRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
-    private final ClubMemberService clubMemberService;
     private final AttachmentService attachmentService;
     private final MessageService messageService;
 
@@ -180,10 +180,15 @@ public class PostService {
     }
     private void checkIsDeletable(ClubMember clubMember, Long clubMemberId) {
         if (!clubMember.getId().equals(clubMemberId)) {
-            if(!clubMemberService.hasAuthority(clubMember.getId(), POST_ALL)){
+            if(!hasAuthority(clubMember.getId(), POST_ALL)){
                 throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
             }
         }
+    }
+    private boolean hasAuthority(Long clubMemberId, ClubAuthorityType authority) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        return clubMember.hasAuthority(authority);
     }
     private void checkIsUpdatable(ClubMember clubMember, Long clubMemberId) {
         if (!clubMember.getId().equals(clubMemberId)){

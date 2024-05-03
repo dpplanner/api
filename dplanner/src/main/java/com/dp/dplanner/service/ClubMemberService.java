@@ -233,26 +233,6 @@ public class ClubMemberService {
     }
 
 
-    /**
-     * AOP method
-     */
-    public boolean hasAuthority(Long clubMemberId, ClubAuthorityType authority) {
-
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        return clubMember.hasAuthority(authority);
-    }
-
-    public boolean hasRole(Long clubMemberId, ClubRole role) {
-
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        return clubMember.hasRole(role);
-    }
-
-
 
     /**
      * utility methods
@@ -279,7 +259,7 @@ public class ClubMemberService {
             return true;
         }
         // 다른 클럽인 경우
-        if (!manager.isSameClub(clubMember)) {
+        if (!manager.isSameClub(clubMember.getClub().getId())) {
             return true;
         }
         // 매니저가 ADMIN kickOut 하는 경우

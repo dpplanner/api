@@ -92,7 +92,7 @@ public class ClubMemberServiceTests {
         assertThat(savedClubMember.getMember()).as("생성된 클럽 회원은 member와 매핑되어야 한다").isEqualTo(member);
         assertThat(savedClubMember.getClub()).as("생성된 클럽 회원은 club과 매핑되어야 한다").isEqualTo(club);
         assertThat(savedClubMember.getRole()).as("생성된 클럽 회원의 역할은 USER여야 한다").isEqualTo(ClubRole.USER);
-        assertThat(savedClubMember.isConfirmed()).as("생성된 클럽회원은 승인대기상태여야 한다").isFalse();
+        assertThat(savedClubMember.getIsConfirmed()).as("생성된 클럽회원은 승인대기상태여야 한다").isFalse();
     }
 
     @Test
@@ -335,7 +335,7 @@ public class ClubMemberServiceTests {
         ClubMember notConfirmed = createClubMember(club, "notConfirmed");
         given(clubMemberRepository.findById(notConfirmedId)).willReturn(Optional.ofNullable(notConfirmed));
 
-        assert !notConfirmed.isConfirmed();
+        assert !notConfirmed.getIsConfirmed();
 
         //when
         //then
@@ -501,36 +501,6 @@ public class ClubMemberServiceTests {
                 .doesNotContain("unconfirmed0", "unconfirmed1", "unconfirmed2");
     }
 
-    @Test
-    @DisplayName("회원 관리 권한이 없는 매니저가 승인되지 않은 회원들을 조회하려 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void findUnconfirmedClubMembersByManagerNotHasMEMBER_ALLThenException() throws Exception {
-        //given
-        Long managerId = 1L;
-        ClubMember manager = createClubMemberAsManager("manager");
-        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
-
-        assert !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
-        //when
-        //then
-        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(managerId, clubId, false))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    @DisplayName("일반 회원이 승인되지 않은 회원들을 조회하려 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void findUnconfirmedClubMembersByUserThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMember(club, "clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        //then
-        assertThatThrownBy(() -> clubMemberService.findMyClubMembers(clubMemberId, clubId, false))
-                .isInstanceOf(IllegalStateException.class);
-    }
 
     @Test
     @DisplayName("승인 여부로 필터링한 회원 조회시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
@@ -593,7 +563,7 @@ public class ClubMemberServiceTests {
         ClubMember notConfirmedClubMember = createClubMember(club, "notConfirmedClubMember");
         given(clubMemberRepository.findById(notConfirmedClubMemberId)).willReturn(Optional.ofNullable(notConfirmedClubMember));
 
-        assert !notConfirmedClubMember.isConfirmed();
+        assert !notConfirmedClubMember.getIsConfirmed();
 
         //when
         //then
@@ -725,48 +695,8 @@ public class ClubMemberServiceTests {
         assertThat(toBeUser.getRole()).as("클럽 회원의 역할은 일반회원이어야 함").isEqualTo(ClubRole.USER);
         assertThat(toBeManager.getRole()).as("클럽 회원의 역할은 관리자여야 함").isEqualTo(ClubRole.MANAGER);
     }
-    @Test
-    @DisplayName("매니저가 임의의 클럽 회원의 역할을 변경하려 하면 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void changeClubMemberRoleByManagerThenException() throws Exception {
-        //given
-        Long managerId = 1L;
-        ClubMember manager = createClubMemberAsManager("manager");
-        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
 
-        Long anotherClubMemberId = 2L;
-        ClubMember anotherClubMember = createConfirmedClubMember(club, "anotherClubMember");
 
-        //when
-        //then
-        ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(anotherClubMemberId, ClubRole.MANAGER);
-        BaseException exception = assertThrows(ServiceException.class,
-                () -> clubMemberService.updateClubMemberClubAuthority(managerId, clubId, updateDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-    }
-
-    @Test
-    @DisplayName("일반 회원이 임의의 클럽 회원의 역할을 변경하려 하면 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void changeClubMemberRoleByUserThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMember(club, "clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        Long anotherClubMemberId = 2L;
-        ClubMember anotherClubMember = createConfirmedClubMember(club, "anotherClubMember");
-
-        //when
-        //then
-        ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(anotherClubMemberId, ClubRole.MANAGER);
-        BaseException exception = assertThrows(ServiceException.class,
-                () -> clubMemberService.updateClubMemberClubAuthority(clubMemberId, clubId, updateDto));
-
-        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-    }
 
     @Test
     @DisplayName("승인되지 않은 회원의 역할을 변경하는 경우 CLUBMEMBER_NOT_CONFIRMED")
@@ -813,23 +743,6 @@ public class ClubMemberServiceTests {
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
-    @Test
-    @DisplayName("자신의 역할을 변경하는 경우 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("기능 삭제")
-    public void changeMyRoleThenException() throws Exception {
-        //given
-        Long adminId = 1L;
-        ClubMember admin = createClubMemberAsAdmin("admin");
-
-        //when
-        //then
-        ClubMemberDto.Update updateDto = createUpdateDtoToChangeRole(adminId, ClubRole.MANAGER);
-        BaseException exception = assertThrows(ServiceException.class,
-                () -> clubMemberService.updateClubMemberClubAuthority(adminId, clubId, updateDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-
-    }
 
     @Test
     @DisplayName("역할을 바꾸려는 회원의 데이터가 존재하지 않을 경우 CLUBMEMBER_NOT_FOUND")
@@ -892,7 +805,7 @@ public class ClubMemberServiceTests {
 
         //then
         unconfirmedClubMembers.forEach(clubMember ->
-                assertThat(clubMember.isConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue()
+                assertThat(clubMember.getIsConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue()
         );
     }
 
@@ -920,47 +833,10 @@ public class ClubMemberServiceTests {
 
         //then
         unconfirmedClubMembers.forEach(clubMember ->
-                assertThat(clubMember.isConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue()
+                assertThat(clubMember.getIsConfirmed()).as("클럽 회원이 승인되어야 한다").isTrue()
         );
     }
 
-    @Test
-    @DisplayName("회원 관리 권한이 없는 매니저가 승인 대기중인 회원을 승인하려 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void confirmAllByManagerNotHasMEMBER_ALLThenException() throws Exception {
-        //given
-        Long managerId = 1L;
-        ClubMember manager = createClubMemberAsManager("manager");
-        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
-
-        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
-
-        assert !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
-
-        //when
-        //then
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.confirmAll(managerId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    @DisplayName("일반 회원이 승인 대기중인 회원을 승인하려 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void confirmAllByUserThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMember(club, "clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
-
-        //when
-        //then
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(unconfirmedClubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.confirmAll(clubMemberId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
-    }
 
     @Test
     @DisplayName("다른 클럽의 회원들을 승인하려하면 DIFFERENT_CLUB_EXCEPTION")
@@ -1051,24 +927,6 @@ public class ClubMemberServiceTests {
                 () -> clubMemberService.leaveClub(wrongClubMemberId, new ClubMemberDto.Request(wrongClubMemberId)));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("클럽 탈퇴시 클럽 회원 데이터 요청 데이터가 다르면 DIFFERENT_CLUB_EXCEPTION ")
-    @Disabled("Controller에서 유효성 검사 진행함에 따라 test disable")
-    public void leaveClubDifferentClubMemberThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMember(club, "clubMember");
-        Long wrongClubMemberId = 2L;
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        //then
-        BaseException exception = assertThrows(ServiceException.class,
-                () -> clubMemberService.leaveClub(clubMemberId, new ClubMemberDto.Request(wrongClubMemberId)));
-        assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 DIFFERENT_CLUB_EXCEPTION 예외를 던진다")
-                .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
 
 
@@ -1193,47 +1051,7 @@ public class ClubMemberServiceTests {
                 .isEqualTo(DELETE_AUTHORIZATION_DENIED);
     }
 
-    @Test
-    @DisplayName("회원 관리 권한이 없는 매니저가 클럽 회원을 퇴출하려 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void kickOutByManagerNotHasMEMBER_ALLThenException() throws Exception {
-        //given
-        Long managerId = 1L;
-        ClubMember manager = createClubMemberAsManager("manager");
-        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
 
-        Long clubMemberId = 2L;
-        ClubMember clubMember = createClubMember(club, "clubMember");
-
-        assert !clubMember.hasAuthority(ClubAuthorityType.MEMBER_ALL);
-
-        //when
-        //then
-        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(clubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(managerId, clubId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
-
-    }
-
-    @Test
-    @DisplayName("일반 회원이 다른 회원을 퇴출하려 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void kickOutByUserThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMember(club, "clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        Long anotherClubMemberId = 2L;
-        ClubMember anotherClubMember = createClubMember(club, "anotherClubMember");
-
-        //when
-        //then
-        ClubMemberDto.Request requestDto = new ClubMemberDto.Request(anotherClubMemberId);
-        assertThatThrownBy(() -> clubMemberService.kickOut(clubMemberId, clubId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
-
-    }
 
     @Test
     @DisplayName("다른 클럽의 회원을 퇴출하려 하면 DELETE_AUTHORIZATION_DENIED")
@@ -1374,44 +1192,6 @@ public class ClubMemberServiceTests {
     }
 
     @Test
-    @DisplayName("회원 관리 권한이 없는 매니저가 다른 회원들을 퇴출하려하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void kickOutAllByMangerNotHasMEMBER_ALLThenException() throws Exception {
-        //given
-        Long managerId = 1L;
-        ClubMember manager = createClubMemberAsManager("manager");
-        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
-
-        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
-
-        assert !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
-
-        //when
-        //then
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(clubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.kickOutAll(managerId, clubId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    @DisplayName("일반 회원이 다른 회원들을 퇴출하려하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void kickOutAllByUserThenException() throws Exception {
-        //given
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMemberAsManager("clubMember");
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        List<Long> clubMemberIds = List.of(2L, 3L, 4L);
-
-        //when
-        //then
-        List<ClubMemberDto.Request> requestDto = ClubMemberDto.Request.ofList(clubMemberIds);
-        assertThatThrownBy(() -> clubMemberService.kickOutAll(clubMemberId, clubId, requestDto))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
     @DisplayName("퇴출하려는 회원 중 퇴출이 불가능한 회원이 존재하면 이들을 제외한 회원들을 모두 퇴출한다.")
     public void kickOutAllByAdminIncludeSelf() throws Exception {
         //given
@@ -1440,8 +1220,6 @@ public class ClubMemberServiceTests {
         savedClubMembers.addAll(List.of(manager, admin, otherClubMember));
 
         given(clubMemberRepository.findAllById(savedClubMemberIds)).willReturn(savedClubMembers);
-
-        assert manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
 
 
         //when
@@ -1503,8 +1281,8 @@ public class ClubMemberServiceTests {
         given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
 
         //when
-        boolean authorizedAdmin = clubMemberService.hasAuthority(adminId, ClubAuthorityType.MEMBER_ALL);
-        boolean authorizedManager = clubMemberService.hasAuthority(managerId, ClubAuthorityType.MEMBER_ALL);
+        boolean authorizedAdmin = hasAuthority(adminId, ClubAuthorityType.MEMBER_ALL);
+        boolean authorizedManager = hasAuthority(managerId, ClubAuthorityType.MEMBER_ALL);
 
         //then
         assertThat(authorizedAdmin).as("관리자는 모든 권한이 있어야 한다").isTrue();
@@ -1519,15 +1297,13 @@ public class ClubMemberServiceTests {
         ClubMember manager = createClubMemberAsManager("manager");
         given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
 
-        assert !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
-
         Long clubMemberId = 2L;
         ClubMember clubMember = createConfirmedClubMember(club, "clubMember");
         given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
 
         //when
-        boolean unauthorizedManager = clubMemberService.hasAuthority(managerId, ClubAuthorityType.MEMBER_ALL);
-        boolean unauthorizedClubMember = clubMemberService.hasAuthority(clubMemberId, ClubAuthorityType.MEMBER_ALL);
+        boolean unauthorizedManager = hasAuthority(managerId, ClubAuthorityType.MEMBER_ALL);
+        boolean unauthorizedClubMember = hasAuthority(clubMemberId, ClubAuthorityType.MEMBER_ALL);
 
         //then
         assertThat(unauthorizedManager).as("권한이 부여되지 않은 매니저는 접근 권한이 없어야 한다").isFalse();
@@ -1544,7 +1320,7 @@ public class ClubMemberServiceTests {
         //when
         //then
         BaseException exception = assertThrows(ServiceException.class,
-                () -> clubMemberService.hasAuthority(wrongClubMemberId, ClubAuthorityType.MEMBER_ALL));
+                () -> hasAuthority(wrongClubMemberId, ClubAuthorityType.MEMBER_ALL));
         assertThat(exception.getErrorResult()).as("클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND 예외를 던진다")
                 .isEqualTo(CLUBMEMBER_NOT_FOUND);
     }
@@ -1643,13 +1419,13 @@ public class ClubMemberServiceTests {
 
     private static ClubMember createClubMemberAsAdmin(String name) {
         ClubMember admin = createConfirmedClubMember(club, name);
-        admin.setAdmin();
+        admin.changeRole(ClubRole.ADMIN);
         return admin;
     }
 
     private static ClubMember createClubMemberAsManager(String name) {
         ClubMember manager = createConfirmedClubMember(club, name);
-        manager.setManager();
+        manager.changeRole(ClubRole.MANAGER);
         return manager;
     }
 
@@ -1687,4 +1463,9 @@ public class ClubMemberServiceTests {
                 .build();
     }
 
+    private boolean hasAuthority(Long clubMemberId, ClubAuthorityType authority) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        return clubMember.hasAuthority(authority);
+    }
 }

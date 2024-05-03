@@ -6,10 +6,7 @@ import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubAuthority;
-import com.dp.dplanner.domain.club.ClubAuthorityType;
-import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.exception.BaseException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.service.exception.ServiceException;
@@ -77,8 +74,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_CreateLock_ReturnResponse_Admin() {
-
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
@@ -101,7 +97,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_CreateLock_ReturnResponse_ManagerHasAuthority() {
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
@@ -141,7 +137,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_CreateLock_ThrowException_ManagerHasNoAuthority() {
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
@@ -159,8 +155,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_DeleteLock_ReturnVoid_Admin() {
-
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
                 .period(new Period(start, start.plusDays(7)))
@@ -172,9 +167,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_DeleteLock_ReturnVoid_ManagerHasAuthority() {
-
-
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
 
         LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
@@ -203,8 +196,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_DeleteLock_ThrowException_ManagerHasNoAuthority() {
-
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
 
         LocalDateTime start = LocalDateTime.of(2023, 8, 10, 12, 0, 0);
         Lock lock = Lock.builder().resource(resource)
@@ -220,7 +212,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_UpdateLock_ReturnResponse_Admin() {
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
@@ -249,7 +241,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_UpdateLock_ReturnResponse_ManagerHasAuthority() {
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
@@ -278,7 +270,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_UpdateLock_ThrowException_ManagerHasNoAuthority() {
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);
@@ -327,8 +319,7 @@ public class LockServiceIntegrationTest {
 
     @Test
     public void LockService_UpdateLock_ThrowException_PeriodOverlap() {
-
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
 
         LocalDateTime start = LocalDateTime.of(2023,8,10,12,0,0);
         LocalDateTime end = start.plusDays(7);

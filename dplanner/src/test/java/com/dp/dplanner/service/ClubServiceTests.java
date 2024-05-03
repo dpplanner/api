@@ -16,7 +16,6 @@ import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.service.upload.UploadService;
 import com.dp.dplanner.util.InviteCodeGenerator;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -259,51 +258,8 @@ public class ClubServiceTests {
 
     }
 
-    @Test
-    @DisplayName("일반 회원이 클럽정보를 수정하려 하면 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("aop 적용으로 통합 테스트로 변경")
-    public void updateClubInfoByUserThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", "clubInfo");
 
-        Long clubMemberId = 12L;
-        ClubMember clubMember = createClubMember(club, member);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
 
-        assert clubMember.checkRoleIs(ClubRole.USER);
-
-        //when
-        //then
-        ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
-        BaseException exception = assertThrows(ServiceException.class, () -> clubService.updateClubInfo(clubMemberId, updateDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-
-    }
-
-    @Test
-    @DisplayName("매니저가 클럽정보를 수정하려 하면 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("aop 적용으로 통합 테스트로 변경")
-    public void updateClubInfoByManagerThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", "clubInfo");
-
-        Long clubMemberId = 12L;
-        ClubMember clubMember = createClubMember(club, member);
-        clubMember.setManager();
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.of(clubMember));
-
-        assert clubMember.checkRoleIs(ClubRole.MANAGER);
-
-        //when
-        //then
-        ClubDto.Update updateDto = new ClubDto.Update(clubId, "updatedClubInfo");
-        BaseException exception = assertThrows(ServiceException.class, () -> clubService.updateClubInfo(clubMemberId, updateDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-    }
 
     @Test
     @DisplayName("정보 수정 시 클럽 회원 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
@@ -324,52 +280,7 @@ public class ClubServiceTests {
     /**
      * createClubAuthority
      */
-    @Test
-    @DisplayName("일반 회원이 매니저의 권한을 설정하려 하면 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("aop 적용으로 통합 테스트로 변경")
-    public void setManagerAuthorityByUserThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long clubMemberId = 12L;
-        ClubMember clubMember = createClubMember(club, member);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        assert clubMember.checkRoleIs(ClubRole.USER);
-
-        //when
-        //then
-        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId,"name","description", ClubAuthorityType.MEMBER_ALL.name());
-        BaseException exception = assertThrows(ServiceException.class, () -> clubService.createClubAuthority(clubMemberId, createDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-    }
-
-    @Test
-    @DisplayName("매니저가 매니저의 권한을 설정하려 하면 UPDATE_AUTHORIZATION_DENIED")
-    @Disabled("aop 적용으로 통합 테스트로 변경")
-    public void setManagerAuthorityByManagerThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long clubMemberId = 12L;
-        ClubMember clubMember = createClubMember(club, member);
-        clubMember.setManager();
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        assert clubMember.checkRoleIs(ClubRole.MANAGER);
-
-        //when
-        //then
-        ClubAuthorityDto.Create createDto = new ClubAuthorityDto.Create(clubId,"name","description", ClubAuthorityType.MEMBER_ALL.name());
-        BaseException exception = assertThrows(ServiceException.class, () -> clubService.createClubAuthority(clubMemberId, createDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없는 경우 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
-    }
-
-    @Test
+        @Test
     @DisplayName("관리자는 매니저의 클럽 권한을 생성할 수 있다.")
     public void setManageMemberAuthorityByAdmin() throws Exception {
         //given
@@ -598,7 +509,7 @@ public class ClubServiceTests {
 
         Long clubMemberId = 1L;
         ClubMember clubMember = createClubMember(club, member);
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
 
         ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.POST_ALL));
         ClubAuthority clubAuthority2 = createClubAuthority(club, "name2", "description2", List.of(ClubAuthorityType.POST_ALL, ClubAuthorityType.SCHEDULE_ALL));
@@ -617,27 +528,6 @@ public class ClubServiceTests {
         assertThat(responseList.get(1).getAuthorities()).containsExactlyInAnyOrder(ClubAuthorityType.POST_ALL.name(), ClubAuthorityType.SCHEDULE_ALL.name());
     }
 
-    @Test
-    @DisplayName("일반회원이 자신이 속한 클럽의 매니저 권한을 확인하려 하면 READ_AUTHORIZATION_DENIED.")
-    @Disabled("aop 적용으로 통합 테스트로 변경")
-    public void findManagerAuthoritiesByUserThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long clubMemberId = 1L;
-        ClubMember clubMember = createClubMember(club, member);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        assert clubMember.checkRoleIs(ClubRole.USER);
-
-        //when
-        //then
-        BaseException exception = assertThrows(ServiceException.class,
-                () -> clubService.findClubManagerAuthorities(clubMemberId, new ClubAuthorityDto.Request(clubId)));
-        assertThat(exception.getErrorResult()).as("읽기 권한이 없으면 READ_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(READ_AUTHORIZATION_DENIED);
-    }
 
     @Test
     @DisplayName("다른 클럽의 매니저 권한을 조회하려하면 DIFFERENT_CLUB_EXCEPTION")
@@ -707,7 +597,7 @@ public class ClubServiceTests {
 
         Long managerId = 1L;
         ClubMember manager = createClubMember(club, member);
-        manager.setManager();
+        manager.changeRole(ClubRole.MANAGER);
         manager.updateClubAuthority(clubAuthority);
 
         given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
@@ -721,43 +611,6 @@ public class ClubServiceTests {
         assertThat(inviteDto.getInviteCode()).as("초대코드가 존재해야 한다").isNotEmpty();
     }
 
-    @Test
-    @DisplayName("회원 관리 권한이 없는 매니저가 초대코드를 만드려고 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void inviteClubByMangerNotHasMEMBER_ALLThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-        Club club = createClub(clubId, "club", null);
-
-        Long managerId = 1L;
-        ClubMember manager = createClubMember(club, member);
-        manager.setManager();
-        given(clubMemberRepository.findById(managerId)).willReturn(Optional.ofNullable(manager));
-
-        assert !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
-        //when
-        //then
-        assertThatThrownBy(() -> clubService.inviteClub(managerId, clubId))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    @DisplayName("일반 회원이 초대코드를 만드려고 하면 IllegalStateException")
-    @Disabled("RequiredAuthority 어노테이션 사용으로 인해 스프링 통합테스트로 이전")
-    public void inviteClubByMangerUserThenException() throws Exception {
-        //given
-        Long clubId = 1L;
-
-        Long clubMemberId = 1L;
-        Club club = createClub(clubId, "club", null);
-        ClubMember clubMember = createClubMember(club, member);
-        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
-
-        //when
-        //then
-        assertThatThrownBy(() -> clubService.inviteClub(clubMemberId, clubId))
-                .isInstanceOf(IllegalStateException.class);
-    }
 
     @Test
     @DisplayName("초대코드 생성 시 본인의 데이터가 없으면 CLUBMEMBER_NOT_FOUND")
@@ -953,7 +806,7 @@ public class ClubServiceTests {
 
     private ClubMember createClubMemberAsAdmin(Club club) {
         ClubMember clubMember = createClubMember(club, member);
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         clubMember.confirm();
         return clubMember;
     }

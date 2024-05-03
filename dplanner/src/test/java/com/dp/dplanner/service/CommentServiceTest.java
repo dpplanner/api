@@ -1,8 +1,7 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.*;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.adapter.dto.CommentDto;
 import com.dp.dplanner.adapter.dto.CommentMemberLikeDto;
 import com.dp.dplanner.adapter.dto.Status;
@@ -27,9 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static com.dp.dplanner.domain.club.ClubAuthorityType.POST_ALL;
-import static com.dp.dplanner.exception.ErrorResult.DELETE_AUTHORIZATION_DENIED;
-import static com.dp.dplanner.exception.ErrorResult.UPDATE_AUTHORIZATION_DENIED;
+import static com.dp.dplanner.domain.club.ClubAuthorityType.MEMBER_ALL;
+import static com.dp.dplanner.exception.ErrorResult.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,11 +43,7 @@ public class CommentServiceTest {
     @Mock
     ClubMemberRepository clubMemberRepository;
     @Mock
-    ClubMemberService clubMemberService;
-    @Mock
     CommentMemberLikeRepository commentMemberLikeRepository;
-    @Mock
-    MessageService messageService;
     @InjectMocks
     CommentService commentService;
 
@@ -346,12 +340,11 @@ public class CommentServiceTest {
                 .club(club)
                 .build();
         ReflectionTestUtils.setField(adminClubMember, "id", adminMemberId);
-        adminClubMember.setAdmin();
+        adminClubMember.changeRole(ClubRole.ADMIN);
 
         Comment comment = createComment(clubMember, post, null, "test");
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
         when(clubMemberRepository.findById(adminMemberId)).thenReturn(Optional.ofNullable(adminClubMember));
-        when(clubMemberService.hasAuthority(adminClubMember.getId(), POST_ALL)).thenReturn(true);
 
         assertAll(() -> commentService.deleteComment(adminMemberId, commentId));
 
@@ -370,7 +363,27 @@ public class CommentServiceTest {
         Comment comment = createComment(clubMember, post, null, "test");
         when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
         when(clubMemberRepository.findById(usualClubMemberId)).thenReturn(Optional.ofNullable(usualClubMember));
-        when(clubMemberService.hasAuthority(usualClubMemberId, POST_ALL)).thenReturn(false);
+
+        BaseException commentException = assertThrows(ServiceException.class, () -> commentService.deleteComment(usualClubMemberId, commentId));
+        assertThat(commentException.getErrorResult()).isEqualTo(DELETE_AUTHORIZATION_DENIED);
+    }
+
+    @Test
+    public void CommentService_DeleteComment_WrongAuthority_Throw_DELETE_AUTHORIZATION_DENIED() {
+        Long usualClubMemberId = clubMemberId + 1;
+        Member usualMember = Member.builder().build();
+        ClubMember managerWithWrongAuthority = ClubMember.builder()
+                .member(usualMember)
+                .club(club)
+                .build();
+        ReflectionTestUtils.setField(managerWithWrongAuthority, "id", usualClubMemberId);
+        ClubAuthority clubAuthority = ClubAuthority.builder().clubAuthorityTypes(List.of(MEMBER_ALL)).build();
+        managerWithWrongAuthority.changeRole(ClubRole.MANAGER);
+        managerWithWrongAuthority.updateClubAuthority(clubAuthority);
+
+        Comment comment = createComment(clubMember, post, null, "test");
+        when(commentRepository.findById(commentId)).thenReturn(Optional.ofNullable(comment));
+        when(clubMemberRepository.findById(usualClubMemberId)).thenReturn(Optional.ofNullable(managerWithWrongAuthority));
 
         BaseException commentException = assertThrows(ServiceException.class, () -> commentService.deleteComment(usualClubMemberId, commentId));
         assertThat(commentException.getErrorResult()).isEqualTo(DELETE_AUTHORIZATION_DENIED);
@@ -396,7 +409,6 @@ public class CommentServiceTest {
         CommentMemberLikeDto.Response response = commentService.likeComment(clubMemberId,commentId);
 
         assertThat(response.getStatus()).isEqualTo(Status.LIKE);
-
     }
 
     @Test
@@ -418,7 +430,5 @@ public class CommentServiceTest {
         CommentMemberLikeDto.Response response = commentService.likeComment(clubMemberId,commentId);
 
         assertThat(response.getStatus()).isEqualTo(Status.DISLIKE);
-
-
     }
 }

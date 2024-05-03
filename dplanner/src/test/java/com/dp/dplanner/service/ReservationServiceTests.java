@@ -1,10 +1,7 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.*;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubAuthority;
-import com.dp.dplanner.domain.club.ClubAuthorityType;
-import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.adapter.dto.ReservationDto;
 import com.dp.dplanner.exception.*;
 import com.dp.dplanner.repository.*;
@@ -162,7 +159,7 @@ public class ReservationServiceTests {
         given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
 
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
 
         //when
         ReservationDto.Create createDto = getCreateDto(
@@ -182,7 +179,7 @@ public class ReservationServiceTests {
         given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
 
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
 
         //when
@@ -473,7 +470,7 @@ public class ReservationServiceTests {
     @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationByAdminThenConfirmed() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
 
         Long reservationId = 1L;
         Reservation reservation = createDefaultReservation(resource, clubMember);
@@ -497,7 +494,7 @@ public class ReservationServiceTests {
     @Disabled("예약 시간 수정은 불가능해짐에 따라 test disabled")
     public void updateReservationByManagerHasSCHEDULE_ALLThenConfirmed() throws Exception {
         //given
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
 
         Long reservationId = 1L;
@@ -701,7 +698,7 @@ public class ReservationServiceTests {
     @DisplayName("관리자는 예약을 삭제할 수 있다.")
     public void deleteReservationByAdmin() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
@@ -723,7 +720,7 @@ public class ReservationServiceTests {
     @DisplayName("권한이 있는 매니저는 예약을 삭제할 수 있다.")
     public void deleteReservationByManagerHasSCHEDULE_ALL() throws Exception {
         //given
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
@@ -745,7 +742,7 @@ public class ReservationServiceTests {
     @DisplayName("관리자는 같은 클럽의 다른 회원의 예약을 삭제할 수 있다.")
     public void deleteSameClubMemberReservationByAdmin() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
@@ -766,7 +763,7 @@ public class ReservationServiceTests {
     @DisplayName("관리자가 다른 클럽의 예약을 삭제하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void deleteOtherClubMemberReservationByAdminThenException() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long reservationId = 1L;
@@ -826,7 +823,7 @@ public class ReservationServiceTests {
     @DisplayName("관리자는 승인대기 상태의 예약을 승인할 수 있다.")
     public void confirmAllReservationsByAdmin() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
@@ -854,7 +851,7 @@ public class ReservationServiceTests {
     @DisplayName("권한이 있는 매니저는 승인대기 상태의 예약을 승인할 수 있다.")
     public void confirmAllReservationsByManagerHasSCHEDULE_ALL() throws Exception {
         //given
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
@@ -884,7 +881,7 @@ public class ReservationServiceTests {
     @Disabled("CANCEL 상태 삭제")
     public void confirmAllCanceledReservationThenDelete() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long canceledReservationId = 1L;
@@ -909,7 +906,7 @@ public class ReservationServiceTests {
     @DisplayName("다른 클럽의 예약을 승인하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void confirmAllOtherClubReservationThenException() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long otherClubReservationId = 1L;
@@ -953,7 +950,7 @@ public class ReservationServiceTests {
     @DisplayName("관리자는 승인 대기중인 예약을 거절할 수 있다.")
     public void rejectAllByAdmin() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         List<Long> reservationIds = new ArrayList<>(List.of(1L, 2L));
@@ -984,7 +981,7 @@ public class ReservationServiceTests {
     @DisplayName("권한이 있는 매니저는 승인 대기중인 예약을 거절할 수 있다.")
     public void rejectAllByManagerHasSCHEDULE_ALL() throws Exception {
         //given
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
@@ -1017,7 +1014,7 @@ public class ReservationServiceTests {
     @Disabled("CANCEL 상태 사용 안 함.")
     public void rejectAllCanceledReservationThenRemain() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long canceledReservationId = 1L;
@@ -1042,7 +1039,7 @@ public class ReservationServiceTests {
     @DisplayName("다른 클럽의 예약을 거절하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void rejectAllOtherClubReservationThenException() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Long otherClubReservationId = 1L;
@@ -1252,7 +1249,7 @@ public class ReservationServiceTests {
     @DisplayName("관리자는 승인 대기중인 예약들을 조회할 수 있다.")
     public void findAllNotConfirmedReservationsByAdmin() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Reservation unconfirmed1 = createReservation(
@@ -1278,7 +1275,7 @@ public class ReservationServiceTests {
     @DisplayName("권한이 있는 매니저는 승인 대기중인 예약들을 조회할 수 있다.")
     public void findAllNotConfirmedReservationsByManagerHasSCHEDULE_ALL() throws Exception {
         //given
-        clubMember.setManager();
+        clubMember.changeRole(ClubRole.MANAGER);
         clubMember.updateClubAuthority(clubAuthority);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
@@ -1305,7 +1302,7 @@ public class ReservationServiceTests {
     @DisplayName("다른 클럽의 승인 대기중인 예약을 조회하려 하면 DIFFERENT_CLUB_EXCEPTION")
     public void findAllNotConfirmedReservationWhenOtherClubThenException() throws Exception {
         //given
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
 
         Reservation unconfirmed1 = createReservation(

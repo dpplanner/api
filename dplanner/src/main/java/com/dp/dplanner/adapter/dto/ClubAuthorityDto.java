@@ -107,7 +107,7 @@ public class ClubAuthorityDto {
                     .clubId(clubId)
                     .name(clubAuthority.getName())
                     .description(clubAuthority.getDescription())
-                    .authorities(clubAuthority.clubAuthorityTypeToString())
+                    .authorities(clubAuthority.getClubAuthorityTypes().stream().map(ClubAuthorityType::name).collect(Collectors.toList()))
                     .build();
         }
 

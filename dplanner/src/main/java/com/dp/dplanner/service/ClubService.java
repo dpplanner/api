@@ -51,7 +51,9 @@ public class ClubService {
 
         member.updateRecentClub(club);
 
-        ClubMember clubMember = ClubMember.createAdmin(member, club);
+        ClubMember clubMember = ClubMember.createClubMember(member, club);
+        clubMember.changeRole(ADMIN);
+        clubMember.confirm();
         clubMemberRepository.save(clubMember);
 
         return ClubDto.Response.of(club);

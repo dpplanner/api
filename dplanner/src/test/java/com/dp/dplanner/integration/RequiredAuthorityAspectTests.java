@@ -51,7 +51,7 @@ public class RequiredAuthorityAspectTests {
     public void requestByAdmin() throws Exception {
         //given
         ClubMember admin = ClubMember.builder().club(club).member(member).build();
-        admin.setAdmin();
+        admin.changeRole(ClubRole.ADMIN);
         entityManager.persist(admin);
 
         assert admin.checkRoleIs(ClubRole.ADMIN);
@@ -66,16 +66,13 @@ public class RequiredAuthorityAspectTests {
     public void requestByAuthorizedManager() throws Exception {
         //given
         ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.MEMBER_ALL));
-
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
-        manager.setManager();
+        manager.changeRole(ClubRole.MANAGER);
         manager.updateClubAuthority(clubAuthority);
 
         entityManager.persist(clubAuthority);
         entityManager.persist(manager);
 
-        assert manager.checkRoleIs(ClubRole.MANAGER)
-                && manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
 
         //when
         //then
@@ -87,11 +84,28 @@ public class RequiredAuthorityAspectTests {
     public void requestByUnauthorizedManagerThenException() throws Exception {
         //given
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
-        manager.setManager();
+        manager.changeRole(ClubRole.MANAGER);
+
         entityManager.persist(manager);
 
-        assert manager.checkRoleIs(ClubRole.MANAGER)
-                && !manager.hasAuthority(ClubAuthorityType.MEMBER_ALL);
+        //when
+        //then
+        assertThatThrownBy(() -> targetClass.targetMethod(manager.getId()))
+                .isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    @DisplayName("다른 권한을 가진 매니저가 요청하면 ServiceException")
+    public void requestByWrongClubAuthorityManagerThenException() throws Exception {
+        //given
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", List.of(ClubAuthorityType.POST_ALL));
+        ClubMember manager = ClubMember.builder().club(club).member(member).build();
+        manager.changeRole(ClubRole.MANAGER);
+        manager.updateClubAuthority(clubAuthority);
+
+        entityManager.persist(clubAuthority);
+        entityManager.persist(manager);
+
 
         //when
         //then
@@ -120,7 +134,7 @@ public class RequiredAuthorityAspectTests {
     {
         //given
         ClubMember admin = ClubMember.builder().club(club).member(member).build();
-        admin.setAdmin();
+        admin.changeRole(ClubRole.ADMIN);
         entityManager.persist(admin);
 
         assert admin.getRole().equals(ClubRole.ADMIN);
@@ -143,7 +157,7 @@ public class RequiredAuthorityAspectTests {
         entityManager.persist(clubMember);
 
         ClubMember manager = ClubMember.builder().club(club).member(member).build();
-        manager.setManager();
+        manager.changeRole(ClubRole.MANAGER);
         entityManager.persist(manager);
 
         assert clubMember.getRole().equals(ClubRole.USER);

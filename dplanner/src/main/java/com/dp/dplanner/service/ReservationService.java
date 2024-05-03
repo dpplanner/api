@@ -53,9 +53,7 @@ public class ReservationService {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
 
-        if (!clubMember.isConfirmed()) {
-            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
-        }
+        checkIsConfirmed(clubMember);
         Reservation reservation;
 
         Resource resource = resourceRepository.findById(resourceId)
@@ -403,11 +401,18 @@ public class ReservationService {
             throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
+    private static void checkIsConfirmed(ClubMember clubMember) {
+        if (!clubMember.getIsConfirmed()) {
+            throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
+        }
+    }
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
         if (clubMember.hasAuthority(SCHEDULE_ALL)) {
             reservation.confirm();
         }
     }
+
+
     //ToDO refactor
     private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
         return reservation.getClubMember().getId().equals(clubMemberId);
@@ -431,7 +436,7 @@ public class ReservationService {
                     Optional<ClubMember> inviteeOptional = clubMemberRepository.findById(inviteeId);
                     if(inviteeOptional.isPresent()){
                         ClubMember invitee = inviteeOptional.get();
-                        if(invitee.isSameClub(inviter)){
+                        if(invitee.isSameClub(inviter.getClub().getId())){
                             ReservationInvitee reservationInvitee = ReservationInvitee.builder()
                                     .clubMember(invitee)
                                     .reservation(reservation)
