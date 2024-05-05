@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static jakarta.persistence.FetchType.LAZY;
 
@@ -44,10 +43,6 @@ public class ClubAuthority {
         this.clubAuthorityTypes = clubAuthorityTypes;
         this.name = name;
         this.description = description;
-    }
-
-    public List<String> clubAuthorityTypeToString() {
-        return clubAuthorityTypes.stream().map(ClubAuthorityType::name).collect(Collectors.toList());
     }
 
     public boolean hasAuthority(ClubAuthorityType authority) {

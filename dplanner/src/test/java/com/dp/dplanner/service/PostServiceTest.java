@@ -5,11 +5,11 @@ import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.adapter.dto.AttachmentDto;
 import com.dp.dplanner.adapter.dto.PostMemberLikeDto;
 import com.dp.dplanner.adapter.dto.Status;
+import com.dp.dplanner.domain.club.ClubRole;
 import com.dp.dplanner.exception.BaseException;
 import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.*;
@@ -52,12 +52,9 @@ public class PostServiceTest {
     @Mock
     ClubMemberRepository clubMemberRepository;
     @Mock
-    ClubMemberService clubMemberService;
-    @Mock
     AttachmentService attachmentService;
     @Mock
     MessageService messageService;
-
     @InjectMocks
     private PostService postService;
     Member member;
@@ -102,7 +99,7 @@ public class PostServiceTest {
                 .name("test")
                 .info("test")
                 .build();
-        adminMember.setAdmin();
+        adminMember.changeRole(ClubRole.ADMIN);
         adminMemberId = 40L;
         ReflectionTestUtils.setField(adminMember, "id", adminMemberId);
 
@@ -300,9 +297,9 @@ public class PostServiceTest {
     public void PostService_DeletePostByAdmin_ReturnVoid() {
 
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
-        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(adminMember));
-        when(clubMemberService.hasAuthority(adminMember.getId(), ClubAuthorityType.POST_ALL)).thenReturn(true);
-        assertAll(() -> postService.deletePostById(clubMemberId,postId));
+        when(clubMemberRepository.findById(adminMemberId)).thenReturn(Optional.ofNullable(adminMember));
+
+        assertAll(() -> postService.deletePostById(adminMemberId,postId));
 
     }
 
@@ -320,7 +317,6 @@ public class PostServiceTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
-        when(clubMemberService.hasAuthority(clubMember.getId(), ClubAuthorityType.POST_ALL)).thenReturn(false);
 
         BaseException postException = assertThrows(ServiceException.class, () -> postService.deletePostById(clubMemberId, postId));
         assertThat(postException.getErrorResult()).isEqualTo(DELETE_AUTHORIZATION_DENIED);

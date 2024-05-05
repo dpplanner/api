@@ -2,10 +2,7 @@ package com.dp.dplanner.integration;
 
 import com.dp.dplanner.TestConfig;
 import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.club.Club;
-import com.dp.dplanner.domain.club.ClubAuthority;
-import com.dp.dplanner.domain.club.ClubAuthorityType;
-import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.adapter.dto.ClubAuthorityDto;
 import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.service.ClubService;
@@ -41,7 +38,7 @@ public class ClubServiceIntegrationTests {
         Member member = Member.builder().build();
         Club club = Club.builder().clubName("club").build();
         clubMember = ClubMember.builder().club(club).member(member).build();
-        clubMember.setAdmin();
+        clubMember.changeRole(ClubRole.ADMIN);
         clubMember.confirm();
 
         entityManager.persist(member);

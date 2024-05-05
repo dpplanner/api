@@ -345,7 +345,7 @@ class ClubMemberRepositoryTest {
                 .name("Authority1")
                 .build();
 
-        clubMember1.setManager();
+        clubMember1.changeRole(ClubRole.MANAGER);
         clubMember1.updateClubAuthority(authority1);
 
         clubAuthorityRepository.save(authority1);

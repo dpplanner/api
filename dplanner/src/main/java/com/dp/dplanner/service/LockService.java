@@ -33,11 +33,11 @@ public class LockService {
     @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional
     public Response createLock(Long clubMemberId, Create createDto) {
-
         checkIfThereExistsLocksDuringPeriod(createDto.getStartDateTime(), createDto.getEndDateTime(), createDto.getResourceId(), null);
 
         Resource resource = getResource(createDto.getResourceId());
-        checkIsSameClub(clubMemberId, resource);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubMember, resource.getClub().getId());
 
         Lock lock = lockRepository.save(createDto.toEntity(resource));
 
@@ -45,9 +45,9 @@ public class LockService {
     }
 
     public Response getLock(Long clubMemberId, Long lockId) {
-
         Lock lock = getLock(lockId);
-        checkIsSameClub(clubMemberId, lock.getResource());
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubMember, lock.getResource().getClub().getId());
 
         return Response.of(lock);
 
@@ -56,10 +56,9 @@ public class LockService {
     @Transactional
     public void deleteLock(Long clubMemberId, Long lockId) {
         Lock lock = getLock(lockId);
-
         Resource resource = lock.getResource();
-        checkIsSameClub(clubMemberId, resource);
-
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubMember, resource.getClub().getId());
 
         lockRepository.delete(lock);
     }
@@ -67,12 +66,12 @@ public class LockService {
     @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional
     public Response updateLock(Long clubMemberId, Update updateDto) {
-
         Lock lock = getLock(updateDto.getId());
-
         checkIfThereExistsLocksDuringPeriod(updateDto.getStartDateTime(), updateDto.getEndDateTime(), updateDto.getResourceId(), lock);
+
         Resource resource = lock.getResource();
-        checkIsSameClub(clubMemberId, resource);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubMember, resource.getClub().getId());
 
         lock.update(new Period(updateDto.getStartDateTime(), updateDto.getEndDateTime()), updateDto.getMessage());
 
@@ -80,23 +79,25 @@ public class LockService {
     }
 
     public List<Response> getLocks(Long clubMemberId, Long resourceId, Period period) {
-
         Resource resource = getResource(resourceId);
-        checkIsSameClub(clubMemberId, resource);
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubMember, resource.getClub().getId());
 
         List<Lock> locks = lockRepository.findBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
 
         return Response.ofList(locks);
     }
 
-    private void checkIsSameClub(Long clubMemberId, Resource resource) {
-        ClubMember clubMember = getClubMember(clubMemberId);
-        if (!clubMember.isSameClub(resource)) {
+
+
+    /**
+     * utility methods
+     */
+    private void checkIsSameClub(ClubMember clubMember, Long targetClubId) {
+        if (!clubMember.isSameClub(targetClubId)) {
             throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
-
     }
-
     /**
      * @param target : 제외시킬 Lock
      */
@@ -107,15 +108,12 @@ public class LockService {
             throw new ServiceException(PERIOD_OVERLAPPED_EXCEPTION);
         }
     }
-
     private Lock getLock(Long lockId) {
         return lockRepository.findById(lockId).orElseThrow(()->new ServiceException(LOCK_NOT_FOUND));
     }
-
     private Resource getResource(Long resourceId) {
         return resourceRepository.findById(resourceId).orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
     }
-
     private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
     }
