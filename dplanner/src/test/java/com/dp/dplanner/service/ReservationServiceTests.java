@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -248,24 +249,24 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("일반 사용자는 현재로부터 7주일 밖 시간은 예약할 수 없다. RESERVATION_UNAVAILABLE")
+    @DisplayName("일반 사용자는 현재로부터 bookableSpan 이후 날짜는 예약할 수 없다. RESERVATION_UNAVAILABLE")
     public void createReservation7DaysAwayThenException() throws Exception {
         //given
         given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
-        LocalDateTime daysBefore7 = LocalDateTime.of(2023, 7, 5, 0, 0);
-        given(clock.instant()).willReturn(daysBefore7.atZone(ZoneId.systemDefault()).toInstant());
+        LocalDateTime now = LocalDateTime.of(2023, 8, 2, 20, 0); // now : 2023-08-02
+        given(clock.instant()).willReturn(now.atZone(ZoneId.systemDefault()).toInstant());
         given(clock.getZone()).willReturn(ZoneId.systemDefault());
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false,  LocalDateTime.of(2023, 8, 10, 20, 0), LocalDateTime.of(2023, 8, 10, 21, 0));
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
-        assertThat(exception.getErrorResult()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
-                .isEqualTo(RESERVATION_UNAVAILABLE);
+        assertThat(exception.getMessage()).as("예약이 불가능하면 RESERVATION_UNAVAILABLE 예외를 던진다.")
+                .isEqualTo("BookableSpan Validation Error");
     }
 
     @Test
@@ -1376,6 +1377,26 @@ public class ReservationServiceTests {
         assertThat(exception.getErrorResult()).as("다른 클럽의 예약에 접근하면 DIFFERENT_CLUB_EXCEPTION를 던진다")
                 .isEqualTo(DIFFERENT_CLUB_EXCEPTION);
     }
+
+    @Test
+    public void testBookableSpan() throws Exception
+    {
+
+        Long bookableSpan = 7L;
+        System.out.println(LocalDate.now());
+        LocalDate nowDate = LocalDate.of(2024, 5, 5);
+        LocalDate endDate = LocalDate.of(2024, 5, 12);
+        LocalDate limit = nowDate.plusDays(bookableSpan);
+
+        assert !endDate.isAfter(limit);
+
+        LocalDate nowDate2 = LocalDate.of(2024, 12, 31);
+        LocalDate endDate2 = LocalDate.of(2025, 1, 7);
+        LocalDate limit2 = nowDate2.plusDays(bookableSpan);
+
+        assert !endDate2.isAfter(limit2);
+    }
+
 
     /**
      * Argument capture method

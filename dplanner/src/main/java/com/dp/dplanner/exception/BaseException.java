@@ -5,4 +5,7 @@ public abstract class BaseException extends RuntimeException {
     public BaseException(ErrorResult errorResult) {
         super(errorResult.getMessage());
     }
+    public BaseException(String message) {
+        super(message);
+    }
 }

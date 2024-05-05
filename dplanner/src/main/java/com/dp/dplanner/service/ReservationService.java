@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -68,12 +68,7 @@ public class ReservationService {
             }
 
             // 현재 시간과 예약 시작 시간 사이의 차이를 계산합니다.
-            LocalDateTime now = LocalDateTime.now(clock);
-            long secondsDifference = ChronoUnit.SECONDS.between(now, startDateTime);
-            Long bookableSpan = resource.getBookableSpan();
-            if ((secondsDifference > (bookableSpan * 24 * 60 * 60))) { // ex) 7 * 24 * 60 * 60 초, 일주일
-                throw new ServiceException(RESERVATION_UNAVAILABLE);
-            }
+            checkIsInBookableSpan(resource, endDateTime);
             // 레디스 확인
             Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
             if(!cache){
@@ -125,7 +120,7 @@ public class ReservationService {
         Long resourceId = updateDto.getResourceId();
         LocalDateTime start = updateDto.getStartDateTime();
         LocalDateTime end = updateDto.getEndDateTime();
-        
+
 // 예약 시간 수정 불가능하기 때문에 시간 및 락 검사할 필요 없음
 //        if (!isUpdatable(reservationId, resourceId, start, end)) {
 //            throw new ServiceException(RESERVATION_UNAVAILABLE);
@@ -401,6 +396,7 @@ public class ReservationService {
             throw new ServiceException(DIFFERENT_CLUB_EXCEPTION);
         }
     }
+
     private static void checkIsConfirmed(ClubMember clubMember) {
         if (!clubMember.getIsConfirmed()) {
             throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
@@ -409,6 +405,15 @@ public class ReservationService {
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
         if (clubMember.hasAuthority(SCHEDULE_ALL)) {
             reservation.confirm();
+        }
+    }
+    private void checkIsInBookableSpan(Resource resource, LocalDateTime endDateTime) {
+        Long bookableSpan = resource.getBookableSpan();
+        LocalDate nowDate = LocalDate.now(clock);
+        LocalDate endDate = endDateTime.toLocalDate();
+        LocalDate limit = nowDate.plusDays(bookableSpan);
+        if ((endDate.isAfter(limit))) {
+            throw new ServiceException("BookableSpan Validation Error");
         }
     }
 
