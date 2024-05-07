@@ -45,40 +45,26 @@ public class ReservationService {
         Long resourceId = createDto.getResourceId();
         LocalDateTime startDateTime = createDto.getStartDateTime();
         LocalDateTime endDateTime = createDto.getEndDateTime();
-        // 이미 예약이 있는지 검사
-        if (reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)) {
-            throw new ServiceException(RESERVATION_UNAVAILABLE);
-        }
 
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-
-        checkIsConfirmed(clubMember);
-        Reservation reservation;
-
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ServiceException(RESOURCE_NOT_FOUND));
-        //일반 사용자 요청 처리
+        Reservation reservation;
+
+        checkIsConfirmed(clubMember);
+        checkIsSameClub(clubMember, resource.getClub().getId());
+        checkIsReserved(resourceId, startDateTime, endDateTime);
+        checkIsReservedCache(resourceId, startDateTime, endDateTime);
+
         if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
-            checkIsSameClub(clubMember, resource.getClub().getId());
-
-            // 락 여부 조사
-            if (isLocked(resourceId, startDateTime, endDateTime)) {
-                throw new ServiceException(RESERVATION_UNAVAILABLE);
-            }
-
-            // 현재 시간과 예약 시작 시간 사이의 차이를 계산합니다.
+            //일반 사용자 요청 처리
+            checkIsLocked(resourceId, startDateTime, endDateTime);
             checkIsInBookableSpan(resource, endDateTime);
-            // 레디스 확인
-            Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
-            if(!cache){
-                throw new ServiceException(RESERVATION_UNAVAILABLE);
-            }
             // 예약을 생성합니다.
             reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
             // 관리자에게 메시지를 전송합니다.
             List<ClubMember> adminClubMembers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(resource.getClub().getId(), SCHEDULE_ALL);
-
             messageService.createPrivateMessage(adminClubMembers,
                     Message.requestMessage(
                             Message.MessageContentBuildDto.builder().
@@ -90,14 +76,7 @@ public class ReservationService {
 
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
         } else {
-            // 사용자가 예약 관리 권한을 가진 경우
-            checkIsSameClub(clubMember,resource.getClub().getId());
-            // 레디스 확인
-
-            Boolean cache = redisReservationService.saveReservation(startDateTime, endDateTime, resourceId);
-            if(!cache){
-                throw new ServiceException(RESERVATION_UNAVAILABLE);
-            }
+            // 예약 관리 권한을 가진 매니저 및 관리자 요청 처리
             // 예약을 생성하고 승인합니다.
             reservation = createDto.toEntity(clubMember, resource);
             reservation.confirm();
@@ -117,21 +96,12 @@ public class ReservationService {
     @Transactional
     public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto) {
         Long reservationId = updateDto.getReservationId();
-        Long resourceId = updateDto.getResourceId();
         LocalDateTime start = updateDto.getStartDateTime();
         LocalDateTime end = updateDto.getEndDateTime();
-
-// 예약 시간 수정 불가능하기 때문에 시간 및 락 검사할 필요 없음
-//        if (!isUpdatable(reservationId, resourceId, start, end)) {
-//            throw new ServiceException(RESERVATION_UNAVAILABLE);
-//        }
-
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
-        if (!isReservationOwner(clubMemberId, reservation)) {
-            throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
-        }
+        checkIsReservationOwner(clubMemberId, reservation);
 
         if (reservation.getPeriod().equals(new Period(start, end))) {
                 reservation.updateNotChangeStatus(
@@ -159,10 +129,7 @@ public class ReservationService {
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
         Reservation reservation = reservationRepository.findById(deleteDto.getReservationId())
                 .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
-
-        if (!isReservationOwner(clubMemberId, reservation)) {
-            throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
-        }
+        checkIsReservationOwner(clubMemberId, reservation);
         redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         reservationRepository.delete(reservation);
 
@@ -389,7 +356,7 @@ public class ReservationService {
 
 
     /**
-     * utility methods
+     * 같은 클럽인지 검사
      */
     private static void checkIsSameClub(ClubMember clubMember, Long targetClubId) {
         if (!clubMember.isSameClub(targetClubId)) {
@@ -397,6 +364,9 @@ public class ReservationService {
         }
     }
 
+    /**
+     * 클럽 가입 상태 검사
+     */
     private static void checkIsConfirmed(ClubMember clubMember) {
         if (!clubMember.getIsConfirmed()) {
             throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
@@ -407,6 +377,9 @@ public class ReservationService {
             reservation.confirm();
         }
     }
+    /**
+     * 리소스의 bookableSpan 유효성 검사
+     */
     private void checkIsInBookableSpan(Resource resource, LocalDateTime endDateTime) {
         Long bookableSpan = resource.getBookableSpan();
         LocalDate nowDate = LocalDate.now(clock);
@@ -416,19 +389,40 @@ public class ReservationService {
             throw new ServiceException("BookableSpan Validation Error");
         }
     }
+    /**
+     *  락 여부 검사
+     */
+    private void checkIsLocked(Long resourceId, LocalDateTime start, LocalDateTime end) {
+        if(lockRepository.existsBetween(start, end, resourceId)){
+            throw new ServiceException(RESERVATION_UNAVAILABLE);
+        }
+    }
+    /**
+     * 데이터베이스에 이미 예약이 있는지 검사
+     */
+    private void checkIsReserved(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        if (reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)) {
+            throw new ServiceException(RESERVATION_UNAVAILABLE);
+        }
+    }
+    /**
+     * 캐시에 이미 예약이 있는지 검사
+     */
+    private void checkIsReservedCache(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        if(!redisReservationService.saveReservation(startDateTime, endDateTime, resourceId)){
+            throw new ServiceException(RESERVATION_UNAVAILABLE);
+        }
+    }
 
+    /**
+     * 예약 주인인지 검사
+     */
+    private static void checkIsReservationOwner(Long clubMemberId, Reservation reservation) {
+        if (!reservation.getClubMember().getId().equals(clubMemberId)) {
+            throw new ServiceException(AUTHORIZATION_DENIED);
+        }
+    }
 
-    //ToDO refactor
-    private static boolean isReservationOwner(Long clubMemberId, Reservation reservation) {
-        return reservation.getClubMember().getId().equals(clubMemberId);
-    }
-    private boolean isUpdatable(Long reservationId, Long resourceId, LocalDateTime start, LocalDateTime end) {
-        return !(reservationRepository.existsOthersBetween(start, end, resourceId, reservationId)
-        || isLocked(resourceId, start, end));
-    }
-    private boolean isLocked(Long resourceId, LocalDateTime start, LocalDateTime end) {
-        return lockRepository.existsBetween(start, end, resourceId);
-    }
     /**
      * @param clubMemberIds : invitee ids
      * @param inviter       : inviter

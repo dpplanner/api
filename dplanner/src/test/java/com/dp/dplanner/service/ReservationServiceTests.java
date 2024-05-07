@@ -198,9 +198,8 @@ public class ReservationServiceTests {
         //given
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
         given(redisReservationService.saveReservation(any(), any(), any())).willReturn(false);
-        given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
-        given(clock.getZone()).willReturn(ZoneId.systemDefault());
 
         //when
         ReservationDto.Create createDto = getCreateDto(
@@ -216,6 +215,8 @@ public class ReservationServiceTests {
     @DisplayName("요청한 시간에 다른 예약이 있으면 RESERVATION_UNAVAILABLE")
     public void createReservationWhenPeriodOverlappedThenException() throws Exception {
         //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
         given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
 
         //when
@@ -233,9 +234,11 @@ public class ReservationServiceTests {
     @DisplayName("요청한 시간에 락이 걸려 있으면 RESERVATION_UNAVAILABLE")
     public void createReservationWhenLockedThenException() throws Exception {
         //given
-        given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(true);
+        given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
+        given(redisReservationService.saveReservation(any(), any(), eq(resource.getId()))).willReturn(true);
 
         //when
         //then
@@ -255,6 +258,9 @@ public class ReservationServiceTests {
         given(lockRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
         given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
         given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
+        given(redisReservationService.saveReservation(any(), any(), eq(resource.getId()))).willReturn(true);
+
         LocalDateTime now = LocalDateTime.of(2023, 8, 2, 20, 0); // now : 2023-08-02
         given(clock.instant()).willReturn(now.atZone(ZoneId.systemDefault()).toInstant());
         given(clock.getZone()).willReturn(ZoneId.systemDefault());
@@ -310,6 +316,7 @@ public class ReservationServiceTests {
         Long unconfirmedId = 3L;
         ClubMember unconfirmed = ClubMember.createClubMember(Member.builder().build(), Club.builder().build());
         given(clubMemberRepository.findById(unconfirmedId)).willReturn(Optional.ofNullable(unconfirmed));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
 
         //when
         //then
@@ -559,7 +566,7 @@ public class ReservationServiceTests {
     }
 
     @Test
-    @DisplayName("다른 사람의 예약을 수정하려 하면 UPDATE_AUTHORIZATION_DENIED")
+    @DisplayName("다른 사람의 예약을 수정하려 하면 AUTHORIZATION_DENIED")
     public void updateReservationByOtherClubMemberThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -575,8 +582,8 @@ public class ReservationServiceTests {
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.updateReservation(otherClubMember.getId(), updateDto));
-        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 UPDATE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(UPDATE_AUTHORIZATION_DENIED);
+        assertThat(exception.getErrorResult()).as("수정 권한이 없으면 AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(AUTHORIZATION_DENIED);
     }
 
     @Test
@@ -659,7 +666,7 @@ public class ReservationServiceTests {
     }
     
     @Test
-    @DisplayName("일반 회원이 다른 회원의 예약을 취소하는 경우 DELETE_AUTHORIZATION_DENIED")
+    @DisplayName("일반 회원이 다른 회원의 예약을 취소하는 경우 AUTHORIZATION_DENIED")
     public void cancelOtherClubMemberReservationThenException() throws Exception {
         //given
         Long reservationId = 1L;
@@ -671,8 +678,8 @@ public class ReservationServiceTests {
         ReservationDto.Delete deleteDto = new ReservationDto.Delete(reservationId);
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.cancelReservation(clubMember.getId(), deleteDto));
-        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 DELETE_AUTHORIZATION_DENIED 예외를 던진다")
-                .isEqualTo(DELETE_AUTHORIZATION_DENIED);
+        assertThat(exception.getErrorResult()).as("삭제 권한이 없으면 AUTHORIZATION_DENIED 예외를 던진다")
+                .isEqualTo(AUTHORIZATION_DENIED);
     }
 
     @Test
