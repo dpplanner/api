@@ -61,6 +61,7 @@ public class ReservationService {
             //일반 사용자 요청 처리
             checkIsLocked(resourceId, startDateTime, endDateTime);
             checkIsInBookableSpan(resource, endDateTime);
+            checkIsPastReservation(startDateTime, endDateTime);
             // 예약을 생성합니다.
             reservation = reservationRepository.save(createDto.toEntity(clubMember, resource));
             // 관리자에게 메시지를 전송합니다.
@@ -413,13 +414,21 @@ public class ReservationService {
             throw new ServiceException(RESERVATION_UNAVAILABLE);
         }
     }
-
     /**
      * 예약 주인인지 검사
      */
     private static void checkIsReservationOwner(Long clubMemberId, Reservation reservation) {
         if (!reservation.getClubMember().getId().equals(clubMemberId)) {
             throw new ServiceException(AUTHORIZATION_DENIED);
+        }
+    }
+    /**
+     * 요청한 예약 시간이 과거 시간인지 검사
+     */
+    private void checkIsPastReservation(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        if (endDateTime.isBefore(now) || endDateTime.isEqual(now)) {
+            throw new ServiceException(REQUEST_IS_INVALID);
         }
     }
 

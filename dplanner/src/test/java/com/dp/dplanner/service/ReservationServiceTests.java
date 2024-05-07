@@ -276,6 +276,32 @@ public class ReservationServiceTests {
     }
 
     @Test
+    @DisplayName("일반 회원은 과거 시간의 예약 요청을 할 수 없다..")
+    public void createPastReservationRequestByUserThrowException() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(reservationRepository.existsBetween(any(), any(), eq(resource.getId()))).willReturn(false);
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
+        fixedNow = LocalDateTime.of(2023, 8, 10, 20, 0);
+        given(clock.instant()).willReturn(fixedNow.atZone(ZoneId.systemDefault()).toInstant());
+        given(clock.getZone()).willReturn(ZoneId.systemDefault());
+
+        //when
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(18), getTime(19));
+        //then
+        BaseException exception = assertThrows(ServiceException.class, () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(exception.getMessage()).isEqualTo(REQUEST_IS_INVALID.getMessage());
+
+        //when
+        ReservationDto.Create createDto2 = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(18), getTime(20));
+        //then
+        BaseException exception2 = assertThrows(ServiceException.class, () -> reservationService.createReservation(clubMember.getId(), createDto2));
+        assertThat(exception2.getMessage()).isEqualTo(REQUEST_IS_INVALID.getMessage());
+    }
+    @Test
     @DisplayName("다른 클럽의 회원이 요청하면 DIFFERENT_CLUB_EXCEPTION")
     public void createReservationByOtherClubMemberThenException() throws Exception {
         //given
