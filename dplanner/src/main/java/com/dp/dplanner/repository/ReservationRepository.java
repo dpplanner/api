@@ -5,6 +5,7 @@ import com.dp.dplanner.domain.ReservationStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -149,6 +150,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             """
     )
     List<Reservation> findAllNotReturned(@Param("now") LocalDateTime now);
+
+
+    @Modifying
+    @Query(
+            """
+            update Reservation r
+            set r.status = 'REJECTED'
+            where r.status = 'REQUEST' AND r.period.endDateTime  <= :now
+            """
+    )
+    int updateNotConfirmedReservationStatus(@Param("now") LocalDateTime now);
     /**
      *  스케줄링 관련 메서드
      */
