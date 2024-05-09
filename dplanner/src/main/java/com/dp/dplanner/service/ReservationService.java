@@ -387,7 +387,7 @@ public class ReservationService {
         LocalDate endDate = endDateTime.toLocalDate();
         LocalDate limit = nowDate.plusDays(bookableSpan);
         if ((endDate.isAfter(limit))) {
-            throw new ServiceException("BookableSpan Validation Error");
+            throw new ServiceException("BookableSpan Validation Error",400);
         }
     }
     /**

@@ -1,8 +1,7 @@
 package com.dp.dplanner.adapter.controller;
 
 import com.dp.dplanner.adapter.dto.CommonResponse;
-import com.dp.dplanner.adapter.exception.ApiException;
-import com.dp.dplanner.service.exception.ServiceException;
+import com.dp.dplanner.exception.BaseException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -33,13 +32,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Throwable.class)
     public CommonResponse handleException(Throwable throwable, HttpServletResponse response) {
         log.error("throwable {}", throwable);
-        if (throwable instanceof ApiException) {
-            var e = (ApiException) throwable;
-            response.setStatus(e.getErrorResult().getHttpStatus().value());
-            return this.makeErrorResponseEntity(e.getMessage());
-        } else if (throwable instanceof ServiceException) {
-            var e = (ServiceException) throwable;
-            response.setStatus(e.getErrorResult().getHttpStatus().value());
+        if (throwable instanceof BaseException) {
+            var e = (BaseException) throwable;
+            response.setStatus(e.getErrorCode());
             return this.makeErrorResponseEntity(e.getMessage());
         }else{
             var e = throwable;
