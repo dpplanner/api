@@ -305,7 +305,7 @@ public class ReservationRepositoryTests {
         assert reservation2.getStatus() == ReservationStatus.REQUEST;
 
         Reservation reservation3 = persistReservation(16, 18);
-        reservation3.reject();
+        reservation3.reject("rejectMessage");
         assert reservation3.getStatus() == ReservationStatus.REJECTED;
 
         Reservation reservation4 = persistReservation(18, 20);

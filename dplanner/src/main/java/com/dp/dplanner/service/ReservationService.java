@@ -215,7 +215,7 @@ public class ReservationService {
 
         reservations.forEach(reservation -> {
             checkIsSameClub(manager,reservation.getResource().getClub().getId());
-            reservation.reject();
+            reservation.reject(requestDto.get(0).getRejectMessage());
             redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
         });
 

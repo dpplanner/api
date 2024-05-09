@@ -89,6 +89,7 @@ public class ReservationDto {
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
+        private String rejectMessage;
 
         public Request(Long reservationId) {
             this.reservationId = reservationId;

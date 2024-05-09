@@ -148,12 +148,12 @@ public class ScheduleTasks {
         }
     }
     // 자정마다 요청 시간 지난 REQUEST 상태인 예약 REJECTED로 변경
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 12 * * *")
     public void task4() {
         try{
             LocalDateTime now = LocalDateTime.now();
             int count = reservationRepository.updateNotConfirmedReservationStatus(now);
-            log.info("ScheduleTasks4 {}",count);
+            log.info("ScheduleTasks4, update rows : {}  ",count);
         }catch (RuntimeException ex){
             log.error("ScheduleTasks4");
         }

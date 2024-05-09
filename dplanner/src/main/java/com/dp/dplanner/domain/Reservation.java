@@ -37,6 +37,7 @@ public class Reservation extends BaseEntity{
     private List<ReservationInvitee> reservationInvitees = new ArrayList<>();
 
     private String returnMessage;
+    private String rejectMessage;
 
     @Embedded
     private Period period;
@@ -82,8 +83,9 @@ public class Reservation extends BaseEntity{
     }
 
 
-    public void reject() {
+    public void reject(String rejectMessage) {
         this.status = REJECTED;
+        this.rejectMessage = rejectMessage;
     }
 
     public boolean isConfirmed() {

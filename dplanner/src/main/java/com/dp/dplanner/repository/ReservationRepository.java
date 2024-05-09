@@ -156,7 +156,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query(
             """
             update Reservation r
-            set r.status = 'REJECTED'
+            set r.status = 'REJECTED' , r.rejectMessage = "예약시간이 지나 자동으로 예약이 거절되었습니다." 
             where r.status = 'REQUEST' AND r.period.endDateTime  <= :now
             """
     )
