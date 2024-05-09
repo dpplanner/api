@@ -7,11 +7,13 @@ import com.dp.dplanner.domain.Resource;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.exception.BaseException;
+import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.service.exception.ServiceException;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.LockRepository;
 import com.dp.dplanner.repository.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,6 +39,8 @@ public class LockServiceTest {
 
     @Mock
     LockRepository lockRepository;
+    @Mock
+    ReservationRepository reservationRepository;
     @Mock
     ResourceRepository resourceRepository;
     @Mock
@@ -93,6 +97,7 @@ public class LockServiceTest {
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
         when(lockRepository.save(any(Lock.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(reservationRepository.existsBetween(any(), any(), eq(resourceId))).thenReturn(false);
 
         Response response = lockService.createLock(clubMemberId, createDto);
 
@@ -120,10 +125,35 @@ public class LockServiceTest {
                 .period(new Period(start, end))
                 .build();
 
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
         when(lockRepository.findBetween(start, end, resourceId)).thenReturn(Arrays.asList(lock));
 
         BaseException lockException = assertThrows(ServiceException.class, () -> lockService.createLock(clubMemberId, createDto));
         assertThat(lockException.getErrorResult()).isEqualTo(PERIOD_OVERLAPPED_EXCEPTION);
+    }
+
+    @Test
+    @DisplayName("예약이 존재하는 시간대에 락을 잡을 수 없다")
+    public void LockService_CreateLock_ThrowException_ReservationReserved(){
+
+        LocalDateTime start = LocalDateTime.of(2023,8,11,12,0,0);
+        LocalDateTime end = start.plusDays(7);
+
+        Create createDto = Create.builder()
+                .startDateTime(start)
+                .endDateTime(end)
+                .resourceId(resourceId)
+                .build();
+
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(resourceRepository.findById(resourceId)).thenReturn(Optional.ofNullable(resource));
+        when(lockRepository.findBetween(start, end, resourceId)).thenReturn(List.of());
+        when(reservationRepository.existsBetween(any(), any(), eq(resourceId))).thenReturn(true);
+
+
+        BaseException lockException = assertThrows(ServiceException.class, () -> lockService.createLock(clubMemberId, createDto));
+        assertThat(lockException.getMessage()).isEqualTo("reservation is already reserved. Can not lock that request time.");
     }
 
     @Test
@@ -150,7 +180,6 @@ public class LockServiceTest {
         when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
         when(resourceRepository.findById(createDto.getResourceId())).thenReturn(Optional.ofNullable(otherClubResource));
 
-        assertThatThrownBy(() -> lockService.createLock(clubMemberId, createDto)).isInstanceOf(RuntimeException.class);
 
         BaseException clubMemberException = assertThrows(ServiceException.class, () -> lockService.createLock(clubMemberId, createDto));
         assertThat(clubMemberException.getErrorResult()).isEqualTo(DIFFERENT_CLUB_EXCEPTION);

@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
@@ -25,6 +26,7 @@ import static com.dp.dplanner.exception.ErrorResult.*;
 @Transactional(readOnly = true)
 public class LockService {
 
+    private final ReservationRepository reservationRepository;
     private final LockRepository lockRepository;
     private final ResourceRepository resourceRepository;
     private final ClubMemberRepository clubMemberRepository;
@@ -33,11 +35,13 @@ public class LockService {
     @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional
     public Response createLock(Long clubMemberId, Create createDto) {
-        checkIfThereExistsLocksDuringPeriod(createDto.getStartDateTime(), createDto.getEndDateTime(), createDto.getResourceId(), null);
-
         Resource resource = getResource(createDto.getResourceId());
         ClubMember clubMember = getClubMember(clubMemberId);
         checkIsSameClub(clubMember, resource.getClub().getId());
+
+        checkIfThereExistsLocksDuringPeriod(createDto.getStartDateTime(), createDto.getEndDateTime(), createDto.getResourceId(), null);
+        checkIsReserved(createDto.getResourceId(), createDto.getStartDateTime(), createDto.getEndDateTime());
+
 
         Lock lock = lockRepository.save(createDto.toEntity(resource));
 
@@ -108,6 +112,16 @@ public class LockService {
             throw new ServiceException(PERIOD_OVERLAPPED_EXCEPTION);
         }
     }
+
+    /**
+     * 데이터베이스에 이미 예약이 있는지 검사
+     */
+    private void checkIsReserved(Long resourceId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        if (reservationRepository.existsBetween(startDateTime, endDateTime, resourceId)) {
+            throw new ServiceException("reservation is already reserved. Can not lock that request time.",400);
+        }
+    }
+
     private Lock getLock(Long lockId) {
         return lockRepository.findById(lockId).orElseThrow(()->new ServiceException(LOCK_NOT_FOUND));
     }
