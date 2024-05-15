@@ -7,7 +7,7 @@ services:
     ports:
       - '9001:8080'
     volumes:
-      - /var/log/dplanner:./log
+      - /var/log/dplanner:/log
 
 networks:
   default:
