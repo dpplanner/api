@@ -34,6 +34,11 @@ spring:
       max-file-size: 50MB
       max-request-size: 200MB
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%5level) [%15.15t] [%X{request_id}] %clr(%-40.40logger{39}){cyan} : %m%n%wEx"
+
+
 expire:
   defaultTime: 60
 
