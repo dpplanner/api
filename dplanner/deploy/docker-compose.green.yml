@@ -6,6 +6,8 @@ services:
     container_name: dplanner-green
     ports:
       - '9000:8080'
+    volumes:
+      - /var/log/dplanner:./log
 
 networks:
   default:
