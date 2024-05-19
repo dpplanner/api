@@ -199,44 +199,6 @@ public class CommentServiceTest {
 
 
     }
-    @Test
-    public void CommentService_GetCommentsByClubMemberId_ReturnListCommentResponseDto() {
-
-        Member newMember = Member.builder().build();
-        ClubMember newClubMember =  ClubMember.builder()
-                .club(club)
-                .member(newMember)
-                .name("test")
-                .info("test")
-                .build();
-        ReflectionTestUtils.setField(newMember,"id",memberId+1);
-        ReflectionTestUtils.setField(newClubMember,"id",clubMemberId+1);
-
-        Comment comment = createComment(clubMember, post, null, "test1");
-        Comment comment2 = createComment(clubMember, post, comment, "test2");
-        Comment comment3 = createComment(newClubMember, post,null, "test3");
-        Comment comment4 = createComment(clubMember, post,comment3, "test4");
-
-        Long newCommentId = comment3.getId();
-        doReturn(Optional.of(clubMember)).when(clubMemberRepository).findById(clubMemberId);
-        Object[] commentObject = {comment, null, 0L};
-        Object[] commentObject2 = {comment2, null, 0L};
-        Object[] commentObject3 = {comment4, null, 0L};
-        when(commentRepository.findCommentsByClubMemberId(clubMemberId)).thenReturn(Arrays.asList(commentObject, commentObject2, commentObject3));
-
-        List<CommentDto.Response> commentsList = commentService.getCommentsByClubMemberId(clubMemberId, clubId);
-
-        assertThat(commentsList).isNotNull();
-        assertThat(commentsList.size()).isEqualTo(2);
-        assertThat(commentsList.get(0).getChildren().size()).isEqualTo(1);
-        assertThat(commentsList.get(0).getChildren().get(0).getClubMemberId()).isEqualTo(clubMemberId);
-        assertThat(commentsList.get(0).getChildren().get(0).getPostId()).isEqualTo(postId);
-        assertThat(commentsList.get(1).getParentId()).isEqualTo(newCommentId);
-        assertThat(commentsList).extracting(CommentDto.Response::getClubMemberId).containsOnly(clubMemberId);
-        assertThat(commentsList).extracting(CommentDto.Response::getPostId).containsOnly(postId);
-
-
-    }
 
     @Test
     public void CommentService_UpdateComment_ReturnCommentResponseDto(){

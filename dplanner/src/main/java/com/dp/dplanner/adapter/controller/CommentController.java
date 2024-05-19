@@ -2,12 +2,15 @@ package com.dp.dplanner.adapter.controller;
 
 import com.dp.dplanner.adapter.dto.CommentMemberLikeDto;
 import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.dto.PostDto;
 import com.dp.dplanner.adapter.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.config.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -83,16 +86,14 @@ public class CommentController {
     }
 
     @GetMapping(value = "/clubMembers/{clubMemberId}/comments")
-    public CommonResponse<List<Response>> getMyComments(@AuthenticationPrincipal PrincipalDetails principal,
-                                                        @PathVariable final Long clubMemberId) {
+    public CommonResponse<PostDto.SliceResponse> getMyCommentedPosts(@AuthenticationPrincipal PrincipalDetails principal,
+                                                        @PathVariable final Long clubMemberId,
+                                                        @PageableDefault final Pageable pageable) {
         if (!principal.getClubMemberId().equals(clubMemberId)) {
             throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubId = principal.getClubId();
-
-        List<Response> response = commentService.getCommentsByClubMemberId(clubMemberId, clubId);
-
-
+        PostDto.SliceResponse response = commentService.getCommentedPosts(clubMemberId, clubId,pageable);
         return CommonResponse.createSuccess(response);
     }
 

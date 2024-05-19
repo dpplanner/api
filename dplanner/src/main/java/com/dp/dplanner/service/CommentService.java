@@ -1,6 +1,7 @@
 package com.dp.dplanner.service;
 
 
+import com.dp.dplanner.adapter.dto.PostDto;
 import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
@@ -14,6 +15,8 @@ import com.dp.dplanner.repository.CommentRepository;
 import com.dp.dplanner.repository.PostRepository;
 import com.dp.dplanner.service.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,13 +74,12 @@ public class CommentService {
         return getResponseList(results);
     }
 
-    public List<Response> getCommentsByClubMemberId(Long clubMemberId, Long clubId) {
+    public PostDto.SliceResponse getCommentedPosts(Long clubMemberId, Long clubId, Pageable pageable) {
 
         ClubMember clubMember = getClubMember(clubMemberId);
         checkIsSameClub(clubMember,clubId);
-
-        List<Object[]> results = commentRepository.findCommentsByClubMemberId(clubMemberId);
-        return getResponseList(results);
+        Slice<Object[]> commentedPosts = postRepository.findMyCommentedPosts(clubMemberId, pageable);
+        return PostDto.getSliceResponse(pageable,commentedPosts);
     }
 
     @Transactional
