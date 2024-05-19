@@ -7,6 +7,7 @@ import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -138,5 +139,20 @@ public class PostDto {
         @Builder.Default
         private List<String> attachmentUrl = new ArrayList<>();
         private List<MultipartFile> files;
+    }
+
+    public static PostDto.SliceResponse getSliceResponse(Pageable pageable, Slice<Object[]> postSlice) {
+        List<PostDto.PostResponseDto> postResponseDtos = new ArrayList<>();
+        for(Object[] object : postSlice){
+            postResponseDtos.add(
+                    PostDto.PostResponseDto.builder()
+                            .post((Post) object[0])
+                            .likeStatus(object[1] != null)
+                            .likeCount((Long) object[2])
+                            .commentCount((Long) object[3])
+                            .build()
+            );
+        }
+        return new PostDto.SliceResponse(PostDto.Response.ofList(postResponseDtos), pageable, postSlice.hasNext());
     }
 }

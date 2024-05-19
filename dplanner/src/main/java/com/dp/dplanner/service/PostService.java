@@ -18,7 +18,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -203,20 +202,6 @@ public class PostService {
     }
     private ClubMember getClubMember(Long clubMemberId) {
         return clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-    }
-    private SliceResponse getSliceResponse(Pageable pageable, Slice<Object[]> postSlice) {
-        List<PostResponseDto> postResponseDtos = new ArrayList<>();
-        for(Object[] object : postSlice){
-            postResponseDtos.add(
-                    PostResponseDto.builder()
-                            .post((Post) object[0])
-                            .likeStatus(object[1] != null)
-                            .likeCount((Long) object[2])
-                            .commentCount((Long) object[3])
-                            .build()
-            );
-        }
-        return new SliceResponse(Response.ofList(postResponseDtos), pageable, postSlice.hasNext());
     }
 }
 
