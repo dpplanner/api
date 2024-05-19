@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.adapter.dto.PostDto;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Attachment;
@@ -88,6 +89,12 @@ public class PostService {
         return getSliceResponse(pageable, postSlice);
     }
 
+    public PostDto.SliceResponse getCommentedPosts(Long clubMemberId, Long clubId, Pageable pageable) {
+        ClubMember clubMember = getClubMember(clubMemberId);
+        checkIsSameClub(clubMember,clubId);
+        Slice<Object[]> commentedPosts = postRepository.findMyCommentedPosts(clubMemberId, pageable);
+        return PostDto.getSliceResponse(pageable,commentedPosts);
+    }
 
     @Transactional
     public Response updatePost(Long clubMemberId, Update update) {

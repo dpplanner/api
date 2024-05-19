@@ -362,5 +362,15 @@ public class PostControllerTest {
 
         verify(postService, times(1)).likePost(clubMemberId, postId);
     }
+    @Test
+    public void CommentController_getMyComments() throws Throwable {
+        ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get("/posts/clubMembers/{clubMemberId}/commented", clubMemberId)
+        );
+
+        resultActions.andExpect(status().isOk());
+        Pageable pageable = PageRequest.of(0, 10);
+        verify(postService, times(1)).getCommentedPosts(clubMemberId, clubId, pageable);
+    }
 
 }

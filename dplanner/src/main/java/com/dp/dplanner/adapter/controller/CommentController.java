@@ -84,17 +84,4 @@ public class CommentController {
 
         return CommonResponse.createSuccess(response);
     }
-
-    @GetMapping(value = "/clubMembers/{clubMemberId}/comments")
-    public CommonResponse<PostDto.SliceResponse> getMyCommentedPosts(@AuthenticationPrincipal PrincipalDetails principal,
-                                                        @PathVariable final Long clubMemberId,
-                                                        @PageableDefault final Pageable pageable) {
-        if (!principal.getClubMemberId().equals(clubMemberId)) {
-            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
-        }
-        Long clubId = principal.getClubId();
-        PostDto.SliceResponse response = commentService.getCommentedPosts(clubMemberId, clubId,pageable);
-        return CommonResponse.createSuccess(response);
-    }
-
 }

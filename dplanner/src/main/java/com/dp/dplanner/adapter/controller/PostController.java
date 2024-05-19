@@ -1,6 +1,7 @@
 package com.dp.dplanner.adapter.controller;
 
 import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.dto.PostDto;
 import com.dp.dplanner.adapter.dto.PostMemberLikeDto;
 import com.dp.dplanner.adapter.exception.ApiException;
 import com.dp.dplanner.exception.ErrorResult;
@@ -149,4 +150,17 @@ public class PostController {
         return CommonResponse.createSuccess(response);
 
     }
+
+    @GetMapping(value = "/clubMembers/{clubMemberId}/commented")
+    public CommonResponse<PostDto.SliceResponse> getMyCommentedPosts(@AuthenticationPrincipal PrincipalDetails principal,
+                                                                     @PathVariable final Long clubMemberId,
+                                                                     @PageableDefault final Pageable pageable) {
+        if (!principal.getClubMemberId().equals(clubMemberId)) {
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
+        }
+        Long clubId = principal.getClubId();
+        PostDto.SliceResponse response = postService.getCommentedPosts(clubMemberId, clubId,pageable);
+        return CommonResponse.createSuccess(response);
+    }
+
 }

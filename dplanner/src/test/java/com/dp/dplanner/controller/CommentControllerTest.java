@@ -133,17 +133,6 @@ public class CommentControllerTest {
     }
 
     @Test
-    public void CommentController_getMyComments() throws Throwable {
-        ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/clubMembers/{clubMemberId}/comments", clubMemberId)
-        );
-
-        resultActions.andExpect(status().isOk());
-        Pageable pageable = PageRequest.of(0, 10);
-        verify(commentService, times(1)).getCommentedPosts(clubMemberId, clubId, pageable);
-    }
-
-    @Test
     public void CommentController_UpdateComment_OK() throws Throwable
     {
         Long commentId = -1L;
