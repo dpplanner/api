@@ -60,6 +60,7 @@ public class MessageService {
                     .redirectUrl(message.getRedirectUrl())
                     .type(message.getType())
                     .info(message.getInfo())
+                    .isRead(false)
                     .build();
 
             privateMessages.add(privateMessage);
