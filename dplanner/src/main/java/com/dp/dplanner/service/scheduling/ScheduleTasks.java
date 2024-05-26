@@ -155,8 +155,22 @@ public class ScheduleTasks {
     public void task4() {
         try{
             LocalDateTime now = LocalDateTime.now();
-            int count = reservationRepository.updateNotConfirmedReservationStatus(now);
-            log.info("ScheduleTasks4, update rows : {}  ",count);
+            List<Reservation> reservations = reservationRepository.findNotConfirmedReservationStatus(now);
+
+            reservations.forEach(reservation -> {
+                reservation.reject("예약시간이 지나 자동으로 예약이 거절되었습니다");
+                messageService.createPrivateMessage(List.of(reservation.getClubMember()),
+                        Message.rejectMessage(
+                                Message.MessageContentBuildDto.builder().
+                                        clubMemberName(reservation.getClubMember().getName()).
+                                        start(reservation.getPeriod().getStartDateTime()).
+                                        end(reservation.getPeriod().getEndDateTime()).
+                                        resourceName(reservation.getResource().getName()).
+                                        info(reservation.getId().toString()).
+                                        build()));
+            });
+
+            log.info("ScheduleTasks4, update rows : {}  ", reservations.size());
         }catch (RuntimeException ex){
             log.error("ScheduleTasks4");
         }
