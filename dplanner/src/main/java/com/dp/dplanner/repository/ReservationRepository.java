@@ -107,7 +107,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             SELECT r
             FROM Reservation r
             WHERE (r.clubMember.id = :clubMemberId or r.id in (SELECT ri.reservation.id FROM ReservationInvitee ri WHERE ri.clubMember.id = :clubMemberId))
-            and r.period.startDateTime >= :startDateTime
+            and r.period.startDateTime >= :startDateTime and r.status != 'REJECTED'
             """)
     Slice<Reservation> findMyReservationsAfter(@Param("clubMemberId") Long clubMemberId, @Param("startDateTime") LocalDateTime startDateTime, Pageable pageable);
 
@@ -115,7 +115,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             SELECT r
             FROM Reservation r
             WHERE (r.clubMember.id = :clubMemberId or r.id in (SELECT ri.reservation.id FROM ReservationInvitee ri WHERE ri.clubMember.id = :clubMemberId))
-            and r.period.startDateTime < :startDateTime
+            and r.period.startDateTime < :startDateTime and r.status != 'REJECTED'
             """)
     Slice<Reservation> findMyReservationsBefore(@Param("clubMemberId") Long clubMemberId, @Param("startDateTime") LocalDateTime startDateTime, Pageable pageable);
 
