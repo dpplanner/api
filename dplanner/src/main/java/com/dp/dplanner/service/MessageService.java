@@ -58,6 +58,8 @@ public class MessageService {
                     .content(message.getContent())
                     .title(message.getTitle())
                     .redirectUrl(message.getRedirectUrl())
+                    .type(message.getType())
+                    .info(message.getInfo())
                     .build();
 
             privateMessages.add(privateMessage);

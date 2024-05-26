@@ -1,7 +1,6 @@
 package com.dp.dplanner.service;
 
 
-import com.dp.dplanner.adapter.dto.PostDto;
 import com.dp.dplanner.domain.Comment;
 import com.dp.dplanner.domain.CommentMemberLike;
 import com.dp.dplanner.domain.Post;
@@ -15,8 +14,6 @@ import com.dp.dplanner.repository.CommentRepository;
 import com.dp.dplanner.repository.PostRepository;
 import com.dp.dplanner.service.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +56,7 @@ public class CommentService {
                         Message.MessageContentBuildDto.builder().
                                 clubMemberName(savedComment.getClubMember().getName()).
                                 postTitle(post.getTitle()).
+                                info(post.getId().toString()).
                                 build()));
 
         return Response.of(savedComment,0L,false);

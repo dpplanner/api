@@ -62,8 +62,9 @@ public class ClubMemberService {
                 Message.clubJoinMessage(
                         Message.MessageContentBuildDto.builder()
                                 .clubMemberName(clubMember.getName())
-                                .clubName(club.getClubName()).
-                                build()));
+                                .clubName(club.getClubName())
+                                .info(savedMember.getId().toString())
+                                .build()));
 
         return ClubMemberDto.Response.of(savedMember);
     }

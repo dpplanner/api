@@ -3,14 +3,13 @@ package com.dp.dplanner.domain.message;
 import com.dp.dplanner.domain.BaseEntity;
 import com.dp.dplanner.domain.club.ClubMember;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class PrivateMessage extends BaseEntity {
 
     @Id
@@ -29,14 +28,10 @@ public class PrivateMessage extends BaseEntity {
 
     private Boolean isRead; // 읽음 여부
 
-    @Builder
-    public PrivateMessage(ClubMember clubMember, String title, String content, String redirectUrl) {
-        this.clubMember = clubMember;
-        this.title = title;
-        this.content = content;
-        this.redirectUrl = redirectUrl;
-        this.isRead = false;
-    }
+    @Enumerated(EnumType.STRING)
+    private MessageType type;
+
+    private String info;
 
     public void read() {
         this.isRead = true;

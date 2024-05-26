@@ -1,18 +1,22 @@
 package com.dp.dplanner.domain.message;
 
 import lombok.*;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-@Getter
-@Setter
+import static com.dp.dplanner.domain.message.MessageType.*;
+
+@Data
+@AllArgsConstructor
+@Builder
 public class Message {
 
     private String title;
     private String content;
     private String redirectUrl;
+    private String info;
+    private MessageType type;
 
     public static final String RESERVATION_REQUEST_APPROVED = "예약이 승인되었습니다!";
     public static final String RESERVATION_UPDATE_APPROVED = "예약 수정 요청이 승인되었습니다!";
@@ -32,20 +36,14 @@ public class Message {
     public static final String CLUB_JOIN = "클럽 가입 요청이 있습니다!";
 
 
-
-    @Builder
-    public Message(String title, String content, String redirectUrl) {
-        this.title = title;
-        this.content = content;
-        this.redirectUrl = redirectUrl;
-    }
-
     public static Message clubJoinMessage(MessageContentBuildDto contentDto) {
         return Message.builder()
                 .title(CLUB_JOIN)
                 .content(String.format("%s님이 %s클럽에 가입을 요청했습니다.",
                         contentDto.getClubMemberName(), contentDto.getClubName()))
                 .redirectUrl("/club_member_list")
+                .type(MEMBER)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -54,6 +52,8 @@ public class Message {
                 .title(NOTICE_REGISTERED)
                 .content(String.format("%s클럽에 새로운 공지글이 등록되었습니다.", contentDto.getClubName()))
                 .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -63,6 +63,8 @@ public class Message {
                 .content(String.format("%s님이 %s게시글에 댓글을 남겼습니다.",
                         contentDto.getClubMemberName(), contentDto.getPostTitle()))
                 .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -71,6 +73,8 @@ public class Message {
                 .title(POST_DELETED)
                 .content(String.format("%s게시글이 관리자에 의해 삭제되었습니다.", contentDto.getPostTitle()))
                 .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -79,6 +83,8 @@ public class Message {
                 .title(POST_REPORTED)
                 .content(String.format("%s게시글에 대한 신고가 접수되었습니다.", contentDto.getPostTitle()))
                 .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -92,6 +98,8 @@ public class Message {
                 .content(String.format("%s님이 %s %s ~ %s %s 예약을 요청했습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/reservation_list")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -105,6 +113,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약이 승인되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -118,6 +128,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약이 거절되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation'")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -132,6 +144,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약에 초대되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -145,6 +159,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약이 관리자에 의해 취소되었습니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation'")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -154,6 +170,8 @@ public class Message {
                 .title(RESERVATION_ALERT)
                 .content(String.format("오늘 신청한 예약이 있어요. 확인해 보세요!"))
                 .redirectUrl("/my_reservation")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -168,6 +186,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약이 10분 후에 시작됩니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -182,6 +202,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약이 10분 후에 종료됩니다.",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -196,6 +218,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약에 대한 반납 메시지를 보내주세요!",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -210,6 +234,8 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약에 대한 반납 메시지가 도착했습니다.!",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/reservation_list")
+                .type(RESERVATION)
+                .info(contentDto.info)
                 .build();
     }
 
@@ -226,6 +252,7 @@ public class Message {
 
         LocalDateTime start;
         LocalDateTime end;
+        String info;
 
     }
 }
