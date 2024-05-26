@@ -54,8 +54,7 @@ public class MessageServiceTest {
         ClubMember clubMember2 = ClubMember.builder().club(club).member(Member.builder().build()).name("clubMember2").build();
         List<ClubMember> clubMembers = Arrays.asList(clubMember1, clubMember2);
 
-        Message message = new Message("title","content","redirectUrl");
-
+        Message message = Message.builder().title("title").content("content").redirectUrl("redirectUrl").build();
         // When
         messageService.createPrivateMessage(clubMembers, message);
 
