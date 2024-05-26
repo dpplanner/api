@@ -56,7 +56,7 @@ public class CommentService {
                         Message.MessageContentBuildDto.builder().
                                 clubMemberName(savedComment.getClubMember().getName()).
                                 postTitle(post.getTitle()).
-                                info(post.getId().toString()).
+                                info(String.valueOf(post.getId())).
                                 build()));
 
         return Response.of(savedComment,0L,false);

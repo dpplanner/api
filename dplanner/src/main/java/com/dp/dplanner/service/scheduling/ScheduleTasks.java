@@ -83,7 +83,7 @@ public class ScheduleTasks {
                                                 start(reservation.getPeriod().getStartDateTime()).
                                                 end(reservation.getPeriod().getEndDateTime()).
                                                 resourceName(reservation.getResource().getName()).
-                                                info(reservation.getId().toString()).
+                                                info(String.valueOf(reservation.getId())).
                                                 build()));
                     }
             );
@@ -112,7 +112,7 @@ public class ScheduleTasks {
                                                 start(reservation.getPeriod().getStartDateTime()).
                                                 end(reservation.getPeriod().getEndDateTime()).
                                                 resourceName(reservation.getResource().getName()).
-                                                info(reservation.getId().toString()).
+                                                info(String.valueOf(reservation.getId())).
                                                 build()));
                     }
             );
@@ -140,7 +140,7 @@ public class ScheduleTasks {
                                                 start(reservation.getPeriod().getStartDateTime()).
                                                 end(reservation.getPeriod().getEndDateTime()).
                                                 resourceName(reservation.getResource().getName()).
-                                                info(reservation.getId().toString()).
+                                                info(String.valueOf(reservation.getId())).
                                                 build()));
                     }
             );
@@ -166,7 +166,7 @@ public class ScheduleTasks {
                                         start(reservation.getPeriod().getStartDateTime()).
                                         end(reservation.getPeriod().getEndDateTime()).
                                         resourceName(reservation.getResource().getName()).
-                                        info(reservation.getId().toString()).
+                                        info(String.valueOf(reservation.getId())).
                                         build()));
             });
 

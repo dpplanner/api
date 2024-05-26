@@ -63,7 +63,7 @@ public class ClubMemberService {
                         Message.MessageContentBuildDto.builder()
                                 .clubMemberName(clubMember.getName())
                                 .clubName(club.getClubName())
-                                .info(savedMember.getId().toString())
+                                .info(String.valueOf(savedMember.getId()))
                                 .build()));
 
         return ClubMemberDto.Response.of(savedMember);

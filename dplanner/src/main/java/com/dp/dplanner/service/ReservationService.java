@@ -73,7 +73,7 @@ public class ReservationService {
                                     start(reservation.getPeriod().getStartDateTime()).
                                     end(reservation.getPeriod().getEndDateTime()).
                                     resourceName(reservation.getResource().getName()).
-                                    info(reservation.getId().toString()).
+                                    info(String.valueOf(reservation.getId())).
                                     build()));
 
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
@@ -91,7 +91,7 @@ public class ReservationService {
                                     start(reservation.getPeriod().getStartDateTime()).
                                     end(reservation.getPeriod().getEndDateTime()).
                                     resourceName(reservation.getResource().getName()).
-                                    info(reservation.getId().toString()).
+                                    info(String.valueOf(reservation.getId())).
                                     build()));
         }
         return ReservationDto.Response.of(reservation);
@@ -156,7 +156,7 @@ public class ReservationService {
                                 start(reservation.getPeriod().getStartDateTime()).
                                 end(reservation.getPeriod().getEndDateTime()).
                                 resourceName(reservation.getResource().getName()).
-                                info(reservation.getId().toString()).
+                                info(String.valueOf(reservation.getId())).
                                 build()));
 
         redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());
@@ -188,7 +188,7 @@ public class ReservationService {
                                     start(reservation.getPeriod().getStartDateTime()).
                                     end(reservation.getPeriod().getEndDateTime()).
                                     resourceName(reservation.getResource().getName()).
-                                    info(reservation.getId().toString()).
+                                    info(String.valueOf(reservation.getId())).
                                     build()));
 
             List<ClubMember> invitees = reservation.getReservationInvitees().stream()
@@ -201,7 +201,7 @@ public class ReservationService {
                                     start(reservation.getPeriod().getStartDateTime()).
                                     end(reservation.getPeriod().getEndDateTime()).
                                     resourceName(reservation.getResource().getName()).
-                                    info(reservation.getId().toString()).
+                                    info(String.valueOf(reservation.getId())).
                                     build()));
         }
     }
@@ -232,7 +232,7 @@ public class ReservationService {
                                     start(reservation.getPeriod().getStartDateTime()).
                                     end(reservation.getPeriod().getEndDateTime()).
                                     resourceName(reservation.getResource().getName()).
-                                    info(reservation.getId().toString()).
+                                    info(String.valueOf(reservation.getId())).
                                     build()));
         }
     }
@@ -354,7 +354,7 @@ public class ReservationService {
                                     start(reservation.getPeriod().getStartDateTime()).
                                     end(reservation.getPeriod().getEndDateTime()).
                                     resourceName(reservation.getResource().getName()).
-                                    info(reservation.getId().toString()).
+                                    info(String.valueOf(reservation.getId())).
                                     build()));
 
         }
