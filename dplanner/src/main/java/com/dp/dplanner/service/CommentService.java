@@ -204,6 +204,15 @@ public class CommentService {
                                 .info(comment.getPost().getId().toString())
                                 .build())
         );
+
+        List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(comment.getClub().getId(), POST_ALL);
+        messageService.createPrivateMessage(
+                managers,
+                Message.commentReportedADMINMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .info(comment.getPost().getId().toString())
+                                .build())
+        );
     }
 
 }

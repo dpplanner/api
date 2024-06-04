@@ -29,8 +29,10 @@ public class Message {
     public static final String RESERVATION_ABOUT_TO_FINISH = "예약이 곧 종료됩니다!";
     public static final String REQUEST_TO_SEND_RETURN_MESSAGE = "아직 반납 메시지를 보내지 않았어요!";
     public static final String REQUEST_TO_CHECK_RETURN_MESSAGE = "반납 메시지가 도착했습니다!";
-    public static final String POST_REPORTED = "신고된 게시글을 검토해주세요!";
-    public static final String COMMENT_REPORTED = "신고된 댓글을 검토해주세요!";
+    public static final String POST_REPORTED_ADMIN = "신고된 게시글을 검토해주세요!";
+    public static final String POST_REPORTED_USER = "게시글이 신고되었어요!";
+    public static final String COMMENT_REPORTED_ADMIN = "신고된 댓글을 검토해주세요!";
+    public static final String COMMENT_REPORTED_USER = "댓글이 신고되었어요!";
     public static final String POST_DELETED = "게시글이 관리자에 의해 삭제되었습니다!";
     public static final String  NOTICE_REGISTERED = "공지가 등록되었습니다!";
     public static final String COMMENT_ALERT = "내 게시글에 댓글이 등록되었습니다!";
@@ -81,7 +83,17 @@ public class Message {
 
     public static Message postReportedMessage(MessageContentBuildDto contentDto) {
         return Message.builder()
-                .title(POST_REPORTED)
+                .title(POST_REPORTED_USER)
+                .content(String.format("%s게시글에 대한 신고가 접수되었습니다.", contentDto.getPostTitle()))
+                .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
+                .build();
+    }
+
+    public static Message postReportedADMINMessage(MessageContentBuildDto contentDto) {
+        return Message.builder()
+                .title(POST_REPORTED_ADMIN)
                 .content(String.format("%s게시글에 대한 신고가 접수되었습니다.", contentDto.getPostTitle()))
                 .redirectUrl("/tab2")
                 .type(POST)
@@ -91,13 +103,24 @@ public class Message {
 
     public static Message commentReportedMessage(MessageContentBuildDto contentDto) {
         return Message.builder()
-                .title(COMMENT_REPORTED)
+                .title(COMMENT_REPORTED_USER)
                 .content("댓글에 대한 신고가 접수되었습니다.")
                 .redirectUrl("/tab2")
                 .type(POST)
                 .info(contentDto.info)
                 .build();
     }
+
+    public static Message commentReportedADMINMessage(MessageContentBuildDto contentDto) {
+        return Message.builder()
+                .title(COMMENT_REPORTED_ADMIN)
+                .content("댓글에 대한 신고가 접수되었습니다.")
+                .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
+                .build();
+    }
+
 
     public static Message requestMessage(MessageContentBuildDto contentDto) {
         String date = contentDto.getStart().format(DateTimeFormatter.ofPattern("M월 d일", Locale.KOREAN));

@@ -197,6 +197,16 @@ public class PostService {
                                 .info(post.getId().toString())
                                 .build())
         );
+
+        List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(post.getClub().getId(), POST_ALL);
+        messageService.createPrivateMessage(
+                managers,
+                Message.postReportedADMINMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .postTitle(post.getTitle())
+                                .info(post.getId().toString())
+                                .build())
+        );
     }
 
 
