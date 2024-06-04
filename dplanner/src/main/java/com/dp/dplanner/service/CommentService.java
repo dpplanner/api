@@ -1,17 +1,13 @@
 package com.dp.dplanner.service;
 
 
-import com.dp.dplanner.domain.Comment;
-import com.dp.dplanner.domain.CommentMemberLike;
-import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.adapter.dto.CommentDto;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
 import com.dp.dplanner.adapter.dto.CommentMemberLikeDto;
-import com.dp.dplanner.repository.ClubMemberRepository;
-import com.dp.dplanner.repository.CommentMemberLikeRepository;
-import com.dp.dplanner.repository.CommentRepository;
-import com.dp.dplanner.repository.PostRepository;
+import com.dp.dplanner.repository.*;
 import com.dp.dplanner.service.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +30,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final CommentMemberLikeRepository commentMemberLikeRepository;
+    private final CommentReportRepository commentReportRepository;
 
     private final MessageService messageService;
 
@@ -186,6 +183,27 @@ public class CommentService {
             );
         }
         return Response.ofList(commentResponseDtos);
+    }
+
+    @Transactional
+    public void reportComment(CommentDto.Report report) {
+        Comment comment = getComment(report.getCommentId());
+        ClubMember clubMember = getClubMember(report.getClubMemberId());
+        checkIsSameClub(clubMember, comment.getClub().getId());
+
+        CommentReport commentReport = CommentReport.builder()
+                .comment(comment)
+                .clubMember(clubMember)
+                .message(report.getReportMessage()).build();
+
+        commentReportRepository.save(commentReport);
+        messageService.createPrivateMessage(
+                List.of(comment.getClubMember()),
+                Message.commentReportedMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .info(comment.getPost().getId().toString())
+                                .build())
+        );
     }
 
 }

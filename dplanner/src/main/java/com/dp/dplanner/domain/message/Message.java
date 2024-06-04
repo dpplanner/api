@@ -30,6 +30,7 @@ public class Message {
     public static final String REQUEST_TO_SEND_RETURN_MESSAGE = "아직 반납 메시지를 보내지 않았어요!";
     public static final String REQUEST_TO_CHECK_RETURN_MESSAGE = "반납 메시지가 도착했습니다!";
     public static final String POST_REPORTED = "신고된 게시글을 검토해주세요!";
+    public static final String COMMENT_REPORTED = "신고된 댓글을 검토해주세요!";
     public static final String POST_DELETED = "게시글이 관리자에 의해 삭제되었습니다!";
     public static final String  NOTICE_REGISTERED = "공지가 등록되었습니다!";
     public static final String COMMENT_ALERT = "내 게시글에 댓글이 등록되었습니다!";
@@ -82,6 +83,16 @@ public class Message {
         return Message.builder()
                 .title(POST_REPORTED)
                 .content(String.format("%s게시글에 대한 신고가 접수되었습니다.", contentDto.getPostTitle()))
+                .redirectUrl("/tab2")
+                .type(POST)
+                .info(contentDto.info)
+                .build();
+    }
+
+    public static Message commentReportedMessage(MessageContentBuildDto contentDto) {
+        return Message.builder()
+                .title(COMMENT_REPORTED)
+                .content("댓글에 대한 신고가 접수되었습니다.")
                 .redirectUrl("/tab2")
                 .type(POST)
                 .info(contentDto.info)

@@ -127,4 +127,16 @@ public class CommentDto {
         private String content;
 
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Report{
+        private Long commentId;
+        private Long clubMemberId;
+        @NotNull
+        private String reportMessage;
+    }
 }

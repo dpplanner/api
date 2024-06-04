@@ -1,6 +1,7 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.adapter.dto.PostDto;
+import com.dp.dplanner.domain.PostReport;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Attachment;
@@ -37,6 +38,7 @@ public class PostService {
     private final PostMemberLikeRepository postMemberLikeRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
+    private final PostReportRepository postReportRepository;
     private final AttachmentService attachmentService;
     private final MessageService messageService;
 
@@ -173,6 +175,28 @@ public class PostService {
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
         Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
         return Response.of(post,likeCount,commentCount,likeStatus);
+    }
+
+    @Transactional
+    public void reportPost(Report report) {
+        Post post = getPost(report.getPostId());
+        ClubMember clubMember = getClubMember(report.getClubMemberId());
+        checkIsSameClub(clubMember, post.getClub().getId());
+
+        PostReport postReport = PostReport.builder()
+                .post(post)
+                .clubMember(clubMember)
+                .message(report.getReportMessage()).build();
+
+        postReportRepository.save(postReport);
+        messageService.createPrivateMessage(
+                List.of(post.getClubMember()),
+                Message.postReportedMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .postTitle(post.getTitle())
+                                .info(post.getId().toString())
+                                .build())
+        );
     }
 
 

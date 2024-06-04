@@ -163,4 +163,15 @@ public class PostController {
         return CommonResponse.createSuccess(response);
     }
 
+    @PostMapping(value = "/{postId}/report")
+    public CommonResponse reportPost(@AuthenticationPrincipal PrincipalDetails principal,
+                                     @RequestBody @Valid Report report,
+                                     @PathVariable final Long postId) {
+        report.setPostId(postId);
+        report.setClubMemberId(principal.getClubMemberId());
+        postService.reportPost(report);
+
+        return CommonResponse.createSuccessWithNoContent();
+    }
+
 }

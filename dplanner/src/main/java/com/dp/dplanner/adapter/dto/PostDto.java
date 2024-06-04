@@ -155,4 +155,16 @@ public class PostDto {
         }
         return new PostDto.SliceResponse(PostDto.Response.ofList(postResponseDtos), pageable, postSlice.hasNext());
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Report{
+        private Long postId;
+        private Long clubMemberId;
+        @NotNull
+        private String reportMessage;
+    }
 }

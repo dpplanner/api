@@ -1,16 +1,12 @@
 package com.dp.dplanner.adapter.controller;
 
+import com.dp.dplanner.adapter.dto.CommentDto;
 import com.dp.dplanner.adapter.dto.CommentMemberLikeDto;
 import com.dp.dplanner.adapter.dto.CommonResponse;
-import com.dp.dplanner.adapter.dto.PostDto;
-import com.dp.dplanner.adapter.exception.ApiException;
-import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.config.security.PrincipalDetails;
 import com.dp.dplanner.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -83,5 +79,15 @@ public class CommentController {
 
 
         return CommonResponse.createSuccess(response);
+    }
+
+    @PostMapping(value = "/comments/{commentId}/report")
+    public CommonResponse reportPost(@AuthenticationPrincipal PrincipalDetails principal,
+                                     @RequestBody @Valid CommentDto.Report report,
+                                     @PathVariable final Long commentId) {
+        report.setCommentId(commentId);
+        report.setClubMemberId(principal.getClubMemberId());
+        commentService.reportComment(report);
+        return CommonResponse.createSuccessWithNoContent();
     }
 }
