@@ -352,6 +352,7 @@ public class PostServiceTest {
     @Test
     public void PostService_FixPost_ReturnPostResponseDto() {
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(clubRepository.findById(clubId)).thenReturn(Optional.ofNullable(club));
 
         Response fixedPost = postService.toggleIsFixed(clubMemberId,postId);
 
@@ -362,6 +363,7 @@ public class PostServiceTest {
     @Test
     public void PostService_UnFixPost_ReturnPostResponseDto(){
         when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(clubRepository.findById(clubId)).thenReturn(Optional.ofNullable(club));
         ReflectionTestUtils.setField(post,"isFixed",true);
 
         Response unfixedPost = postService.toggleIsFixed(clubMemberId,postId);
