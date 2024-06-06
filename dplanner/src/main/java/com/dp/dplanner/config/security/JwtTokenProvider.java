@@ -88,15 +88,17 @@ public class JwtTokenProvider {
     @Transactional
     public String generateRefreshToken(Authentication authentication) {
         Date now = new Date();
+        PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
+        Claims claims = Jwts.claims().setSubject(principal.getName());
 
         String refreshToken = Jwts.builder()
+                .setClaims(claims)
                 .setIssuer("dplanner")
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + REFRESH_TOKEN_VALID_TIME))
                 .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
 
-        PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
         Long id = Long.valueOf(principal.getName());
         memberRepository.updateRefreshToken(id, refreshToken);
 
