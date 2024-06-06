@@ -6,6 +6,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import static com.dp.dplanner.domain.club.ClubRole.*;
 import static jakarta.persistence.FetchType.*;
@@ -13,6 +15,8 @@ import static jakarta.persistence.FetchType.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLDelete(sql = "UPDATE club_member set is_deleted=true, name='삭제된 회원', club_authority_id=null, role='USER' where id = ?")
+@Where(clause = "is_deleted=false")
 public class ClubMember {
 
     @Id
@@ -37,6 +41,7 @@ public class ClubMember {
     private String info;
     private Boolean isConfirmed;
     private String url;
+    private Boolean isDeleted;
 
     @Builder
     public ClubMember(Member member, Club club, String name, String info) {
@@ -48,6 +53,7 @@ public class ClubMember {
         this.info = info;
         this.role = USER;
         this.isConfirmed = false;
+        this.isDeleted = false;
     }
 
     public static ClubMember createClubMember(Member member, Club club) {

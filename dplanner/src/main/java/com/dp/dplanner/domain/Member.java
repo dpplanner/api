@@ -7,6 +7,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +16,8 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLDelete(sql = "UPDATE member set is_deleted=true where id = ?")
+@Where(clause = "is_deleted=false")
 public class Member extends BaseEntity {
 
     @Id
@@ -24,11 +28,10 @@ public class Member extends BaseEntity {
     private String name;
     private String refreshToken;
     private String fcmToken;
-
+    private Boolean isDeleted;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recent_club_id")
     private Club recentClub;
-
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
     private List<ClubMember> clubMembers = new ArrayList<>();
@@ -38,6 +41,7 @@ public class Member extends BaseEntity {
         this.email = email;
         this.name = name;
         this.refreshToken = refreshToken;
+        this.isDeleted = false;
     }
 
     public void updateRecentClub(Club club) {

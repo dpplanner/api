@@ -43,4 +43,10 @@ public class MemberService {
             member.updateRecentClub(club);
         }
     }
+
+    @Transactional
+    public void leave(Long memberId) {
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
+        memberRepository.delete(member);
+    }
 }

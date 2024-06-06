@@ -41,6 +41,15 @@ public class MemberController {
         memberService.changeRecentClub(memberId, request);
 
         return CommonResponse.createSuccessWithNoContent();
+    }
 
+    @DeleteMapping("/members/{memberId}")
+    public CommonResponse leaveApplication(@AuthenticationPrincipal PrincipalDetails principal,
+                                           @PathVariable Long memberId) {
+        if (!principal.getId().equals(memberId)) {
+            throw new ApiException(ErrorResult.INVALID_TOKEN);
+        }
+        memberService.leave(memberId);
+        return CommonResponse.createSuccessWithNoContent();
     }
 }
