@@ -31,7 +31,7 @@ public interface MemberRepository extends CrudRepository<Member,Long> {
             select m.fcmToken
             from ClubMember cm
             join Member m on cm.member.id = m.id
-            where cm.id in :clubMemberIds
+            where cm.id in :clubMemberIds and m.isDeleted=false 
             """)
     List<String> getFcmTokensUsingClubMemberIds(@Param("clubMemberIds") List<Long> clubMemberIds);
 
