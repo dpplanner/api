@@ -174,6 +174,17 @@ public class PostService {
         Long likeCount = postMemberLikeRepository.countDistinctByPostId(post.getId());
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
         Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
+
+        Club club = getClub(post.getClub().getId());
+        List<ClubMember> clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
+        messageService.createPrivateMessage(
+                clubMembers, Message.noticeRegisterdMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .clubName(club.getClubName())
+                                .build()
+                )
+        );
+
         return Response.of(post,likeCount,commentCount,likeStatus);
     }
 
