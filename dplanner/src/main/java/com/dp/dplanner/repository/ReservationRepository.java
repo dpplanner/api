@@ -145,10 +145,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             FROM Reservation r
             JOIN FETCH r.resource rs
             WHERE r.status = 'CONFIRMED' AND rs.returnMessageRequired = true
-            AND r.isReturned = false AND r.period.endDateTime  <= :now
+            AND r.isReturned = false AND r.period.endDateTime  between  :time1 and :time2
             """
     )
-    List<Reservation> findAllNotReturned(@Param("now") LocalDateTime now);
+    List<Reservation> findAllNotReturned(@Param("time1") LocalDateTime time1, @Param("time2") LocalDateTime time2);
 
 
     @Query(
