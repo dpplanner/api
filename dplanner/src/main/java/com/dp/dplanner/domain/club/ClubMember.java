@@ -15,8 +15,7 @@ import static jakarta.persistence.FetchType.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE club_member set is_deleted=true, name='삭제된 회원', club_authority_id=null, role='USER', url =null where id = ?")
-@Where(clause = "is_deleted=false")
+@SQLDelete(sql = "UPDATE club_member set is_deleted=true, is_confirmed=false, name='탈퇴한 회원', info='탈퇴한 회원입니다.', club_authority_id=null, role='USER', url =null where id = ?")
 public class ClubMember {
 
     @Id

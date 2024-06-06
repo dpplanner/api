@@ -5,9 +5,9 @@ import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.adapter.dto.ClubMemberDto;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -15,26 +15,30 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
+public interface ClubMemberRepository extends CrudRepository<ClubMember, Long> {
 
-    @Query("select cm from ClubMember cm join fetch cm.member where cm.id =:clubMemberId")
+    @Query("select cm from ClubMember cm join fetch cm.member where cm.id =:clubMemberId and cm.isDeleted=false ")
     Optional<ClubMember> findById(@Param("clubMemberId") Long clubMemberId);
 
+    @Query("select cm from ClubMember cm join fetch cm.member where cm.id in :clubMemberIds and cm.isDeleted=false ")
+    List<ClubMember> findAllById(@Param("clubMemberIds") List<Long> clubMemberIds);
+
+    @Query("SELECT cm from ClubMember  cm where cm.club.id = :clubId and cm.member.id = :memberId and cm.isDeleted=false ")
     Optional<ClubMember> findByClubIdAndMemberId(Long clubId, Long memberId);
 
-    @Query("select cm from ClubMember cm where cm.club = :club order by cm.isConfirmed desc, cm.name")
+    @Query("select cm from ClubMember cm where cm.club = :club and cm.isDeleted=false order by cm.isConfirmed desc, cm.name")
     List<ClubMember> findAllByClub(Club club);
 
 
-    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = true order by cm.role, cm.name ")
+    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = true and cm.isDeleted=false  order by cm.role, cm.name ")
     List<ClubMember> findAllConfirmedClubMemberByClub(@Param("club") Club club);
 
-    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = false order by cm.name")
+    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = false and cm.isDeleted=false  order by cm.name")
     List<ClubMember> findAllUnconfirmedClubMemberByClub(@Param("club") Club club);
 
     @Query("SELECT cm FROM ClubMember cm " +
             "LEFT JOIN ClubAuthority ca ON cm.clubAuthority.id = ca.id " +
-            "WHERE cm.club.id = :clubId AND ((:authorityType MEMBER OF ca.clubAuthorityTypes) or cm.role = 'ADMIN')")
+            "WHERE cm.club.id = :clubId AND ((:authorityType MEMBER OF ca.clubAuthorityTypes) or cm.role = 'ADMIN') AND cm.isDeleted=false")
     List<ClubMember> findClubMemberByClubIdAndClubAuthorityTypesContaining(
             @Param("clubId") Long clubId,
             @Param("authorityType") ClubAuthorityType authorityType
@@ -58,7 +62,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
             GROUP BY
                 ca.id
         ) AS ca2 ON cm.club_authority_id = ca2.id
-        WHERE cm.id = :clubMemberId
+        WHERE cm.id = :clubMemberId AND cm.is_Deleted=false 
 """, nativeQuery = true)
 
     Optional<ClubMemberDto.ResponseMapping> findClubMemberWithClubAuthority(@Param("clubMemberId") Long clubMemberId);

@@ -116,6 +116,7 @@ public class ReservationDto {
         private Long reservationId;
         private Long clubMemberId;
         private String clubMemberName;
+        private Boolean clubMemberIsDeleted;
         private Long resourceId;
         private String resourceName;
         private String title;
@@ -139,6 +140,7 @@ public class ReservationDto {
                     .reservationId(reservation.getId())
                     .clubMemberId(reservation.getClubMember().getId())
                     .clubMemberName(reservation.getClubMember().getName())
+                    .clubMemberIsDeleted(reservation.getClubMember().getIsDeleted())
                     .resourceId(reservation.getResource().getId())
                     .resourceName(reservation.getResource().getName())
                     .title(reservation.getTitle())
@@ -158,6 +160,7 @@ public class ReservationDto {
                                             ReservationInviteeDto.builder()
                                                     .clubMemberId(reservationInvitee.getClubMember().getId())
                                                     .clubMemberName(reservationInvitee.getClubMember().getName())
+                                                    .clubMemberIsDeleted(reservationInvitee.getClubMember().getIsDeleted())
                                                     .build()).collect(Collectors.toList())
                     )
                     .build();

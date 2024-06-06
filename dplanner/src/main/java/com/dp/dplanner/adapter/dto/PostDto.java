@@ -71,6 +71,7 @@ public class PostDto {
         private Long clubId;
         private Long clubMemberId;
         private String clubMemberName;
+        private Boolean clubMemberIsDeleted;
         private String profileUrl;
         private String clubRole;
         private Long likeCount;
@@ -92,6 +93,7 @@ public class PostDto {
                     .clubId(post.getClub().getId())
                     .clubMemberName(post.getClubMember().getName())
                     .clubMemberId(post.getClubMember().getId())
+                    .clubMemberIsDeleted(post.getClubMember().getIsDeleted())
                     .profileUrl(post.getClubMember().getUrl())
                     .clubRole(post.getClubMember().getRole().name())
                     .likeCount(likeCount)

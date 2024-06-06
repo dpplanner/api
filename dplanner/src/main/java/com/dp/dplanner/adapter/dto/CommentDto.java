@@ -59,6 +59,7 @@ public class CommentDto {
         private Long postId;
         private Long clubMemberId;
         private String clubMemberName;
+        private Boolean clubMemberIsDeleted;
         private String profileUrl;
         private Long likeCount;
         private String content;
@@ -86,6 +87,7 @@ public class CommentDto {
                     .createdTime(comment.getCreatedDate())
                     .lastModifiedTime(comment.getLastModifiedDate())
                     .clubMemberName(comment.getClubMember().getName())
+                    .clubMemberIsDeleted(comment.getClubMember().getIsDeleted())
                     .likeCount(likeCount)
                     .isDeleted(comment.getIsDeleted())
                     .likeStatus(likeStatus)
