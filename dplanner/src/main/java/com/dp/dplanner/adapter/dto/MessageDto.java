@@ -21,6 +21,7 @@ public class MessageDto {
         private String title;
         private String redirectUrl;
         private Boolean isRead;
+        private String infoType;
         private String type;
         private String info;
         public static Response of(PrivateMessage message) {
@@ -31,7 +32,8 @@ public class MessageDto {
                     .content(message.getContent())
                     .redirectUrl(message.getRedirectUrl())
                     .isRead(message.getIsRead())
-                    .type(message.getType().name())
+                    .type(String.valueOf(message.getType()))
+                    .infoType(String.valueOf(message.getInfoType()))
                     .info(message.getInfo())
                     .build();
         }
