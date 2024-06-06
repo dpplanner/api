@@ -1,9 +1,9 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Member;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -11,10 +11,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends CrudRepository<Member,Long> {
 
-    Optional<Member> findByEmail(String email);
-    Optional<Member> findByRefreshToken(String RefreshToken);
+    @Query("SELECT m from Member m where m.id = :memberId and m.isDeleted=false ")
+    Optional<Member> findById(@Param("memberId") Long memberId);
+
+    @Query("SELECT m from Member m where m.email = :email and m.isDeleted=false ")
+    Optional<Member> findByEmail(@Param("email") String email);
+    @Query("SELECT m from Member m where m.refreshToken = :refreshToken and m.isDeleted=false ")
+    Optional<Member> findByRefreshToken(@Param("refreshToken") String RefreshToken);
 
     @Modifying
     @Query("update Member m set m.refreshToken = :refreshToken where m.id = :memberId")
