@@ -16,11 +16,11 @@ public class MessageController {
     private final MessageService messageService;
 
     @GetMapping(value = "")
-    public CommonResponse<MessageDto.ResponseList> findMyMessages(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+    public CommonResponse<MessageDto.ResponseList> findMyMessages(@AuthenticationPrincipal PrincipalDetails principalDetails, @RequestParam(required = false) Long months) {
 
         Long clubMemberId = principalDetails.getClubMemberId();
 
-        MessageDto.ResponseList response = messageService.findMyMessage(clubMemberId);
+        MessageDto.ResponseList response = messageService.findMyMessage(clubMemberId,months);
 
         return CommonResponse.createSuccess(response);
     }

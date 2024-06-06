@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,10 +26,13 @@ public class MessageService {
     private final MessageRepository messageRepository;
 
     @Transactional(readOnly = true)
-    public MessageDto.ResponseList findMyMessage(Long clubMemberId) {
+    public MessageDto.ResponseList findMyMessage(Long clubMemberId, Long months) {
 
-        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
-        List<PrivateMessage> messages = messageRepository.findAll(clubMemberId,sixMonthsAgo);
+        if (ObjectUtils.isEmpty(months)) {
+            months = 3L;
+        }
+        LocalDateTime monthsAgo = LocalDateTime.now().minusMonths(months);
+        List<PrivateMessage> messages = messageRepository.findAll(clubMemberId,monthsAgo);
         long notReadCount = 0;
         List<MessageDto.Response> responseList = new ArrayList<>();
 

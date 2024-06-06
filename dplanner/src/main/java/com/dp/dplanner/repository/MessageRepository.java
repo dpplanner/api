@@ -15,8 +15,8 @@ public interface MessageRepository extends JpaRepository<PrivateMessage,Long> {
 
     @Query("SELECT pm FROM PrivateMessage pm " +
             "WHERE pm.clubMember.id = :clubMemberId " +
-            "AND pm.createdDate >= :sixMonthsAgo " +
+            "AND pm.createdDate >= :monthsAgo " +
             "ORDER BY pm.createdDate desc ")
-    List<PrivateMessage> findAll(@Param("clubMemberId") Long clubMemberId,@Param("sixMonthsAgo") LocalDateTime sixMonthsAgo);
+    List<PrivateMessage> findAll(@Param("clubMemberId") Long clubMemberId,@Param("monthsAgo") LocalDateTime monthsAgo);
 
 }
