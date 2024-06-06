@@ -8,6 +8,7 @@ import com.dp.dplanner.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,11 +124,15 @@ public class ScheduleTasks {
     }
 
     // 반납 메시지 요청 매 시간마다
-    @Scheduled(cron = "0 0 * * * *")
+    @Schedules({
+            @Scheduled(cron = "0 0 * * * *"),
+            @Scheduled(cron = "0 5 * * * *"),
+            @Scheduled(cron = "0 15 * * * *")
+    })
     public void task3() {
         try{
             LocalDateTime now = LocalDateTime.now();
-            List<Reservation> reservations = reservationRepository.findAllNotReturned(now);
+            List<Reservation> reservations = reservationRepository.findAllNotReturned(now.minusMinutes(30),now.plusMinutes(30));
 
             reservations.forEach(
                     reservation -> {
