@@ -29,6 +29,8 @@ public class PrivateMessage extends BaseEntity {
     private Boolean isRead; // 읽음 여부
 
     @Enumerated(EnumType.STRING)
+    private InfoType infoType;
+    @Enumerated(EnumType.STRING)
     private MessageType type;
 
     private String info;
