@@ -1,4 +1,4 @@
-package com.dp.dplanner.adapter.controller;
+package com.dp.dplanner.adapter.controller.logging;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -89,9 +89,10 @@ public class HttpLogMessage {
 
     private String extractResponseBody(ContentCachingResponseWrapper responseWrapper) {
         byte[] buf = responseWrapper.getContentAsByteArray();
+        int size = Math.min(buf.length, 1000);
         if (buf.length > 0) {
             try{
-                return new String(buf, 0, buf.length, StandardCharsets.UTF_8);
+                return new String(buf, 0, size, StandardCharsets.UTF_8);
             } catch (Exception e) {
                 return "-";
             }

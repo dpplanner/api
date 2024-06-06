@@ -1,4 +1,4 @@
-package com.dp.dplanner.adapter.controller;
+package com.dp.dplanner.adapter.controller.logging;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
