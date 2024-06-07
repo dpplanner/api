@@ -181,6 +181,7 @@ public class PostService {
                 clubMembers, Message.noticeRegisterdMessage(
                         Message.MessageContentBuildDto.builder()
                                 .clubName(club.getClubName())
+                                .info(String.valueOf(post.getId()))
                                 .build()
                 )
         );

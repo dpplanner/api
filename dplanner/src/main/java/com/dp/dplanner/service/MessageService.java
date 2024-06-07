@@ -63,6 +63,7 @@ public class MessageService {
                     .title(message.getTitle())
                     .redirectUrl(message.getRedirectUrl())
                     .type(message.getType())
+                    .infoType(message.getInfoType())
                     .info(message.getInfo())
                     .isRead(false)
                     .build();
