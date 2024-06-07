@@ -118,6 +118,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             """)
     Slice<Reservation> findMyReservationsBefore(@Param("clubMemberId") Long clubMemberId, @Param("startDateTime") LocalDateTime startDateTime, Pageable pageable);
 
+    @Query("""
+            SELECT r
+            FROM Reservation r
+            WHERE r.clubMember.id = :clubMemberId
+            and r.status = :status
+            """)
+    Slice<Reservation> findMyReservationsStatus(@Param("clubMemberId") Long clubMemberId,@Param("status") ReservationStatus status, Pageable pageable);
 
 
     /**

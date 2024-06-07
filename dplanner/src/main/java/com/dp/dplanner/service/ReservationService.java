@@ -260,6 +260,18 @@ public class ReservationService {
 
     }
 
+    public ReservationDto.SliceResponse findMyReservationsReject(Long clubMemberId, Pageable pageable) {
+        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUB_NOT_FOUND));
+        Pageable pageRequest= PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
+
+        Slice<Reservation> reservations = reservationRepository.findMyReservationsStatus(clubMember.getId(), ReservationStatus.REJECTED, pageRequest);
+
+        return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), pageRequest, reservations.hasNext());
+
+    }
+
+
     @Transactional(readOnly = true)
     public ReservationDto.Response findReservationById(Long clubMemberId, ReservationDto.Request requestDto) {
         ClubMember clubMember = clubMemberRepository.findById(clubMemberId)

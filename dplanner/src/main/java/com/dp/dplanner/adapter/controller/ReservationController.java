@@ -165,6 +165,9 @@ public class ReservationController {
         }else if(status.equals("upcoming")){
             response = reservationService.findMyReservationsUpComing(clubMemberId, pageable);
         }
+        else if(status.equals("reject")){
+            response = reservationService.findMyReservationsReject(clubMemberId, pageable);
+        }
         else{
             throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
