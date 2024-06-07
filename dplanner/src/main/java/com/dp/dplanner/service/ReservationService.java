@@ -156,7 +156,6 @@ public class ReservationService {
                                 start(reservation.getPeriod().getStartDateTime()).
                                 end(reservation.getPeriod().getEndDateTime()).
                                 resourceName(reservation.getResource().getName()).
-                                info(String.valueOf(reservation.getId())).
                                 build()));
 
         redisReservationService.deleteReservation(reservation.getPeriod().getStartDateTime(), reservation.getPeriod().getEndDateTime(), reservation.getResource().getId());

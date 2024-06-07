@@ -75,6 +75,7 @@ public class Message {
                 .build();
     }
 
+    // info null
     public static Message postDeletedMessage(MessageContentBuildDto contentDto) {
         return Message.builder()
                 .title(POST_DELETED)
@@ -82,7 +83,6 @@ public class Message {
                 .redirectUrl("/tab2")
                 .infoType(POST)
                 .type(MessageType.INFO)
-                .info(contentDto.info)
                 .build();
     }
 
@@ -196,6 +196,7 @@ public class Message {
                 .build();
     }
 
+    //info null
     public static Message cancelMessage(MessageContentBuildDto contentDto) {
         String date = contentDto.getStart().format(DateTimeFormatter.ofPattern("M월 d일", Locale.KOREAN));
         String startTime = contentDto.getStart().format(DateTimeFormatter.ofPattern("H시 m분"));
@@ -208,7 +209,6 @@ public class Message {
                 .redirectUrl("/my_reservation'")
                 .infoType(RESERVATION)
                 .type(MessageType.REJECT)
-                .info(contentDto.info)
                 .build();
     }
 

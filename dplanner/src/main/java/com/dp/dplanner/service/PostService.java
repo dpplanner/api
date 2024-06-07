@@ -136,7 +136,6 @@ public class PostService {
                     Message.postDeletedMessage(
                             Message.MessageContentBuildDto.builder().
                                     postTitle(post.getTitle()).
-//                                    info(String.valueOf(postId)).
                                     build()));
         }
         postRepository.delete(post);
