@@ -309,13 +309,20 @@ public class Message {
 
         @Builder
         public MessageContentBuildDto(String clubName, String clubMemberName, String postTitle, String resourceName, LocalDateTime start, LocalDateTime end, String info) {
-            this.clubName = clubName;
-            this.clubMemberName = clubMemberName;
-            this.postTitle = postTitle;
-            this.resourceName = resourceName;
+            this.clubName = truncateString(clubName, 10);
+            this.clubMemberName = truncateString(clubMemberName, 10);
+            this.postTitle = truncateString(postTitle, 10);
+            this.resourceName = truncateString(resourceName, 10);
             this.start = start;
             this.end = end;
             this.info = info;
+        }
+
+        private String truncateString(String value, int maxLength) {
+            if (value == null) {
+                return "";
+            }
+            return value.length() < maxLength ? value : value.substring(0, maxLength) + "...";
         }
     }
 }
