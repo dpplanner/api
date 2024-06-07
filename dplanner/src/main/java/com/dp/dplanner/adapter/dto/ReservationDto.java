@@ -125,6 +125,7 @@ public class ReservationDto {
         private String  status;
         private boolean isReturned;
         private String returnMessage;
+        private String rejectMessage;
         private List<String> attachmentsUrl;
         @Builder.Default
         private List<ReservationInviteeDto> invitees = new ArrayList<>();
@@ -153,6 +154,7 @@ public class ReservationDto {
                     .lastModifiedDate(reservation.getLastModifiedDate())
                     .isReturned(reservation.isReturned())
                     .returnMessage(reservation.getReturnMessage())
+                    .rejectMessage(reservation.getRejectMessage())
                     .attachmentsUrl(reservation.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.toList()))
                     .invitees(
                             reservation.getReservationInvitees().stream().map(
