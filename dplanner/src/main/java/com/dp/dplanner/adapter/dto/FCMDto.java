@@ -2,7 +2,7 @@ package com.dp.dplanner.adapter.dto;
 
 import lombok.*;
 
-import java.util.List;
+import java.util.Map;
 
 
 public class FCMDto {
@@ -24,8 +24,7 @@ public class FCMDto {
 
         private String title;
         private String content;
-
-        private List<String> fcmTokens;
+        private Map<String, String> data;
 
     }
 
