@@ -53,6 +53,31 @@ public class MessageService {
 
     @Async
     @Transactional
+    public void sendFcmNotification(List<ClubMember> clubMembers, Message message, Boolean clubIdInclude) {
+        List<Long> clubMemberIds = new ArrayList<>(clubMembers.size());
+        List<FCMDto.Send> fcmDtos = new ArrayList<>(clubMembers.size());
+
+
+        for (ClubMember clubMember : clubMembers) {
+            Map<String, String> data = new HashMap<>();
+            if (clubIdInclude) {
+                data.put("clubId", String.valueOf(clubMember.getClub().getId()));
+            }
+            FCMDto.Send fcmDto = FCMDto.Send.builder()
+                    .title(message.getTitle())
+                    .content(message.getContent())
+                    .data(data)
+                    .build();
+            fcmDtos.add(fcmDto);
+            clubMemberIds.add(clubMember.getId());
+        }
+
+        // Send notifications
+        fcmService.sendNotification(clubMemberIds, fcmDtos);
+    }
+
+    @Async
+    @Transactional
     public void createPrivateMessage(List<ClubMember> clubMembers, Message message) {
 
         // Initialize collections with expected sizes

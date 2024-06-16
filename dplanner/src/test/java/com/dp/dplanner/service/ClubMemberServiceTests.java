@@ -794,7 +794,7 @@ public class ClubMemberServiceTests {
         Long adminId = 1L;
         ClubMember admin = createClubMemberAsAdmin("admin");
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
-
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
         List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
         List<ClubMember> unconfirmedClubMembers = createUnconfirmedClubMembers(club, 3, "unconfirmed");
         given(clubMemberRepository.findAllById(unconfirmedClubMemberIds)).willReturn(unconfirmedClubMembers);
@@ -813,6 +813,7 @@ public class ClubMemberServiceTests {
     @DisplayName("회원 관리 권한이 있는 매니저는 승인 대기중인 회원들을 승인할 수 있다.")
     public void confirmAllByManagerHasMEMBER_ALL() throws Exception {
         //given
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
         Long managerId = 1L;
         ClubMember manager = createClubMemberAsManager("manager");
@@ -845,6 +846,7 @@ public class ClubMemberServiceTests {
         Long adminId = 1L;
         ClubMember admin = createClubMemberAsAdmin("admin");
         given(clubMemberRepository.findById(adminId)).willReturn(Optional.ofNullable(admin));
+        given(clubRepository.findById(clubId)).willReturn(Optional.ofNullable(club));
 
         List<Long> unconfirmedClubMemberIds = new ArrayList<>(List.of(2L, 3L, 4L));
         Club otherClub = createClub("otherClub");

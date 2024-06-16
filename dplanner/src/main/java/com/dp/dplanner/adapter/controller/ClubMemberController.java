@@ -58,6 +58,21 @@ public class ClubMemberController {
         return CommonResponse.createSuccessWithNoContent();
     }
 
+    @PatchMapping("/reject")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse rejectClubMembers(@AuthenticationPrincipal PrincipalDetails principal,
+                                             @PathVariable("clubId") Long clubId,
+                                             @RequestBody @Valid ClubMemberDto.Request requestDto) {
+        if (!principal.getClubId().equals(clubId)) {
+            throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
+        }
+
+        Long clubMemberId = principal.getClubMemberId();
+
+        clubMemberService.rejectAll(clubMemberId, List.of(requestDto));
+        return CommonResponse.createSuccessWithNoContent();
+    }
+
     @GetMapping("/{clubMemberId}")
     public CommonResponse<ClubMemberDto.Response> findClubMemberById(@AuthenticationPrincipal PrincipalDetails principal,
                                                                      @PathVariable("clubId") Long clubId,

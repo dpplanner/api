@@ -177,11 +177,37 @@ public class ClubMemberService {
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
         List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
+        Club club = clubRepository.findById(manager.getClub().getId())
+                .orElseThrow(()-> new ServiceException(CLUB_NOT_FOUND));
 
-        //TODO unconfirmedClubMembers 빈 리스트 일 때 응답 구분
         unconfirmedClubMembers.forEach(clubMember -> checkIsSameClub(manager,clubMember.getClub().getId()));
-
         unconfirmedClubMembers.forEach(ClubMember::confirm);
+
+        messageService.sendFcmNotification(unconfirmedClubMembers,
+                Message.clubJoinConfirmMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .clubName(club.getClubName())
+                                .build()),true);
+    }
+
+    @Transactional
+    @RequiredAuthority(authority = MEMBER_ALL)
+    public void rejectAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
+        ClubMember manager = clubMemberRepository.findById(managerId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
+        List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
+        Club club = clubRepository.findById(manager.getClub().getId())
+                .orElseThrow(()-> new ServiceException(CLUB_NOT_FOUND));
+
+        unconfirmedClubMembers.forEach(clubMember -> checkIsSameClub(manager,clubMember.getClub().getId()));
+        clubMemberRepository.deleteAll(unconfirmedClubMembers);
+
+        messageService.sendFcmNotification(unconfirmedClubMembers,
+                Message.clubJoinRejectMessage(
+                        Message.MessageContentBuildDto.builder()
+                                .clubName(club.getClubName())
+                                .build()), false);
     }
 
     @Transactional

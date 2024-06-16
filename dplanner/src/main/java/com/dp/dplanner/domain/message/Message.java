@@ -38,6 +38,8 @@ public class Message {
     public static final String  NOTICE_REGISTERED = "공지가 등록되었습니다!";
     public static final String COMMENT_ALERT = "내 게시글에 댓글이 등록되었습니다!";
     public static final String CLUB_JOIN = "클럽 가입 요청이 있습니다!";
+    public static final String CLUB_JOIN_CONFIRM = "클럽 가입이 승인되었습니다!";
+    public static final String CLUB_JOIN_REJECT = "클럽 가입이 거절되었습니다!";
 
 
     public static Message clubJoinMessage(MessageContentBuildDto contentDto) {
@@ -48,6 +50,28 @@ public class Message {
                 .redirectUrl("/club_member_list")
                 .infoType(MEMBER)
                 .type(MessageType.REQUEST)
+                .info(contentDto.info)
+                .build();
+    }
+
+    public static Message clubJoinConfirmMessage(MessageContentBuildDto contentDto) {
+        return Message.builder()
+                .title(CLUB_JOIN_CONFIRM)
+                .content(String.format("%s클럽에 가입이 승인되었습니다.",contentDto.getClubName()))
+                .redirectUrl("/club_member_list")
+                .infoType(MEMBER)
+                .type(MessageType.ACCEPT)
+                .info(contentDto.info)
+                .build();
+    }
+
+    public static Message clubJoinRejectMessage(MessageContentBuildDto contentDto) {
+        return Message.builder()
+                .title(CLUB_JOIN_REJECT)
+                .content(String.format("%s클럽에 가입이 거절되었습니다.",contentDto.getClubName()))
+                .redirectUrl("/club_member_list")
+                .infoType(MEMBER)
+                .type(MessageType.REJECT)
                 .info(contentDto.info)
                 .build();
     }
