@@ -38,6 +38,9 @@ public class Post extends BaseEntity{
     @OneToMany(mappedBy = "post",cascade = CascadeType.REMOVE)
     private List<PostMemberLike> postMemberLikes = new ArrayList();
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
+    private List<PostReport> postReports = new ArrayList<>();
+
     @Builder
     public Post(Club club, ClubMember clubMember, String content,String title, Boolean isFixed) {
         this.club = club;
