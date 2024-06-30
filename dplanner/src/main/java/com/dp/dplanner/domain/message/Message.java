@@ -293,7 +293,7 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약에 대한 반납 메시지를 보내주세요!",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/my_reservation")
-                .infoType(RESERVATION)
+                .infoType(RETURN)
                 .type(MessageType.REQUEST)
                 .info(contentDto.info)
                 .build();
@@ -310,7 +310,7 @@ public class Message {
                 .content(String.format("%s님의 %s %s ~ %s %s 예약에 대한 반납 메시지가 도착했습니다.!",
                         contentDto.getClubMemberName(), date, startTime, endTime, contentDto.getResourceName()))
                 .redirectUrl("/reservation_list")
-                .infoType(RESERVATION)
+                .infoType(RETURN)
                 .type(MessageType.INFO)
                 .info(contentDto.info)
                 .build();
