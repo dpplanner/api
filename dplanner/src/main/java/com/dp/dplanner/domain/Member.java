@@ -28,7 +28,7 @@ public class Member extends BaseEntity {
     private String fcmToken;
     private Boolean isDeleted;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recent_club_id")
+    @JoinColumn(name = "recent_club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Club recentClub;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)

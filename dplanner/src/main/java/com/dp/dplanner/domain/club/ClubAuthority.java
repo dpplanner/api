@@ -21,9 +21,10 @@ public class ClubAuthority {
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name="club_id")
+    @JoinColumn(name = "club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Club club;
 
+    @Column(nullable = false)
     @ElementCollection(targetClass = ClubAuthorityType.class)
     @Enumerated(EnumType.STRING)
     private List<ClubAuthorityType> clubAuthorityTypes = new ArrayList<>();

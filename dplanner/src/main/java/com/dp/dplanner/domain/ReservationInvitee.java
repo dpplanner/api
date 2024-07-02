@@ -21,11 +21,11 @@ public class ReservationInvitee {
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id")
+    @JoinColumn(name = "reservation_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     Reservation reservation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clubMember_id")
+    @JoinColumn(name = "clubMember_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     ClubMember clubMember;
 
     @Builder

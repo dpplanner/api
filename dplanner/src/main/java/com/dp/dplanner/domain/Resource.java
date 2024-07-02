@@ -23,12 +23,13 @@ public class Resource extends BaseEntity{
     private boolean returnMessageRequired = false;
     @Column(columnDefinition = "text")
     private String notice;
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ResourceType resourceType;
     private Long bookableSpan;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "club_id")
+    @JoinColumn(name = "club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Club club;
 
 //    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)

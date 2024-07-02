@@ -3,6 +3,7 @@ package com.dp.dplanner.repository;
 import com.dp.dplanner.domain.Lock;
 import com.dp.dplanner.domain.Period;
 import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,7 @@ public class LockRepositoryTest {
 
         resource = Resource.builder()
                 .club(club)
+                .resourceType(ResourceType.PLACE)
                 .build();
 
         testEntityManager.persist(club);

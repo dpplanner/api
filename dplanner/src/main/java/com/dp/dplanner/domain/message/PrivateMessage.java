@@ -17,7 +17,7 @@ public class PrivateMessage extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "club_member_id")
+    @JoinColumn(name = "club_member_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ClubMember clubMember;
 
     private String title;
@@ -28,8 +28,10 @@ public class PrivateMessage extends BaseEntity {
 
     private Boolean isRead; // 읽음 여부
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private InfoType infoType;
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private MessageType type;
 

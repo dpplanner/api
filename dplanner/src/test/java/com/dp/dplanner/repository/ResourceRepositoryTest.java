@@ -1,6 +1,7 @@
 package com.dp.dplanner.repository;
 
 import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.ResourceType;
 import com.dp.dplanner.domain.club.Club;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ public class ResourceRepositoryTest {
         return Resource.builder()
                 .name("test")
                 .info("test")
+                .resourceType(ResourceType.PLACE)
                 .club(club)
                 .build();
     }

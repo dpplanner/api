@@ -3,6 +3,8 @@ package com.dp.dplanner.repository;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.domain.message.InfoType;
+import com.dp.dplanner.domain.message.MessageType;
 import com.dp.dplanner.domain.message.PrivateMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -71,12 +73,16 @@ public class MessageRepositoryTest {
         //given
         PrivateMessage privateMessage = PrivateMessage.builder()
                 .clubMember(clubMember)
+                .infoType(InfoType.MEMBER)
+                .type(MessageType.REQUEST)
                 .title("title")
                 .content("content")
                 .redirectUrl("redirectUrl")
                 .build();
         PrivateMessage privateMessage2 = PrivateMessage.builder()
                 .clubMember(clubMember)
+                .infoType(InfoType.MEMBER)
+                .type(MessageType.REQUEST)
                 .title("title")
                 .content("content")
                 .redirectUrl("redirectUrl")
@@ -102,12 +108,16 @@ public class MessageRepositoryTest {
         //given
         PrivateMessage privateMessage = PrivateMessage.builder()
                 .clubMember(clubMember)
+                .infoType(InfoType.MEMBER)
+                .type(MessageType.REQUEST)
                 .title("title")
                 .content("content")
                 .redirectUrl("redirectUrl")
                 .build();
         PrivateMessage privateMessage2 = PrivateMessage.builder()
                 .clubMember(clubMember)
+                .infoType(InfoType.MEMBER)
+                .type(MessageType.REQUEST)
                 .title("title")
                 .content("content")
                 .redirectUrl("redirectUrl")

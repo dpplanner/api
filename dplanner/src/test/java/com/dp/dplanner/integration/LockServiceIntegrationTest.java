@@ -2,10 +2,7 @@ package com.dp.dplanner.integration;
 
 
 import com.dp.dplanner.TestConfig;
-import com.dp.dplanner.domain.Lock;
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.Period;
-import com.dp.dplanner.domain.Resource;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.*;
 import com.dp.dplanner.exception.BaseException;
 import com.dp.dplanner.exception.ErrorResult;
@@ -57,6 +54,7 @@ public class LockServiceIntegrationTest {
 
         resource = Resource.builder()
                 .club(club)
+                .resourceType(ResourceType.PLACE)
                 .build();
 
         clubAuthority = ClubAuthority.builder()

@@ -24,11 +24,11 @@ public class Reservation extends BaseEntity{
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "resource_id")
+    @JoinColumn(name = "resource_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Resource resource;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "club_member_id")
+    @JoinColumn(name = "club_member_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ClubMember clubMember;
 
     @OneToMany(mappedBy = "reservation",cascade = CascadeType.REMOVE)

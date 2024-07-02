@@ -31,7 +31,7 @@ public class ReservationRepositoryTests {
         Member member = Member.builder().build();
         Club club = Club.builder().build();
         clubMember = ClubMember.builder().member(member).club(club).build();
-        resource = Resource.builder().club(club).build();
+        resource = Resource.builder().club(club).resourceType(ResourceType.PLACE).build();
 
         entityManager.persist(member);
         entityManager.persist(club);

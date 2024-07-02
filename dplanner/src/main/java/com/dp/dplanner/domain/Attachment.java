@@ -17,16 +17,17 @@ public class Attachment extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "post_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id")
+    @JoinColumn(name = "reservation_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     Reservation reservation;
 
 
     @Column(unique = true)
     String url;
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     FileType type;
 

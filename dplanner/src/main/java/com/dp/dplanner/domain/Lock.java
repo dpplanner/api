@@ -18,7 +18,7 @@ public class Lock extends BaseEntity{
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "resource_id")
+    @JoinColumn(name = "resource_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Resource resource;
 
     @Embedded

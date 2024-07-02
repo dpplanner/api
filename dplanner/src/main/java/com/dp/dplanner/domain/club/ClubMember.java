@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
 
 import static com.dp.dplanner.domain.club.ClubRole.*;
 import static jakarta.persistence.FetchType.*;
@@ -23,17 +22,17 @@ public class ClubMember {
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name="member_id")
+    @JoinColumn(name = "member_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Member member;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name="club_id")
+    @JoinColumn(name = "club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Club club;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "club_authority_id")
+    @JoinColumn(name = "club_authority_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ClubAuthority clubAuthority;
-
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ClubRole role;
     private String name;
