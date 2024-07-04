@@ -3,6 +3,7 @@ package com.dp.dplanner.service;
 
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.PostBlock;
 import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
@@ -51,6 +52,8 @@ public class PostServiceTest {
     PostMemberLikeRepository postMemberLikeRepository;
     @Mock
     ClubMemberRepository clubMemberRepository;
+    @Mock
+    PostBlockRepository postBlockRepository;
     @Mock
     AttachmentService attachmentService;
     @Mock
@@ -371,5 +374,33 @@ public class PostServiceTest {
         assertThat(unfixedPost).isNotNull();
         assertThat(unfixedPost.getIsFixed()).isFalse();
     }
+
+    @Test
+    @DisplayName("게시글 숨기기 기능 ")
+    public void PostService_BlockPost() {
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(postBlockRepository.findById(any(PostBlock.PostBlockId.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+        Block block = new Block(postId, clubMemberId);
+        postService.toggleBlockPost(block);
+
+        verify(postBlockRepository, times(0)).save(any(PostBlock.class));
+        verify(postBlockRepository, times(1)).delete(any(PostBlock.class));
+    }
+
+
+    @Test
+    @DisplayName("게시글 숨기기 취소 ")
+    public void PostService_unBlockPost() {
+        when(clubMemberRepository.findById(clubMemberId)).thenReturn(Optional.ofNullable(clubMember));
+        when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+        when(postBlockRepository.findById(any(PostBlock.PostBlockId.class))).thenAnswer(invocation -> Optional.empty());
+        Block block = new Block(postId, clubMemberId);
+        postService.toggleBlockPost(block);
+
+        verify(postBlockRepository, times(1)).save(any(PostBlock.class));
+        verify(postBlockRepository, times(0)).delete(any(PostBlock.class));
+    }
+
 
 }

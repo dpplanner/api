@@ -1,6 +1,8 @@
 package com.dp.dplanner.domain.club;
 
 import com.dp.dplanner.domain.Member;
+import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.PostBlock;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -85,5 +87,8 @@ public class ClubMember {
     }
     public boolean isSameClub(Long clubId) {
         return this.club.getId().equals(clubId);
+    }
+    public PostBlock block(Post post) {
+        return PostBlock.builder().clubMember(this).post(post).build();
     }
 }

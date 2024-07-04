@@ -174,4 +174,15 @@ public class PostController {
         return CommonResponse.createSuccessWithNoContent();
     }
 
+    @PostMapping(value = "/{postId}/block")
+    public CommonResponse blockPost(@AuthenticationPrincipal PrincipalDetails principal,
+                                     @PathVariable final Long postId) {
+        Block block = Block.builder()
+                .postId(postId)
+                .clubMemberId(principal.getClubMemberId())
+                .build();
+        postService.toggleBlockPost(block);
+
+        return CommonResponse.createSuccessWithNoContent();
+    }
 }

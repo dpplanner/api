@@ -1,12 +1,9 @@
 package com.dp.dplanner.service;
 
 import com.dp.dplanner.adapter.dto.PostDto;
-import com.dp.dplanner.domain.PostReport;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.ClubAuthorityType;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
-import com.dp.dplanner.domain.Attachment;
-import com.dp.dplanner.domain.Post;
-import com.dp.dplanner.domain.PostMemberLike;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
@@ -39,6 +36,7 @@ public class PostService {
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
     private final PostReportRepository postReportRepository;
+    private final PostBlockRepository postBlockRepository;
     private final AttachmentService attachmentService;
     private final MessageService messageService;
 
@@ -221,6 +219,21 @@ public class PostService {
     }
 
 
+    @Transactional
+    public void toggleBlockPost(Block block) {
+        Post post = getPost(block.getPostId());
+        ClubMember clubMember = getClubMember(block.getClubMemberId());
+        checkIsSameClub(clubMember, post.getClub().getId());
+
+        PostBlock postBlock = clubMember.block(post);
+
+        Optional<PostBlock> postBlockId = postBlockRepository.findById(postBlock.getId());
+        if (postBlockId.isPresent()) {
+            postBlockRepository.delete(postBlock);
+        }else{
+            postBlockRepository.save(postBlock);
+        }
+    }
 
     /**
      * utility methods

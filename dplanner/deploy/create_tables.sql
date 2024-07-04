@@ -187,6 +187,12 @@ create table resource (
     primary key (id)
 );
 
+create table posb_block (
+    club_member_id bigint not null,
+    post_id bigint not null,
+    primary key (club_member_id, post_id)
+);
+
 -- Add Constraints
 alter table if exists attachment
     drop constraint if exists UK_ofevfnbd2scd80rbeciujvcts;

@@ -169,4 +169,14 @@ public class PostDto {
         @NotNull
         private String reportMessage;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Block {
+        private Long postId;
+        private Long clubMemberId;
+    }
 }
