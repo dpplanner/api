@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.adapter.dto.LoginResponseDto;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.adapter.dto.LoginDto;
@@ -52,7 +53,7 @@ public class AuthService {
                 .build();
     }
     @Transactional
-    public TokenDto login(LoginDto loginDto) {
+    public LoginResponseDto login(LoginDto loginDto) {
         String email = loginDto.getEmail();
         String name = loginDto.getName();
         PrincipalDetails principalDetail;
@@ -75,10 +76,17 @@ public class AuthService {
         String newAccessToken = tokenProvider.generateAccessToken(authentication);
         String newRefreshToken = tokenProvider.generateRefreshToken(authentication);
 
-        return TokenDto.builder()
+        return LoginResponseDto.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
+                .eula(member.getEula())
                 .build();
+    }
+
+    @Transactional
+    public void eula(Long memberId) {
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(MEMBER_NOT_FOUND));
+        member.agreeEula();
     }
 
     private Member createMember(String name, String email) {

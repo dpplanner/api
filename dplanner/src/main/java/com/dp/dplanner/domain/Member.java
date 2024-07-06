@@ -27,6 +27,10 @@ public class Member extends BaseEntity {
     private String refreshToken;
     private String fcmToken;
     private Boolean isDeleted;
+    // 서비스 이용 약관 동의 여부
+    @Column(columnDefinition = "boolean default false")
+    private Boolean eula;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recent_club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Club recentClub;
@@ -48,5 +52,9 @@ public class Member extends BaseEntity {
 
     public void updateFCMToken(String fcmToken) {
         this.fcmToken = fcmToken;
+    }
+
+    public void agreeEula() {
+        this.eula = true;
     }
 }
