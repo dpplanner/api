@@ -1,7 +1,6 @@
 package com.dp.dplanner.repository;
 
-import com.dp.dplanner.domain.Member;
-import com.dp.dplanner.domain.Post;
+import com.dp.dplanner.domain.*;
 import com.dp.dplanner.domain.club.Club;
 import com.dp.dplanner.domain.club.ClubMember;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +25,12 @@ public class PostRepositoryTest {
 
     @Autowired
     PostRepository postRepository;
-
+    @Autowired
+    PostBlockRepository postBlockRepository;
+    @Autowired
+    PostMemberLikeRepository postMemberLikeRepository;
+    @Autowired
+    CommentRepository commentRepository;
     @Autowired
     TestEntityManager testEntityManager;
 
@@ -217,4 +221,105 @@ public class PostRepositoryTest {
     }
 
 
+    @Test
+    @DisplayName("클럽 홈에서 블락 처리 한 게시글은 보이지 않음")
+    public void 블락처리한게시글은보이지않음(){
+        Post post1 = createAndSavePost(club, clubMember);
+        Post post2 = createAndSavePost(club, clubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        blockPost(post1, clubMember);
+        blockPost(post2, clubMember);
+
+        Slice<Object[]> postSlice = postRepository.findByClubId(club.getId(), clubMember.getId(), pageRequest);
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+    @Test
+    @DisplayName("내 게시글에서 block 처리 한 게시글은 보이지 않음")
+    public void 내게시글에서블락처리한게시글은보이지않음(){
+        Post post1 = createAndSavePost(club, clubMember);
+        Post post2 = createAndSavePost(club, clubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        Club newClub = Club.builder().build();
+        ClubMember newClubMember = ClubMember.createClubMember(member, newClub);
+        testEntityManager.persist(newClub);
+        testEntityManager.persist(newClubMember);
+        Post post5 = createAndSavePost(newClub, newClubMember);
+
+        blockPost(post1, clubMember);
+        blockPost(post2, clubMember);
+
+        Slice<Object[]> postSlice = postRepository.findMyPostsByClubId(clubMember.getId(), club.getId(), Pageable.unpaged());
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+    @Test
+    @DisplayName("좋아요 한 게시글에서 내가 블락 처리 한 게시글은 보이지 않음")
+    public void 좋아요한게시글에서블락처리한게시글은보이지않음() {
+        Post post1 = createAndSavePost(club, clubMember);
+        Post post2 = createAndSavePost(club, clubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        createAndSaveLikes(List.of(post1, post2, post3, post4), clubMember);
+
+        blockPost(post1, clubMember);
+        blockPost(post2, clubMember);
+
+        Slice<Object[]> postSlice = postRepository.findLikePosts(clubMember.getId(), club.getId(), Pageable.unpaged());
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+    @Test
+    @DisplayName("댓글 단 게시글에서 내가 블락 처리 한 게시글은 보이지 않음")
+    public void 댓글단게시글에서숨김처리한게시글은보이지않음() {
+        Post post1 = createAndSavePost(club, clubMember);
+        Post post2 = createAndSavePost(club, clubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        createAndSaveComments(List.of(post1, post2, post3, post4), clubMember);
+
+        blockPost(post1, clubMember);
+        blockPost(post2, clubMember);
+
+        Slice<Object[]> postSlice = postRepository.findMyCommentedPosts(clubMember.getId(), Pageable.unpaged());
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+    private Post createAndSavePost(Club club, ClubMember clubMember) {
+        Post post = createPost(club, clubMember);
+        return postRepository.save(post);
+    }
+
+    private void blockPost(Post post, ClubMember clubMember) {
+        PostBlock postBlock = PostBlock.builder().post(post).clubMember(clubMember).build();
+        postBlockRepository.save(postBlock);
+    }
+
+    private void createAndSaveLikes(List<Post> posts, ClubMember clubMember) {
+        List<PostMemberLike> likes = posts.stream()
+                .map(post -> PostMemberLike.builder().post(post).clubMember(clubMember).build())
+                .toList();
+        postMemberLikeRepository.saveAll(likes);
+    }
+
+    private void createAndSaveComments(List<Post> posts, ClubMember clubMember) {
+        List<Comment> comments = posts.stream()
+                .map(post -> Comment.builder().post(post).clubMember(clubMember).build())
+                .toList();
+        commentRepository.saveAll(comments);
+    }
+
+    private void assertPosts(Slice<Object[]> postSlice, List<Post> expectedPosts) {
+        List<Post> posts = postSlice.stream().map(object -> (Post) object[0]).toList();
+        assertThat(postSlice).isNotNull();
+        assertThat(postSlice.getContent().size()).isEqualTo(expectedPosts.size());
+        assertThat(posts).extracting(Post::getId).isNotNull();
+        assertThat(posts).containsExactlyInAnyOrderElementsOf(expectedPosts);
+    }
 }
