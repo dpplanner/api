@@ -29,7 +29,7 @@ public class Member extends BaseEntity {
     private Boolean isDeleted;
     // 서비스 이용 약관 동의 여부
     @Column(columnDefinition = "boolean default false")
-    private Boolean eula;
+    private Boolean eula = Boolean.FALSE;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recent_club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
