@@ -75,11 +75,9 @@ public class ClubMemberService {
 
     public ClubMemberDto.Response findById(Long clubMemberId, ClubMemberDto.Request requestDto) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(clubMemberId);
 
-        ClubMember requestClubMember = clubMemberRepository.findById(requestDto.getId())
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember requestClubMember = getClubMember(requestDto.getId());
 
         checkIsSameClub(clubMember, requestClubMember.getClub().getId());
         checkIsConfirmed(requestClubMember);
@@ -92,8 +90,7 @@ public class ClubMemberService {
      */
     public List<ClubMemberDto.Response> findMyClubMembers(Long clubMemberId,Long clubId) {
 
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(clubMemberId);
 
         checkIsSameClub(clubMember, clubId);
         checkIsConfirmed(clubMember);
@@ -108,8 +105,7 @@ public class ClubMemberService {
     @RequiredAuthority(authority = MEMBER_ALL)
     public List<ClubMemberDto.Response> findMyClubMembers(Long managerId, Long clubId, boolean confirmed) {
 
-        ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember manager = getClubMember(managerId);
 
         checkIsSameClub(manager, clubId);
 
@@ -125,8 +121,7 @@ public class ClubMemberService {
             throw new ServiceException(UPDATE_AUTHORIZATION_DENIED);
         }
 
-        ClubMember clubMember = clubMemberRepository.findById(updateDto.getId())
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(updateDto.getId());
         checkIsConfirmed(clubMember);
         clubMember.update(updateDto.getName(), updateDto.getInfo());
         return ClubMemberDto.Response.of(clubMember);
@@ -135,7 +130,7 @@ public class ClubMemberService {
 
     @Transactional
     public ClubMemberDto.Response changeClubMemberProfileImage(Long clubMemberId, MultipartFile image) {
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId).orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(clubMemberId);
         String url = uploadService.uploadFile(image);
         clubMember.updateProfileUrl(url);
 
@@ -147,13 +142,11 @@ public class ClubMemberService {
     public ClubMemberDto.Response updateClubMemberClubAuthority(Long adminId, Long clubId, ClubMemberDto.Update updateDto) {
 
 
-        ClubMember admin = clubMemberRepository.findById(adminId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember admin = getClubMember(adminId);
         checkIsSameClub(admin, clubId);
 
         Long clubMemberId = updateDto.getId();
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(clubMemberId);
         checkIsSameClub(clubMember, clubId);
         checkIsConfirmed(clubMember);
 
@@ -177,8 +170,7 @@ public class ClubMemberService {
     @Transactional
     @RequiredAuthority(authority = MEMBER_ALL)
     public void confirmAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
-        ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember manager = getClubMember(managerId);
         List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
         Club club = clubRepository.findById(manager.getClub().getId())
@@ -197,8 +189,7 @@ public class ClubMemberService {
     @Transactional
     @RequiredAuthority(authority = MEMBER_ALL)
     public void rejectAll(Long managerId, List<ClubMemberDto.Request> requestDto) {
-        ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember manager = getClubMember(managerId);
         List<Long> unconfirmedClubMemberIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
         List<ClubMember> unconfirmedClubMembers = clubMemberRepository.findAllById(unconfirmedClubMemberIds);
         Club club = clubRepository.findById(manager.getClub().getId())
@@ -216,8 +207,7 @@ public class ClubMemberService {
 
     @Transactional
     public void leaveClub(Long clubMemberId, ClubMemberDto.Request requestDto) {
-        ClubMember clubMember = clubMemberRepository.findById(clubMemberId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(clubMemberId);
 
         assert clubMemberId.equals(requestDto.getId());
         checkIsAdmin(clubMember);
@@ -229,12 +219,10 @@ public class ClubMemberService {
     @RequiredAuthority(authority = MEMBER_ALL)
     public void kickOut(Long managerId, Long clubId, ClubMemberDto.Request requestDto) {
 
-        ClubMember admin = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember admin = getClubMember(managerId);
         checkIsSameClub(admin, clubId);
 
-        ClubMember clubMember = clubMemberRepository.findById(requestDto.getId())
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember clubMember = getClubMember(requestDto.getId());
 
         if (invalidKickOutRequest(admin, clubMember)) {
             throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
@@ -247,8 +235,7 @@ public class ClubMemberService {
     @RequiredAuthority(authority = MEMBER_ALL)
     public List<ClubMemberDto.Response> kickOutAll(Long adminId, Long clubId, List<ClubMemberDto.Request> requestDto) {
 
-        ClubMember admin = clubMemberRepository.findById(adminId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+        ClubMember admin = getClubMember(adminId);
         checkIsSameClub(admin, clubId);
 
         List<Long> requestIds = requestDto.stream().map(ClubMemberDto.Request::getId).toList();
