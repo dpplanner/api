@@ -17,8 +17,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "join fetch p.clubMember " +
             "left join PostMemberLike l on p.id = l.post.id and l.clubMember.id = :clubMemberId " +
             "left join PostBlock pb on p.id = pb.id.post.id and pb.id.clubMember.id = :clubMemberId " +
+            "left join ClubMemberBlock cb on p.clubMember.id = cb.id.blockedClubMember.id and cb.id.clubMember.id = :clubMemberId " +
             "where p.club.id = :clubId " +
             "and pb.id.post.id is null " +
+            "and cb.id.blockedClubMember.id is null " +
             "order by p.isFixed desc, p.createdDate desc")
     Slice<Object[]> findByClubId(@Param(value = "clubId") Long clubId, @Param(value = "clubMemberId") Long clubMemberId, Pageable pageable);
 
@@ -38,8 +40,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "join fetch p.clubMember " +
             "join PostMemberLike l on p.id = l.post.id and l.clubMember.id = :clubMemberId " +
             "left join PostBlock pb on p.id = pb.id.post.id and pb.id.clubMember.id = :clubMemberId " +
+            "left join ClubMemberBlock cb on p.clubMember.id = cb.id.blockedClubMember.id and cb.id.clubMember.id = :clubMemberId " +
             "where p.club.id = :clubId " +
             "and pb.id.post.id is null " +
+            "and cb.id.blockedClubMember.id is null " +
             "order by p.createdDate desc")
     Slice<Object[]> findLikePosts(@Param(value = "clubMemberId") Long clubMemberId,@Param(value = "clubId") Long clubId, Pageable pageable);
 
@@ -57,8 +61,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             join fetch p.clubMember cm
             left join PostMemberLike l on p.id = l.post.id and l.clubMember.id = :clubMemberId 
             left join PostBlock pb on p.id = pb.id.post.id and pb.id.clubMember.id = :clubMemberId 
+            left join ClubMemberBlock cb on p.clubMember.id = cb.id.blockedClubMember.id and cb.id.clubMember.id = :clubMemberId 
             join Comment c on c.post.id = p.id and c.clubMember.id = :clubMemberId
-            where pb.id.post.id is null
+            where pb.id.post.id is null 
+            and cb.id.blockedClubMember.id is null
             group by p.id,cm.id,l.id
             order by max(c.lastModifiedDate) desc
             """)

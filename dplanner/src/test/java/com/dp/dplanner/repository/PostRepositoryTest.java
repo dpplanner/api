@@ -28,6 +28,8 @@ public class PostRepositoryTest {
     @Autowired
     PostBlockRepository postBlockRepository;
     @Autowired
+    ClubMemberBlockRepository clubMemberBlockRepository;
+    @Autowired
     PostMemberLikeRepository postMemberLikeRepository;
     @Autowired
     CommentRepository commentRepository;
@@ -291,6 +293,58 @@ public class PostRepositoryTest {
         assertPosts(postSlice, List.of(post3, post4));
     }
 
+    @Test
+    @DisplayName("클럽 홈에서 블락 처리 한 클럽 맴버의 게시글은 보이지 않음")
+    public void 블락처리한클럽맴버의게시글은보이지않음(){
+        ClubMember blockedClubMember = createBlockedClubMember();
+        Post post1 = createAndSavePost(club, blockedClubMember);
+        Post post2 = createAndSavePost(club, blockedClubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        blockClubMember(clubMember,blockedClubMember);
+
+        Slice<Object[]> postSlice = postRepository.findByClubId(club.getId(), clubMember.getId(), pageRequest);
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+    @Test
+    @DisplayName("댓글 단 게시글에서 내가 블락 처리 한 클럽 맴버의 게시글은 보이지 않음")
+    public void 댓글단게시글에서숨김처리한클럽맴버의게시글은보이지않음() {
+        ClubMember blockedClubMember = createBlockedClubMember();
+
+        Post post1 = createAndSavePost(club, blockedClubMember);
+        Post post2 = createAndSavePost(club, blockedClubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        createAndSaveComments(List.of(post1, post2,post3,post4), clubMember);
+
+        blockClubMember(clubMember,blockedClubMember);
+
+        Slice<Object[]> postSlice = postRepository.findMyCommentedPosts(clubMember.getId(), Pageable.unpaged());
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+    @Test
+    @DisplayName("좋아요 한 게시글에서 내가 블락 처리 한 클럽 맴버의 게시글은 보이지 않음")
+    public void 좋아요한게시글에서블락처리한클럽맴버의게시글은보이지않음() {
+        ClubMember blockedClubMember = createBlockedClubMember();
+
+        Post post1 = createAndSavePost(club, blockedClubMember);
+        Post post2 = createAndSavePost(club, blockedClubMember);
+        Post post3 = createAndSavePost(club, clubMember);
+        Post post4 = createAndSavePost(club, clubMember);
+
+        createAndSaveLikes(List.of(post1, post2, post3, post4), clubMember);
+
+        blockClubMember(clubMember,blockedClubMember);
+
+        Slice<Object[]> postSlice = postRepository.findLikePosts(clubMember.getId(), club.getId(), Pageable.unpaged());
+        assertPosts(postSlice, List.of(post3, post4));
+    }
+
+
     private Post createAndSavePost(Club club, ClubMember clubMember) {
         Post post = createPost(club, clubMember);
         return postRepository.save(post);
@@ -299,6 +353,19 @@ public class PostRepositoryTest {
     private void blockPost(Post post, ClubMember clubMember) {
         PostBlock postBlock = PostBlock.builder().post(post).clubMember(clubMember).build();
         postBlockRepository.save(postBlock);
+    }
+
+    private void blockClubMember(ClubMember clubMember, ClubMember blockedClubMember) {
+        ClubMemberBlock block = clubMember.block(blockedClubMember);
+        clubMemberBlockRepository.save(block);
+    }
+
+    private ClubMember createBlockedClubMember() {
+        Member blockedMember = Member.builder().build();
+        ClubMember blockedClubMember = ClubMember.createClubMember(blockedMember, club);
+        testEntityManager.persist(blockedMember);
+        testEntityManager.persist(blockedClubMember);
+        return blockedClubMember;
     }
 
     private void createAndSaveLikes(List<Post> posts, ClubMember clubMember) {

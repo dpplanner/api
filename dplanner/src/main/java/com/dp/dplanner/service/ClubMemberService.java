@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.domain.ClubMemberBlock;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.*;
@@ -10,6 +11,7 @@ import com.dp.dplanner.repository.ClubAuthorityRepository;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.repository.ClubMemberBlockRepository;
 import com.dp.dplanner.service.upload.UploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.domain.club.ClubRole.*;
@@ -35,6 +38,7 @@ public class ClubMemberService {
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubAuthorityRepository clubAuthorityRepository;
+    private final ClubMemberBlockRepository clubMemberBlockRepository;
 
     @Transactional
     public ClubMemberDto.Response create(Long memberId, ClubMemberDto.Create createDto) {
@@ -259,6 +263,21 @@ public class ClubMemberService {
         return ClubMemberDto.Response.ofList(deletedClubMembers);
     }
 
+    @Transactional
+    public void blockClubMember(Long clubMemberId, Long blockedClubMemberId) {
+        ClubMember clubMember = getClubMember(clubMemberId);
+        ClubMember blockedClubMember = getClubMember(blockedClubMemberId);
+        checkIsSameClub(clubMember, blockedClubMember.getClub().getId());
+
+        ClubMemberBlock clubMemberBlock = clubMember.block(blockedClubMember);
+        Optional<ClubMemberBlock> clubMemberBlockId = clubMemberBlockRepository.findById(clubMemberBlock.getId());
+        if (clubMemberBlockId.isPresent()) {
+            clubMemberBlockRepository.delete(clubMemberBlock);
+        }else{
+            clubMemberBlockRepository.save(clubMemberBlock);
+        }
+    }
+
 
 
     /**
@@ -298,5 +317,9 @@ public class ClubMemberService {
     }
     private static boolean isMemberManager(ClubMember clubMember) {
         return clubMember.checkRoleIs(MANAGER) && clubMember.hasAuthority(MEMBER_ALL);
+    }
+    private ClubMember getClubMember(Long managerId) {
+        return clubMemberRepository.findById(managerId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
     }
 }

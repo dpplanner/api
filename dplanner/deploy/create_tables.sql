@@ -194,6 +194,11 @@ create table post_block (
     primary key (club_member_id, post_id)
 );
 
+create table club_member_block (
+    club_member_id bigint not null,
+    blocked_club_member_id bigint not null,
+    primary key (blocked_club_member_id, club_member_id)
+);
 
 -- Add Constraints
 alter table if exists attachment

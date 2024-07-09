@@ -1,5 +1,6 @@
 package com.dp.dplanner.domain.club;
 
+import com.dp.dplanner.domain.ClubMemberBlock;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.Post;
 import com.dp.dplanner.domain.PostBlock;
@@ -90,5 +91,8 @@ public class ClubMember {
     }
     public PostBlock block(Post post) {
         return PostBlock.builder().clubMember(this).post(post).build();
+    }
+    public ClubMemberBlock block(ClubMember blockedClubMember) {
+        return ClubMemberBlock.builder().clubMember(this).blockedClubMember(blockedClubMember).build();
     }
 }

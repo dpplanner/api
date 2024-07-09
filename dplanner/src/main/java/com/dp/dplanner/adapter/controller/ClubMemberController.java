@@ -169,4 +169,12 @@ public class ClubMemberController {
         ClubMemberDto.Response responseDto = clubMemberService.changeClubMemberProfileImage(clubMemberId, image);
         return CommonResponse.createSuccess(responseDto);
     }
+
+    @PostMapping("{blockedClubMemberId}/block")
+    public CommonResponse blockClubMember(@AuthenticationPrincipal PrincipalDetails principal,
+                                          @PathVariable("blockedClubMemberId") Long blockedClubMemberId) {
+        Long clubMemberId = principal.getClubMemberId();
+        clubMemberService.blockClubMember(clubMemberId, blockedClubMemberId);
+        return CommonResponse.createSuccessWithNoContent();
+    }
 }
