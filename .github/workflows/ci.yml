@@ -31,13 +31,11 @@ jobs:
 
       - name: make firebase adminsdk json
         run: |
-          cd ./dplanner/src/main/resources
-          touch ./dplanner-firebase-adminsdk.json
-          echo "${{secrets.FIREBASE}}" > ./dplanner-firebase-adminsdk.json
+          touch ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
+          echo "${{secrets.FIREBASE}}" > ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
           
-          cd ./dplanner/src/test/resources
-          touch ./dplanner-firebase-adminsdk.json
-          echo "${{secrets.FIREBASE}}" > ./dplanner-firebase-adminsdk.json
+          touch ./dplanner/src/test/resources/dplanner-firebase-adminsdk.json
+          echo "${{secrets.FIREBASE}}" > ./dplanner/src/test/resources/dplanner-firebase-adminsdk.json
         shell: bash
 
       - name: Substitute environment variables PROD
