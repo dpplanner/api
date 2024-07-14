@@ -74,7 +74,7 @@ jobs:
         run: |
           cd ./dplanner
           chmod +x ./gradlew
-          ./gradlew test -i
+          ./gradlew clean build -x test
 
       - name: Build Docker image
         run: sudo docker build --no-cache -t dplanner/api:${{ env.DOCKER_IMAGE_VERSION }} -f ./dplanner/deploy/Dockerfile . --platform linux/x86_64
