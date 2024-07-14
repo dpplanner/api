@@ -24,14 +24,14 @@ jobs:
 
       - name: make oauth.yml
         run: |
-          cd ./src/main/resources
+          cd ./dplanner/src/main/resources
           touch ./application-oauth.yml
           echo "${{secrets.OAUTH}}" > ./application-oauth.yml
         shell: bash
 
       - name: make firebase adminsdk json
         run: |
-          cd ./src/main/resources
+          cd ./dplanner/src/main/resources
           touch ./dplanner-firebase-adminsdk.json
           echo "${{secrets.FIREBASE}}" > ./dplanner-firebase-adminsdk.json
         shell: bash
