@@ -46,8 +46,8 @@ public class PostController {
 
     @GetMapping(value = "/clubs/{clubId}")
     public CommonResponse<SliceResponse> getClubPosts(@AuthenticationPrincipal PrincipalDetails principal,
-                                              @PathVariable final Long clubId,
-                                              @PageableDefault final Pageable pageable) {
+                                                      @PathVariable final Long clubId,
+                                                      @PageableDefault final Pageable pageable) {
 
         Long clubMemberId = principal.getClubMemberId();
         if (!principal.getClubId().equals(clubId)) {
@@ -63,8 +63,8 @@ public class PostController {
 
     @GetMapping(value = "/clubMembers/{clubMemberId}")
     public CommonResponse<SliceResponse> getMyPosts(@AuthenticationPrincipal PrincipalDetails principal,
-                                            @PathVariable final Long clubMemberId,
-                                            @PageableDefault final Pageable pageable) {
+                                                    @PathVariable final Long clubMemberId,
+                                                    @PageableDefault final Pageable pageable) {
         if (!principal.getClubMemberId().equals(clubMemberId)) {
             throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
@@ -78,8 +78,8 @@ public class PostController {
 
     @GetMapping(value = "/clubMembers/{clubMemberId}/like")
     public CommonResponse<SliceResponse> getLikedPosts(@AuthenticationPrincipal PrincipalDetails principal,
-                                                    @PathVariable final Long clubMemberId,
-                                                    @PageableDefault final Pageable pageable) {
+                                                       @PathVariable final Long clubMemberId,
+                                                       @PageableDefault final Pageable pageable) {
         if (!principal.getClubMemberId().equals(clubMemberId)) {
             throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
@@ -159,7 +159,7 @@ public class PostController {
             throw new ApiException(ErrorResult.REQUEST_IS_INVALID);
         }
         Long clubId = principal.getClubId();
-        PostDto.SliceResponse response = postService.getCommentedPosts(clubMemberId, clubId,pageable);
+        PostDto.SliceResponse response = postService.getCommentedPosts(clubMemberId, clubId, pageable);
         return CommonResponse.createSuccess(response);
     }
 
@@ -176,7 +176,7 @@ public class PostController {
 
     @PostMapping(value = "/{postId}/block")
     public CommonResponse blockPost(@AuthenticationPrincipal PrincipalDetails principal,
-                                     @PathVariable final Long postId) {
+                                    @PathVariable final Long postId) {
         Block block = Block.builder()
                 .postId(postId)
                 .clubMemberId(principal.getClubMemberId())
