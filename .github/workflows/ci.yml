@@ -66,7 +66,13 @@ jobs:
         run: |
           cd ./dplanner
           chmod +x ./gradlew
-          ./gradlew clean build -x test 
+          ./gradlew clean build --build-cache -x test 
+
+      - name: Cache PhysicalTheraphy build directory
+        uses: actions/cache@v3
+        with:
+          path: ./
+          key: ${{ runner.os }}-physicaltheraphy-build-cache-${{ steps.short-sha.outputs.sha }}
           
       - name: Build Docker image
         run: sudo docker build  -t dplanner/api:${{ env.DOCKER_IMAGE_VERSION }} -f ./dplanner/deploy/Dockerfile . --platform linux/x86_64
