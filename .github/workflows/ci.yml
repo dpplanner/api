@@ -34,6 +34,10 @@ jobs:
           cd ./dplanner/src/main/resources
           touch ./dplanner-firebase-adminsdk.json
           echo "${{secrets.FIREBASE}}" > ./dplanner-firebase-adminsdk.json
+          
+          cd ./dplanner/src/test/resources
+          touch ./dplanner-firebase-adminsdk.json
+          echo "${{secrets.FIREBASE}}" > ./dplanner-firebase-adminsdk.json
         shell: bash
 
       - name: Substitute environment variables PROD
