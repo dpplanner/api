@@ -71,6 +71,7 @@ jobs:
       - name: Build with Gradle
         run: |
           cd ./dplanner
+          chmod +x ./gradlew
           ./gradlew clean build --debug
 
       - name: Build Docker image
