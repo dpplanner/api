@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/checkout@v4
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -60,7 +60,14 @@ jobs:
           cloud.aws.credentials.access-key: ${{secrets.AWS_S3_ACCESSKEY}}
           cloud.aws.credentials.secret-key: ${{secrets.AWS_S3_SECRETKEY}}
 
+      - name: debug
+        run: |
+         cat ./dplanner/src/main/resources/application-production.yml
+         cat ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
+         cat ./dplanner/src/main/resources/application-oauth.yml
 
+
+      
       - name: Build with Gradle
         run: |
           cd ./dplanner
