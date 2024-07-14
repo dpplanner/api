@@ -62,22 +62,14 @@ jobs:
           cloud.aws.credentials.access-key: ${{secrets.AWS_S3_ACCESSKEY}}
           cloud.aws.credentials.secret-key: ${{secrets.AWS_S3_SECRETKEY}}
 
-      - name: debug
-        run: |
-         cat ./dplanner/src/main/resources/application-production.yml
-         cat ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
-         cat ./dplanner/src/main/resources/application-oauth.yml
-
-
-      
       - name: Build with Gradle
         run: |
           cd ./dplanner
           chmod +x ./gradlew
-          ./gradlew clean build -x test
-
+          ./gradlew clean build -x test 
+          
       - name: Build Docker image
-        run: sudo docker build --no-cache -t dplanner/api:${{ env.DOCKER_IMAGE_VERSION }} -f ./dplanner/deploy/Dockerfile . --platform linux/x86_64
+        run: sudo docker build  -t dplanner/api:${{ env.DOCKER_IMAGE_VERSION }} -f ./dplanner/deploy/Dockerfile . --platform linux/x86_64
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
