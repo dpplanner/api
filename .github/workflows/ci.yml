@@ -19,22 +19,24 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '11'
+          distribution: 'temurin'
+
 
       - name: make oauth.yml
         run: |
-          cd ./src/main/resources
+          cd ./dplanner/src/main/resources
           touch ./application-oauth.yml
           echo "${{secrets.OAUTH}}" > ./application-oauth.yml
         shell: bash
 
       - name: make firebase adminsdk json
         run: |
-          cd ./src/main/resources
+          cd ./dplanner/src/main/resources
           touch ./dplanner-firebase-adminsdk.json
           echo "${{secrets.FIREBASE}}" > ./dplanner-firebase-adminsdk.json
         shell: bash
 
-      - name: Substitute environment variables
+      - name: Substitute environment variables PROD
         if: contains(github.ref,'main')
         uses: microsoft/variable-substitution@v1
         with:
@@ -46,7 +48,7 @@ jobs:
           cloud.aws.credentials.access-key: ${{secrets.AWS_S3_ACCESSKEY}}
           cloud.aws.credentials.secret-key: ${{secrets.AWS_S3_SECRETKEY}}
 
-      - name: Substitute environment variables
+      - name: Substitute environment variables DEV
         if: contains(github.ref,'develop')
         uses: microsoft/variable-substitution@v1
         with:
