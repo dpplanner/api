@@ -38,10 +38,10 @@ jobs:
 
       - name: Substitute environment variables
         run: |
-          sed -i "s/\\${DB_USER}/${{ secrets.DB_USER }}/" ./dplanner/src/main/resources/application-production.yml
-          sed -i "s/\\${DB_PASSWORD}/${{ secrets.DB_PASSWORD }}/" ./dplanner/src/main/resources/application-production.yml
-          sed -i "s/\\${AWS_S3_ACCESSKEY}/${{ secrets.AWS_S3_ACCESSKEY }}/" ./dplanner/src/main/resources/application-production.yml
-          sed -i "s/\\${AWS_S3_SECRETKEY}/${{ secrets.AWS_S3_SECRETKEY }}/" ./dplanner/src/main/resources/application-production.yml
+          sed -i "s#\\${DB_USER}/${{ secrets.DB_USER }}/" ./dplanner/src/main/resources/application-production.yml
+          sed -i "s#\\${DB_PASSWORD}/${{ secrets.DB_PASSWORD }}/" ./dplanner/src/main/resources/application-production.yml
+          sed -i "s#\\${AWS_S3_ACCESSKEY}/${{ secrets.AWS_S3_ACCESSKEY }}/" ./dplanner/src/main/resources/application-production.yml
+          sed -i "s#\\${AWS_S3_SECRETKEY}/${{ secrets.AWS_S3_SECRETKEY }}/" ./dplanner/src/main/resources/application-production.yml
         shell: bash
 
       - name : Substitute environment variables (PROD)
