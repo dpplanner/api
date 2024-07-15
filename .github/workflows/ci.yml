@@ -77,8 +77,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker image
-        run: sudo docker push dplanner/api:${{ env.DOCKER_IMAGE_VERSION }}
 
+      - name: Push Docker image
+        run: |
+          sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          sudo docker push dplanner/api:${{ env.DOCKER_IMAGE_VERSION }}
+        
       - name: Clean Docker image
         run: sudo docker rmi dplanner/api:${{ env.DOCKER_IMAGE_VERSION }}
