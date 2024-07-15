@@ -7,7 +7,7 @@ RUN apk --no-cache add tzdata && \
     echo $TZ > /etc/timezone \
     apk del tzdata
 
-ARG JAR_FILE=../build/libs/dplanner-0.0.1-SNAPSHOT.jar
+ARG JAR_FILE=./dplanner/build/libs/dplanner-0.0.1-SNAPSHOT.jar
 
 COPY ${JAR_FILE} dplanner.jar
 
