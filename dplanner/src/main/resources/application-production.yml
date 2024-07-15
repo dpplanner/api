@@ -3,7 +3,7 @@ spring:
     activate:
       on-profile: production
     import:
-      - application-oauth.yml
+#      - application-oauth.yml
 #      - application-rabbitMQ.yml
 
   datasource:
