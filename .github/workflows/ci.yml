@@ -25,13 +25,13 @@ jobs:
       - name: make oauth.yml
         run: |
           touch ./dplanner/src/main/resources/application-oauth.yml
-          echo "${{secrets.OAUTH}}" > ./dplanner/src/main/resources/application-oauth.yml
+          echo '${{secrets.OAUTH}}' > ./dplanner/src/main/resources/application-oauth.yml
         shell: bash
 
       - name: make firebase adminsdk json
         run: |
           touch ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
-          echo "${{secrets.FIREBASE}}" > ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
+          echo '${{secrets.FIREBASE}}' > ./dplanner/src/main/resources/dplanner-firebase-adminsdk.json
         shell: bash
 
       - name: Substitute environment variables PROD
