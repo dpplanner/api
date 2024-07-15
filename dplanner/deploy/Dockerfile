@@ -15,4 +15,4 @@ COPY ${JAR_FILE} dplanner.jar
 
 RUN mkdir ./log
 
-ENTRYPOINT ["java","-jar", "-Dspring.profiles.active=production", "/dplanner.jar"]
+ENTRYPOINT ["java","-jar", "-Dspring.profiles.active=production", "./dplanner.jar"]
