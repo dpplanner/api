@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dp.dplanner.domain.club.ClubAuthorityType.*;
 import static com.dp.dplanner.adapter.dto.LockDto.*;
@@ -89,7 +90,13 @@ public class LockService {
 
         List<Lock> locks = lockRepository.findBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
 
-        return Response.ofList(locks);
+        //todo 임시방편 코드 추후 락 관련  논의 필요
+        LocalDateTime cutoffDate = LocalDateTime.now().plusDays(resource.getBookableSpan()).toLocalDate().atStartOfDay();
+        List<Lock> filteredLock = locks.stream()
+                .filter(lock -> !(lock.getPeriod().getStartDateTime().isAfter(cutoffDate) || lock.getPeriod().getEndDateTime().isAfter(cutoffDate)))
+                .collect(Collectors.toList());
+
+        return Response.ofList(filteredLock);
     }
 
 
