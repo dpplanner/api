@@ -1,5 +1,6 @@
 package com.dp.dplanner.service;
 
+import com.dp.dplanner.domain.club.ClubAuthority;
 import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.service.aop.annotation.RequiredAuthority;
 import com.dp.dplanner.domain.Lock;
@@ -91,12 +92,14 @@ public class LockService {
         List<Lock> locks = lockRepository.findBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
 
         //todo 임시방편 코드 추후 락 관련  논의 필요
-        LocalDateTime cutoffDate = LocalDateTime.now().plusDays(resource.getBookableSpan()).toLocalDate().atStartOfDay();
-        List<Lock> filteredLock = locks.stream()
-                .filter(lock -> !(lock.getPeriod().getStartDateTime().isAfter(cutoffDate) || lock.getPeriod().getEndDateTime().isAfter(cutoffDate)))
-                .collect(Collectors.toList());
-
-        return Response.ofList(filteredLock);
+        if (clubMember.hasAuthority(SCHEDULE_ALL)) {
+            LocalDateTime cutoffDate = LocalDateTime.now().plusDays(resource.getBookableSpan()+1).toLocalDate().atStartOfDay();
+            List<Lock> filteredLock = locks.stream()
+                    .filter(lock -> !(lock.getPeriod().getStartDateTime().isAfter(cutoffDate) || lock.getPeriod().getEndDateTime().isAfter(cutoffDate)))
+                    .collect(Collectors.toList());
+            return Response.ofList(filteredLock);
+        }
+        return Response.ofList(locks);
     }
 
 
