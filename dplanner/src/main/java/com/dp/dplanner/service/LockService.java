@@ -92,7 +92,7 @@ public class LockService {
         List<Lock> locks = lockRepository.findBetween(period.getStartDateTime(), period.getEndDateTime(), resourceId);
 
         //todo 임시방편 코드 추후 락 관련  논의 필요
-        if (clubMember.hasAuthority(SCHEDULE_ALL)) {
+        if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
             LocalDateTime cutoffDate = LocalDateTime.now().plusDays(resource.getBookableSpan()+1).toLocalDate().atStartOfDay();
             List<Lock> filteredLock = locks.stream()
                     .filter(lock -> !(lock.getPeriod().getStartDateTime().isAfter(cutoffDate) || lock.getPeriod().getEndDateTime().isAfter(cutoffDate)))
