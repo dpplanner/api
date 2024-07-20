@@ -31,6 +31,11 @@ public class ReservationController {
     public CommonResponse<Response> createReservation(@AuthenticationPrincipal PrincipalDetails principal,
                                                       @RequestBody ReservationDto.Create createDto) {
         Long clubMemberId = principal.getClubMemberId();
+
+        //todo 추후 버전 처리 해서 삭제
+        if (createDto.getReservationOwnerId() == null) {
+            createDto.setReservationOwnerId(principal.getClubMemberId());
+        }
         Response response = reservationService.createReservation(clubMemberId, createDto);
 
         return CommonResponse.createSuccess(response);
