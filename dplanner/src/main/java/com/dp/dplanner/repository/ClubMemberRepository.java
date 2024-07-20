@@ -30,7 +30,10 @@ public interface ClubMemberRepository extends CrudRepository<ClubMember, Long> {
     List<ClubMember> findAllByClub(Club club);
 
 
-    @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = true and cm.isDeleted=false  order by cm.role, cm.name ")
+    @Query(value = "select cm from ClubMember cm " +
+            " left join ClubAuthority ca on cm.clubAuthority.id = ca.id " +
+            " where cm.club = :club and cm.isConfirmed = true and cm.isDeleted=false " +
+            " order by cm.role, ca.name, cm.name ")
     List<ClubMember> findAllConfirmedClubMemberByClub(@Param("club") Club club);
 
     @Query(value = "select cm from ClubMember cm where cm.club = :club and cm.isConfirmed = false and cm.isDeleted=false  order by cm.name")
