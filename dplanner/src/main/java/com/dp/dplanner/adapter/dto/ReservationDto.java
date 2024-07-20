@@ -23,6 +23,7 @@ public class ReservationDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Create {
+        private Long reservationOwnerId;
         private Long resourceId;
         private String title;
         private String usage;

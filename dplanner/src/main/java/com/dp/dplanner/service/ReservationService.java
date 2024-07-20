@@ -59,6 +59,7 @@ public class ReservationService {
 
         if (!clubMember.hasAuthority(SCHEDULE_ALL)) {
             //일반 사용자 요청 처리
+            checkIsSameClubMember(clubMemberId, createDto.getReservationOwnerId());
             checkIsLocked(resourceId, startDateTime, endDateTime);
             checkIsInBookableSpan(resource, endDateTime);
             checkIsPastReservation(startDateTime, endDateTime);
@@ -77,13 +78,17 @@ public class ReservationService {
                                     build()));
 
             createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
-        } else {
+        } else if(clubMember.hasAuthority(SCHEDULE_ALL)) {
             // 예약 관리 권한을 가진 매니저 및 관리자 요청 처리
             // 예약을 생성하고 승인합니다.
-            reservation = createDto.toEntity(clubMember, resource);
+            ClubMember reservationOwner = clubMemberRepository.findById(createDto.getReservationOwnerId())
+                    .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+            checkIsSameClub(clubMember,reservationOwner.getClub().getId());
+
+            reservation = createDto.toEntity(reservationOwner, resource);
             reservation.confirm();
             reservationRepository.save(reservation);
-            List<ReservationInvitee> invitees = createReservationInvitee(createDto.getReservationInvitees(), clubMember, reservation);
+            List<ReservationInvitee> invitees = createReservationInvitee(createDto.getReservationInvitees(), reservationOwner, reservation);
             messageService.createPrivateMessage(invitees.stream().map(ReservationInvitee::getClubMember).toList(),
                     Message.invitedMessage(
                             Message.MessageContentBuildDto.builder().
@@ -93,9 +98,12 @@ public class ReservationService {
                                     resourceName(reservation.getResource().getName()).
                                     info(String.valueOf(reservation.getId())).
                                     build()));
+        }else{
+            throw new ServiceException(REQUEST_IS_INVALID);
         }
         return ReservationDto.Response.of(reservation);
     }
+
     @Transactional
     public ReservationDto.Response updateReservation(Long clubMemberId, ReservationDto.Update updateDto) {
         Long reservationId = updateDto.getReservationId();
@@ -391,6 +399,7 @@ public class ReservationService {
             throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
         }
     }
+
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
         if (clubMember.hasAuthority(SCHEDULE_ALL)) {
             reservation.confirm();
@@ -446,6 +455,15 @@ public class ReservationService {
     private void checkIsPastReservation(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         LocalDateTime now = LocalDateTime.now(clock);
         if (endDateTime.isBefore(now) || endDateTime.isEqual(now)) {
+            throw new ServiceException(REQUEST_IS_INVALID);
+        }
+    }
+
+    /**
+     * 일반 사용자는 예약시 본인이 예약 주인이 되어야 함.
+     */
+    private void checkIsSameClubMember(Long clubMemberId, Long reservationOwnerId) {
+        if (!clubMemberId.equals(reservationOwnerId)) {
             throw new ServiceException(REQUEST_IS_INVALID);
         }
     }
