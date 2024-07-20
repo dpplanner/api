@@ -676,6 +676,31 @@ public class ReservationServiceTests {
                 .isEqualTo(RESERVATION_NOT_FOUND);
     }
 
+    @Test
+    @DisplayName("관리자는 예약 소유자 다른 클럽원으로 바꿀 수 있다.")
+    public void updateReservationOwner() throws Exception {
+        //given
+        Long reservationId = 1L;
+        Long newReservationOwnerId = sameClubMember.getId();
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(newReservationOwnerId)).willReturn(Optional.ofNullable(sameClubMember));
+
+        assert reservation.getClubMember().getId() != newReservationOwnerId;
+        //when
+        ReservationDto.UpdateOwner updateDto = ReservationDto.UpdateOwner.builder()
+                .reservationOwnerId(sameClubMember.getId())
+                .reservationId(reservationId)
+                .build();
+        ReservationDto.Response response = reservationService.updateReservationOwner(clubMember.getId(), updateDto);
+
+        //then
+        assertThat(response.getClubMemberName()).as("예약 주인이 바뀌어야 한다").isEqualTo(sameClubMember.getName());
+        assertThat(response.getClubMemberId()).as("예약 주인이 바뀌어야 한다").isEqualTo(sameClubMember.getId());
+
+    }
+
 
     /**
      * cancelReservation

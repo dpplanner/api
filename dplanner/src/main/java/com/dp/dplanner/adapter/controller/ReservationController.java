@@ -49,6 +49,18 @@ public class ReservationController {
 
     }
 
+    @PatchMapping(value = "/reservations/{reservationId}/update-owner", name = "updateReservationOwner")
+    public CommonResponse<Response> updateReservationOwner(@AuthenticationPrincipal PrincipalDetails principal,
+                                                       @PathVariable Long reservationId,
+                                                       @RequestBody UpdateOwner updateOwnerDto) {
+
+        Long clubMemberId = principal.getClubMemberId();
+        updateOwnerDto.setReservationId(reservationId);
+        Response response = reservationService.updateReservationOwner(clubMemberId, updateOwnerDto);
+
+        return CommonResponse.createSuccess(response);
+    }
+
     @PatchMapping(value = "/reservations/{reservationId}/cancel", name = "cancel")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public CommonResponse cancelReservations(@AuthenticationPrincipal PrincipalDetails principal,

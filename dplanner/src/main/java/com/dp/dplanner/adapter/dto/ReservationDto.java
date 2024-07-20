@@ -72,6 +72,16 @@ public class ReservationDto {
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
+    public static class UpdateOwner {
+        private Long reservationId;
+        private Long reservationOwnerId;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Delete {
         private Long reservationId;
 

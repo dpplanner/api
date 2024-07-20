@@ -100,4 +100,8 @@ public class Reservation extends BaseEntity{
     public void clearInvitee() {
         this.reservationInvitees = new ArrayList<>();
     }
+
+    public void updateOwner(ClubMember newReservationOwner) {
+        this.clubMember = newReservationOwner;
+    }
 }

@@ -135,6 +135,29 @@ public class ReservationService {
 
         return ReservationDto.Response.of(reservation);
     }
+    @Transactional
+    @RequiredAuthority(authority = SCHEDULE_ALL)
+    public ReservationDto.Response updateReservationOwner(Long clubMemberId, ReservationDto.UpdateOwner updateDto) {
+        Long reservationId = updateDto.getReservationId();
+        Long newReservationOwnerId = updateDto.getReservationOwnerId();
+
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
+
+        ClubMember mananger = clubMemberRepository.findById(clubMemberId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+
+        ClubMember newReservationOwner = clubMemberRepository.findById(newReservationOwnerId)
+                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+
+        checkIsSameClub(mananger,newReservationOwner.getClub().getId());
+
+        reservation.updateOwner(newReservationOwner);
+
+        return ReservationDto.Response.of(reservation);
+
+
+    }
 
     @Transactional
     public void cancelReservation(Long clubMemberId, ReservationDto.Delete deleteDto) {
@@ -399,7 +422,6 @@ public class ReservationService {
             throw new ServiceException(CLUBMEMBER_NOT_CONFIRMED);
         }
     }
-
     private static void confirmIfAuthorized(ClubMember clubMember, Reservation reservation) {
         if (clubMember.hasAuthority(SCHEDULE_ALL)) {
             reservation.confirm();
@@ -449,6 +471,7 @@ public class ReservationService {
             throw new ServiceException(AUTHORIZATION_DENIED);
         }
     }
+
     /**
      * 요청한 예약 시간이 과거 시간인지 검사
      */
