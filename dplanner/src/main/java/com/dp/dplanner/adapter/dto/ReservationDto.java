@@ -23,6 +23,7 @@ public class ReservationDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Create {
+        private Long reservationOwnerId;
         private Long resourceId;
         private String title;
         private String usage;
@@ -64,6 +65,16 @@ public class ReservationDto {
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime endDateTime;
 
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UpdateOwner {
+        private Long reservationId;
+        private Long reservationOwnerId;
     }
 
     @Getter

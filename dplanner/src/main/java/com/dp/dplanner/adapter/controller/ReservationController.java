@@ -31,6 +31,11 @@ public class ReservationController {
     public CommonResponse<Response> createReservation(@AuthenticationPrincipal PrincipalDetails principal,
                                                       @RequestBody ReservationDto.Create createDto) {
         Long clubMemberId = principal.getClubMemberId();
+
+        //todo 추후 버전 처리 해서 삭제
+        if (createDto.getReservationOwnerId() == null) {
+            createDto.setReservationOwnerId(principal.getClubMemberId());
+        }
         Response response = reservationService.createReservation(clubMemberId, createDto);
 
         return CommonResponse.createSuccess(response);
@@ -47,6 +52,18 @@ public class ReservationController {
 
         return CommonResponse.createSuccess(response);
 
+    }
+
+    @PatchMapping(value = "/reservations/{reservationId}/update-owner", name = "updateReservationOwner")
+    public CommonResponse<Response> updateReservationOwner(@AuthenticationPrincipal PrincipalDetails principal,
+                                                       @PathVariable Long reservationId,
+                                                       @RequestBody UpdateOwner updateOwnerDto) {
+
+        Long clubMemberId = principal.getClubMemberId();
+        updateOwnerDto.setReservationId(reservationId);
+        Response response = reservationService.updateReservationOwner(clubMemberId, updateOwnerDto);
+
+        return CommonResponse.createSuccess(response);
     }
 
     @PatchMapping(value = "/reservations/{reservationId}/cancel", name = "cancel")

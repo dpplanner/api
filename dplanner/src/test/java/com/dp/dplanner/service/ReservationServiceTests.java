@@ -104,7 +104,7 @@ public class ReservationServiceTests {
 
         //when
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
         ReservationDto.Response responseDto = reservationService.createReservation(clubMember.getId(), createDto);
 
         //then
@@ -118,6 +118,25 @@ public class ReservationServiceTests {
         assertThat(responseDto.getEndDateTime()).as("예약 종료 시간이 일치해야 한다").isEqualTo(createDto.getEndDateTime());
         assertThat(responseDto.getStatus()).as("예약은 REQUEST 상태여야 한다").isEqualTo(REQUEST.name());
     }
+
+    @Test
+    @DisplayName("일반 회원은 예약 주인이 본인이 아닌 예약을 신청할 경우에는 REQUEST_IS_INVALID.")
+    public void createReservationRequestByUser_RequestOwnerIsDifferent() throws Exception {
+        //given
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
+
+        //when
+        Long otherReservationOwnerId = 1234L;
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),otherReservationOwnerId);
+
+        //then
+        ServiceException serviceException = assertThrows(ServiceException.class, () -> reservationService.createReservation(clubMember.getId(), createDto));
+        assertThat(serviceException.getMessage()).isEqualTo(REQUEST_IS_INVALID.getMessage());
+    }
+
 
     @Test
     @DisplayName("예약시 invitee를 초대할 수 있다.")
@@ -138,7 +157,7 @@ public class ReservationServiceTests {
 
         //when
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
         createDto.setReservationInvitees(List.of(invitee.getId()));
 
         ReservationDto.Response responseDto = reservationService.createReservation(clubMember.getId(), createDto);
@@ -164,7 +183,7 @@ public class ReservationServiceTests {
 
         //when
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
         ReservationDto.Response responseDto = reservationService.createReservation(clubMember.getId(), createDto);
 
         //then
@@ -185,13 +204,38 @@ public class ReservationServiceTests {
 
         //when
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
         ReservationDto.Response responseDto = reservationService.createReservation(clubMember.getId(), createDto);
 
         //then
         assertThat(responseDto.getStatus()).as("예약은 승인된 상태여야 한다").isEqualTo(CONFIRMED.name());
     }
 
+
+    @Test
+    @DisplayName("예약 권한이 있는 매니저나 관리자는 본인이 아닌 다른 클럽 멤버를 예약 주인으로 신청할 수 있다.")
+    public void createReservationDifferentReservationOwner() throws Exception {
+        //given
+        Long diffrentReservaionOwnerId = sameClubMember.getId();
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(sameClubMember.getId())).willReturn(Optional.ofNullable(sameClubMember));
+        given(resourceRepository.findById(resource.getId())).willReturn(Optional.ofNullable(resource));
+        given(reservationRepository.save(any(Reservation.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(redisReservationService.saveReservation(any(), any(), any())).willReturn(true);
+
+        clubMember.changeRole(ClubRole.MANAGER);
+        clubMember.updateClubAuthority(clubAuthority);
+
+        //when
+        ReservationDto.Create createDto = getCreateDto(
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),diffrentReservaionOwnerId);
+        ReservationDto.Response responseDto = reservationService.createReservation(clubMember.getId(), createDto);
+
+        //then
+        assertThat(responseDto.getStatus()).as("예약은 승인된 상태여야 한다").isEqualTo(CONFIRMED.name());
+        assertThat(responseDto.getClubMemberId()).as("예약의 주인은 본인이 아닌 다른 클럽원이다.").isEqualTo(sameClubMember.getId());
+        assertThat(responseDto.getClubMemberName()).as("예약의 주인은 본인이 아닌 다른 클럽원이다.").isEqualTo(sameClubMember.getName());
+    }
     @Test
     @DisplayName("레디스에 이미 해당 예약에 대한 키가 있으면 REQUEST_IS_INVALID.")
     public void createReservationConcurrentRequestThenException() throws Exception {
@@ -203,7 +247,7 @@ public class ReservationServiceTests {
 
         //when
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
         RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> reservationService.createReservation(clubMember.getId(), createDto));
 
         //then
@@ -222,7 +266,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
@@ -243,7 +287,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
@@ -267,7 +311,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false,  LocalDateTime.of(2023, 8, 10, 20, 0), LocalDateTime.of(2023, 8, 10, 21, 0));
+                resource.getId(), "reservation", "usage", false,  LocalDateTime.of(2023, 8, 10, 20, 0), LocalDateTime.of(2023, 8, 10, 21, 0),clubMember.getId());
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
@@ -289,14 +333,14 @@ public class ReservationServiceTests {
 
         //when
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(18), getTime(19));
+                resource.getId(), "reservation", "usage", false, getTime(18), getTime(19),clubMember.getId());
         //then
         BaseException exception = assertThrows(ServiceException.class, () -> reservationService.createReservation(clubMember.getId(), createDto));
         assertThat(exception.getMessage()).isEqualTo(REQUEST_IS_INVALID.getMessage());
 
         //when
         ReservationDto.Create createDto2 = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(18), getTime(20));
+                resource.getId(), "reservation", "usage", false, getTime(18), getTime(20),clubMember.getId());
         //then
         BaseException exception2 = assertThrows(ServiceException.class, () -> reservationService.createReservation(clubMember.getId(), createDto2));
         assertThat(exception2.getMessage()).isEqualTo(REQUEST_IS_INVALID.getMessage());
@@ -310,7 +354,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),otherClubMember.getId());
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(otherClubMember.getId(), createDto));
@@ -327,7 +371,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),null);
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
@@ -347,7 +391,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),unconfirmedId);
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(unconfirmedId, createDto));
@@ -365,7 +409,7 @@ public class ReservationServiceTests {
         //when
         //then
         ReservationDto.Create createDto = getCreateDto(
-                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21));
+                resource.getId(), "reservation", "usage", false, getTime(20), getTime(21),clubMember.getId());
 
         BaseException exception = assertThrows(ServiceException.class,
                 () -> reservationService.createReservation(clubMember.getId(), createDto));
@@ -630,6 +674,31 @@ public class ReservationServiceTests {
                 () -> reservationService.updateReservation(clubMember.getId(), updateDto));
         assertThat(exception.getErrorResult()).as("예야 데이터가 없으면 RESERVATION_NOT_FOUND 예외를 던져야 한다")
                 .isEqualTo(RESERVATION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("관리자는 예약 소유자 다른 클럽원으로 바꿀 수 있다.")
+    public void updateReservationOwner() throws Exception {
+        //given
+        Long reservationId = 1L;
+        Long newReservationOwnerId = sameClubMember.getId();
+        Reservation reservation = createDefaultReservation(resource, clubMember);
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.ofNullable(reservation));
+        given(clubMemberRepository.findById(clubMember.getId())).willReturn(Optional.ofNullable(clubMember));
+        given(clubMemberRepository.findById(newReservationOwnerId)).willReturn(Optional.ofNullable(sameClubMember));
+
+        assert reservation.getClubMember().getId() != newReservationOwnerId;
+        //when
+        ReservationDto.UpdateOwner updateDto = ReservationDto.UpdateOwner.builder()
+                .reservationOwnerId(sameClubMember.getId())
+                .reservationId(reservationId)
+                .build();
+        ReservationDto.Response response = reservationService.updateReservationOwner(clubMember.getId(), updateDto);
+
+        //then
+        assertThat(response.getClubMemberName()).as("예약 주인이 바뀌어야 한다").isEqualTo(sameClubMember.getName());
+        assertThat(response.getClubMemberId()).as("예약 주인이 바뀌어야 한다").isEqualTo(sameClubMember.getId());
+
     }
 
 
@@ -1511,9 +1580,10 @@ public class ReservationServiceTests {
      * Dto util method
      */
     private ReservationDto.Create getCreateDto(
-            Long resourceId, String title, String usage, boolean sharing, LocalDateTime start, LocalDateTime end) {
+            Long resourceId, String title, String usage, boolean sharing, LocalDateTime start, LocalDateTime end,Long reservationOwnerId) {
 
         return ReservationDto.Create.builder()
+                .reservationOwnerId(reservationOwnerId)
                 .resourceId(resourceId)
                 .title(title)
                 .usage(usage)
