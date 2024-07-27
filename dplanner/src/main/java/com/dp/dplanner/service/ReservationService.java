@@ -16,6 +16,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -113,14 +114,13 @@ public class ReservationService {
                 .orElseThrow(() -> new ServiceException(RESERVATION_NOT_FOUND));
 
         checkIsReservationOwner(clubMemberId, reservation);
-
+        checkUpdateDTONullValidation(reservation, updateDto);
         if (reservation.getPeriod().equals(new Period(start, end))) {
                 reservation.updateNotChangeStatus(
                         updateDto.getTitle(),
                         updateDto.getUsage(),
-                        updateDto.getStartDateTime(),
-                        updateDto.getEndDateTime(),
-                        updateDto.isSharing()
+                        updateDto.isSharing(),
+                        updateDto.getColor()
                 );
             // 양방향 관계 reservation.invitees clear 필요
             reservation.clearInvitee();
@@ -488,6 +488,25 @@ public class ReservationService {
     private void checkIsSameClubMember(Long clubMemberId, Long reservationOwnerId) {
         if (!clubMemberId.equals(reservationOwnerId)) {
             throw new ServiceException(REQUEST_IS_INVALID);
+        }
+    }
+
+    private void checkUpdateDTONullValidation(Reservation reservation, ReservationDto.Update updateDto) {
+
+        if (ObjectUtils.isEmpty(updateDto.isSharing())) {
+            updateDto.setSharing(reservation.isSharing());
+        }
+
+        if (ObjectUtils.isEmpty(updateDto.getTitle())) {
+            updateDto.setTitle(reservation.getTitle());
+        }
+
+        if (ObjectUtils.isEmpty(updateDto.getUsage())) {
+            updateDto.setUsage(reservation.getUsage());
+        }
+
+        if (ObjectUtils.isEmpty(updateDto.getColor())) {
+            updateDto.setColor(reservation.getColor());
         }
     }
 

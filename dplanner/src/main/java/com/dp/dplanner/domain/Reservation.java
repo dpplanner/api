@@ -45,17 +45,19 @@ public class Reservation extends BaseEntity{
     private boolean isReturned = false;
     private String title;
     private String usage;
+    private String color;
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
     @Builder
-    public Reservation(Resource resource, ClubMember clubMember, Period period, boolean sharing, String title, String usage) {
+    public Reservation(Resource resource, ClubMember clubMember, Period period, boolean sharing, String title, String usage,String color) {
         setResource(resource);
         this.clubMember = clubMember;
         this.period = period;
         this.sharing = sharing;
         this.title = title;
         this.usage = usage;
+        this.color = color;
         this.status = REQUEST;
     }
 
@@ -75,11 +77,11 @@ public class Reservation extends BaseEntity{
         this.status = REQUEST;
     }
 
-    public void updateNotChangeStatus(String title, String usage, LocalDateTime startDateTime, LocalDateTime endDateTime, boolean sharing) {
+    public void updateNotChangeStatus(String title, String usage,boolean sharing, String color) {
         this.title = title;
         this.usage = usage;
         this.sharing = sharing;
-        this.period = new Period(startDateTime, endDateTime);
+        this.color = color;
     }
 
 
