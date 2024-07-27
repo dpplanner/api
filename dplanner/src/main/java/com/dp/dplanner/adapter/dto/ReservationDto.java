@@ -28,6 +28,7 @@ public class ReservationDto {
         private String title;
         private String usage;
         private boolean sharing;
+        private String color = "A294DB";
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime startDateTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
@@ -43,6 +44,7 @@ public class ReservationDto {
                     .title(title)
                     .usage(usage)
                     .sharing(sharing)
+                    .color(color)
                     .build();
         }
     }
@@ -57,6 +59,7 @@ public class ReservationDto {
         private Long resourceId;
         private String title;
         private String usage;
+        private String color;
         private boolean sharing;
         @Builder.Default
         private List<Long> reservationInvitees = new ArrayList<>();
@@ -137,6 +140,7 @@ public class ReservationDto {
         private boolean isReturned;
         private String returnMessage;
         private String rejectMessage;
+        private String color;
         private List<String> attachmentsUrl;
         @Builder.Default
         private List<ReservationInviteeDto> invitees = new ArrayList<>();
@@ -166,6 +170,7 @@ public class ReservationDto {
                     .isReturned(reservation.isReturned())
                     .returnMessage(reservation.getReturnMessage())
                     .rejectMessage(reservation.getRejectMessage())
+                    .color(reservation.getColor())
                     .attachmentsUrl(reservation.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.toList()))
                     .invitees(
                             reservation.getReservationInvitees().stream().map(
