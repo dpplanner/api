@@ -172,16 +172,18 @@ public class PostService {
         Long commentCount = commentRepository.countDistinctByPostId(post.getId());
         Boolean likeStatus = postMemberLikeRepository.existsPostMemberLikeByPostIdAndClubMemberId(post.getId(), clubMemberId);
 
-        Club club = getClub(post.getClub().getId());
-        List<ClubMember> clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
-        messageService.createPrivateMessage(
-                clubMembers, Message.noticeRegisterdMessage(
-                        Message.MessageContentBuildDto.builder()
-                                .clubName(club.getClubName())
-                                .info(String.valueOf(post.getId()))
-                                .build()
-                )
-        );
+        if (post.getIsFixed()) {
+            Club club = getClub(post.getClub().getId());
+            List<ClubMember> clubMembers = clubMemberRepository.findAllConfirmedClubMemberByClub(club);
+            messageService.createPrivateMessage(
+                    clubMembers, Message.noticeRegisterdMessage(
+                            Message.MessageContentBuildDto.builder()
+                                    .clubName(club.getClubName())
+                                    .info(String.valueOf(post.getId()))
+                                    .build()
+                    )
+            );
+        }
 
         return Response.of(post,likeCount,commentCount,likeStatus);
     }
