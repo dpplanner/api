@@ -366,7 +366,7 @@ public class ReservationService {
         return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), pageableAmin, reservations.hasNext());
     }
 
-    @RequiredAuthority(authority = RETURN_MSG_READ)
+    @RequiredAuthority(authority = {RETURN_MSG_READ,SCHEDULE_ALL})
     @Transactional(readOnly = true)
     public ReservationDto.SliceResponse findAllReservationsConfirmed(Long managerId, ReservationDto.Request requestDto, String status, Pageable pageable) {
         Pageable pageableAmin = PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));

@@ -9,6 +9,9 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -172,6 +176,52 @@ public class RequiredAuthorityAspectTests {
                 .isInstanceOf(ServiceException.class);
     }
 
+    @ParameterizedTest
+    @MethodSource("provideAuthorityTestCases")
+    @DisplayName("권한에 따른 매니저 요청 테스트")
+    void testManagerRequestWithDifferentAuthorities(List<ClubAuthorityType> authorities, boolean shouldThrowException) {
+        // given
+        ClubAuthority clubAuthority = createClubAuthority(club, "name", "description", authorities);
+        ClubMember manager = ClubMember.builder().club(club).member(member).build();
+        manager.changeRole(ClubRole.MANAGER);
+        manager.updateClubAuthority(clubAuthority);
+
+        entityManager.persist(clubAuthority);
+        entityManager.persist(manager);
+
+        // when & then
+        if (shouldThrowException) {
+            assertThatThrownBy(() -> targetClass.targetMethod2(manager.getId()))
+                    .isInstanceOf(ServiceException.class);
+        } else {
+            assertDoesNotThrow(() -> targetClass.targetMethod2(manager.getId()));
+        }
+    }
+
+    private static Stream<Arguments> provideAuthorityTestCases() {
+        return Stream.of(
+                Arguments.of(List.of(ClubAuthorityType.MEMBER_ALL), false),
+                Arguments.of(List.of(ClubAuthorityType.SCHEDULE_ALL), false),
+                Arguments.of(List.of(ClubAuthorityType.MEMBER_ALL, ClubAuthorityType.SCHEDULE_ALL), false),
+                Arguments.of(List.of(ClubAuthorityType.RESOURCE_ALL), true)
+        );
+    }
+
+    @Test
+    @DisplayName("일반 회원이 요청하면 ServiceException")
+    public void requestByUserThenException2() throws Exception {
+        //given
+        ClubMember clubMember = ClubMember.builder().club(club).member(member).build();
+        entityManager.persist(clubMember);
+
+        assert clubMember.getRole().equals(ClubRole.USER);
+
+        //when
+        //then
+        assertThatThrownBy(() -> targetClass.targetMethod2(clubMember.getId()))
+                .isInstanceOf(ServiceException.class);
+    }
+
     private static ClubAuthority createClubAuthority(Club club, String name, String description, List<ClubAuthorityType> clubAuthorityTypes) {
 
         return ClubAuthority.builder()
@@ -191,6 +241,11 @@ public class RequiredAuthorityAspectTests {
 class TestAopTargetClass {
     @RequiredAuthority(authority = ClubAuthorityType.MEMBER_ALL)
     public void targetMethod(Long clubMemberId) throws IllegalStateException {
+
+    }
+
+    @RequiredAuthority(authority = {ClubAuthorityType.MEMBER_ALL,ClubAuthorityType.SCHEDULE_ALL})
+    public void targetMethod2(Long clubMemberId) throws IllegalStateException {
 
     }
 }

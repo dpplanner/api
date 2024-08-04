@@ -12,6 +12,9 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 import static com.dp.dplanner.domain.club.ClubRole.ADMIN;
 import static com.dp.dplanner.exception.ErrorResult.*;
 
@@ -27,8 +30,10 @@ public class RequiredAuthorityAspect {
             "&& @annotation(requiredAuthority) " +
             "&& args(clubMemberId, ..)")
     public void checkAuthority(Long clubMemberId, RequiredAuthority requiredAuthority) throws Throwable {
-        if(!requiredAuthority.authority().equals(ClubAuthorityType.NONE) ){
-            if (!hasAuthority(clubMemberId, requiredAuthority.authority())) {
+        if (!requiredAuthority.authority().equals(ClubAuthorityType.NONE)) {
+            boolean hasRequiredAuthority = Arrays.stream(requiredAuthority.authority())
+                    .anyMatch(authorityType -> hasAuthority(clubMemberId, authorityType));
+            if (!hasRequiredAuthority) {
                 throw new ServiceException(AUTHORIZATION_DENIED);
             }
         } else if (!requiredAuthority.role().equals(ClubRole.NONE)) {
