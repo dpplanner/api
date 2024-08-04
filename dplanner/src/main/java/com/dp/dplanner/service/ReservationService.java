@@ -348,24 +348,32 @@ public class ReservationService {
 
     @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional(readOnly = true)
-    public ReservationDto.SliceResponse findAllReservationsByStatus(Long managerId, ReservationDto.Request requestDto, String status, Pageable pageable) {
+    public ReservationDto.SliceResponse findAllReservationsRequest(Long managerId, ReservationDto.Request requestDto, String status, Pageable pageable) {
         Pageable pageableAmin = PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
 
-        Slice<Reservation> reservations = reservationRepository.findReservationsAdmin(requestDto.getClubId(), ReservationStatus.valueOf(status), pageableAmin);
+        Slice<Reservation> reservations = reservationRepository.findReservationsAdmin(requestDto.getClubId(), ReservationStatus.REQUEST, pageableAmin);
 
         return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), pageableAmin, reservations.hasNext());
     }
 
     @RequiredAuthority(authority = SCHEDULE_ALL)
     @Transactional(readOnly = true)
-    public List<ReservationDto.Response> findAllNotConfirmedReservations(Long managerId, ReservationDto.Request requestDto) {
-        ClubMember manager = clubMemberRepository.findById(managerId)
-                .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
-        List<Reservation> reservations = reservationRepository.findAllNotConfirmed(requestDto.getResourceId());
+    public ReservationDto.SliceResponse findAllReservationsRejected(Long managerId, ReservationDto.Request requestDto, String status, Pageable pageable) {
+        Pageable pageableAmin = PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
 
-        reservations.forEach(reservation -> checkIsSameClub(manager, reservation.getResource().getClub().getId()));
+        Slice<Reservation> reservations = reservationRepository.findReservationsAdmin(requestDto.getClubId(), ReservationStatus.REJECTED, pageableAmin);
 
-        return ReservationDto.Response.ofList(reservations);
+        return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), pageableAmin, reservations.hasNext());
+    }
+
+    @RequiredAuthority(authority = RETURN_MSG_READ)
+    @Transactional(readOnly = true)
+    public ReservationDto.SliceResponse findAllReservationsConfirmed(Long managerId, ReservationDto.Request requestDto, String status, Pageable pageable) {
+        Pageable pageableAmin = PageRequest.of(pageable.getPageNumber(),100, Sort.by(Sort.Direction.DESC, "period.startDateTime"));
+
+        Slice<Reservation> reservations = reservationRepository.findReservationsAdmin(requestDto.getClubId(), ReservationStatus.CONFIRMED, pageableAmin);
+        System.out.println(reservations.getContent().size());
+        return new ReservationDto.SliceResponse(ReservationDto.Response.ofList(reservations.getContent()), pageableAmin, reservations.hasNext());
     }
 
     @Transactional
@@ -388,7 +396,7 @@ public class ReservationService {
             }
             reservation.returned(returnDto.getReturnMessage());
 
-            List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(clubMember.getClub().getId(), SCHEDULE_ALL);
+            List<ClubMember> managers = clubMemberRepository.findClubMemberByClubIdAndClubAuthorityTypesContaining(clubMember.getClub().getId(), RETURN_MSG_READ);
             messageService.createPrivateMessage(managers,
                     Message.checkReturnMessage(
                             Message.MessageContentBuildDto.builder().

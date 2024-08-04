@@ -5,6 +5,7 @@ import com.dp.dplanner.adapter.exception.ApiException;
 import com.dp.dplanner.adapter.dto.CommonResponse;
 import com.dp.dplanner.adapter.dto.ReservationDto;
 import com.dp.dplanner.config.security.PrincipalDetails;
+import com.dp.dplanner.domain.ReservationStatus;
 import com.dp.dplanner.exception.ErrorResult;
 import com.dp.dplanner.service.ReservationService;
 import lombok.RequiredArgsConstructor;
@@ -164,7 +165,15 @@ public class ReservationController {
 
         Request requestDto = Request.builder().clubId(clubId).build();
 
-        SliceResponse response = reservationService.findAllReservationsByStatus(clubMemberId, requestDto, status, pageable);
+        SliceResponse response = null;
+        ReservationStatus reservationStatus = ReservationStatus.valueOf(status);
+        if (reservationStatus.equals(ReservationStatus.REQUEST)) {
+            response = reservationService.findAllReservationsRequest(clubMemberId, requestDto, status, pageable);
+        } else if (reservationStatus.equals(ReservationStatus.CONFIRMED)) {
+            response = reservationService.findAllReservationsConfirmed(clubMemberId, requestDto, status, pageable);
+        } else if (reservationStatus.equals(ReservationStatus.REJECTED)) {
+            response = reservationService.findAllReservationsRejected(clubMemberId, requestDto, status, pageable);
+        }
 
         return CommonResponse.createSuccess(response);
     }
