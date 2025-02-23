@@ -19,6 +19,7 @@ spring:
     properties:
       hibernate:
         default_batch_fetch_size: 500
+    database-platform: org.hibernate.dialect.Oracle12cDialect
   cache:
     type: redis
   data:
