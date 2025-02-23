@@ -11,8 +11,9 @@ import java.util.List;
 
 import static jakarta.persistence.FetchType.*;
 
-@Entity
 @Getter
+@Entity
+@Table(name = "resources")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Resource extends BaseEntity{
     @Id
