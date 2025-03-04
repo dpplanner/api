@@ -100,7 +100,7 @@ public class ClubMemberDto {
         String getName();
         String getInfo();
         String getRole();
-        Boolean getIsConfirmed();
+        Integer getIsConfirmed();
         String getUrl();
         Long getClubAuthorityId();
         String getClubAuthorityName();

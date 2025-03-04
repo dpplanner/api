@@ -55,7 +55,7 @@ public class ClubDto {
         String getInfo();
         String getUrl();
         Long getMemberCount();
-        Boolean getIsConfirmed();
+        Integer getIsConfirmed();
     }
 
     @Getter
@@ -76,7 +76,7 @@ public class ClubDto {
                     .clubName(responseMapping.getClubName())
                     .info(responseMapping.getInfo())
                     .memberCount(responseMapping.getMemberCount())
-                    .isConfirmed(responseMapping.getIsConfirmed())
+                    .isConfirmed(responseMapping.getIsConfirmed() != null && responseMapping.getIsConfirmed() == 1)
                     .url(responseMapping.getUrl())
                     .build();
         }

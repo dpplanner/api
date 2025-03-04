@@ -839,8 +839,8 @@ public class ClubServiceTests {
             }
 
             @Override
-            public Boolean getIsConfirmed() {
-                return true;
+            public Integer getIsConfirmed() {
+                return 1;
             }
         };
     }
