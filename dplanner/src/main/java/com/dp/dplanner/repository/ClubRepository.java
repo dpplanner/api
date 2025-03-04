@@ -15,7 +15,7 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
         SELECT
             c.id AS id, c.club_name AS clubName, c.info, c.url,
             (SELECT count(*)
-             FROM club_member AS cm2
+             FROM club_member cm2
              WHERE cm2.club_id = c.id AND cm2.is_confirmed = 1 AND cm2.is_deleted = 0) memberCount,
             cm.is_confirmed as isConfirmed
         FROM
