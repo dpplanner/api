@@ -1,11 +1,9 @@
 package com.dp.dplanner.config.security;
 
-import com.dp.dplanner.config.security.CustomAuthenticationEntryPoint;
-import com.dp.dplanner.config.security.JwtAuthenticationFilter;
-import com.dp.dplanner.config.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -13,7 +11,6 @@ import org.springframework.security.config.annotation.web.configurers.HeadersCon
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -25,34 +22,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-
-                .sessionManagement((sessionManagement)
-                        -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                .headers((headers)
-                        -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
-
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
+                .sessionManagement((sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers((headers) -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .formLogin(AbstractHttpConfigurer::disable)
-
                 .httpBasic(AbstractHttpConfigurer::disable)
-
-                .authorizeHttpRequests((authorizeHttpRequest)
-                        -> authorizeHttpRequest
-                        .requestMatchers(new AntPathRequestMatcher("/auth/**"))
-                        .permitAll()
-                        .requestMatchers("/swagger-ui/**")
-                        .permitAll()
-                        .requestMatchers("/actuator/**")
-                        .permitAll()
-                        .requestMatchers("/v3/**")
-                        .permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(
-                        (exceptionHandling) -> exceptionHandling.authenticationEntryPoint(customAuthenticationEntryPoint)
-                );
+                .authorizeHttpRequests((authorizeHttpRequest) -> authorizeHttpRequest
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/v3/**").permitAll()
+                        .anyRequest().authenticated())
+                .exceptionHandling((exceptionHandling) -> exceptionHandling.authenticationEntryPoint(customAuthenticationEntryPoint));
 
 //                .oauth2Login((oauth2Login) ->
 //                    oauth2Login
@@ -68,6 +50,4 @@ public class SecurityConfig {
                 UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-
-
 }

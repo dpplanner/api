@@ -18,7 +18,7 @@ import java.util.List;
 public class Comment extends BaseEntity{
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String content;
     private Boolean isDeleted;
