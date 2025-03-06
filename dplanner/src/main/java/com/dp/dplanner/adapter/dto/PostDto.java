@@ -29,8 +29,8 @@ public class PostDto {
     public static class Create{
         @NotNull
         private Long clubId;
-        private String content = "";
-        private String title = "";
+        private String content;
+        private String title;
         private List<MultipartFile> files;
 
         public Post toEntity(ClubMember clubMember, Club club) {
