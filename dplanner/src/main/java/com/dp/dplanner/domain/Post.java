@@ -25,8 +25,10 @@ public class Post extends BaseEntity{
     private ClubMember clubMember;
 
     @Column(columnDefinition = "text")
-    private String content;
-    private String title;
+    @Builder.Default
+    private String content = "";
+    @Builder.Default
+    private String title = "";
     private Boolean isFixed;
 
     @OneToMany(mappedBy = "post",cascade = CascadeType.REMOVE)
