@@ -38,7 +38,7 @@ public class PostDto {
                     .clubMember(clubMember)
                     .club(club)
                     .content(content.isBlank() ? " " : content)
-                    .title(title.isBlank() ? " " : title)
+                    .title(title.isBlank() ? "제목 없음" : title)
                     .isFixed(false)
                     .build();
         }
