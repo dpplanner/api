@@ -37,8 +37,8 @@ public class PostDto {
             return Post.builder()
                     .clubMember(clubMember)
                     .club(club)
-                    .content(this.content)
-                    .title(this.title)
+                    .content(content.isBlank() ? " " : content)
+                    .title(title.isBlank() ? " " : title)
                     .isFixed(false)
                     .build();
         }
