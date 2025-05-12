@@ -178,6 +178,7 @@ public class ReservationDto {
                                             ReservationInviteeDto.builder()
                                                     .clubMemberId(reservationInvitee.getClubMember().getId())
                                                     .clubMemberName(reservationInvitee.getClubMember().getName())
+                                                    .profileImageUrl(reservationInvitee.getClubMember().getUrl())
                                                     .clubMemberIsDeleted(reservationInvitee.getClubMember().getIsDeleted())
                                                     .build()).collect(Collectors.toList())
                     )
