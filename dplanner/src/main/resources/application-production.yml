@@ -6,6 +6,7 @@ spring:
 #      - application-oauth.yml
 #      - application-rabbitMQ.yml
 
+
   datasource:
     driver-class-name: oracle.jdbc.OracleDriver
     url: ${ORACLE_URL}
