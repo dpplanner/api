@@ -347,25 +347,6 @@ public class ReservationControllerTest {
     }
 
 
-    @Test
-    @Disabled("api 삭제")
-    public void ReservationController_getAllReservationsNotConfirmed_OK() throws Throwable {
-
-        Request requestDto = Request.builder()
-                .resourceId(resourceId)
-                .build();
-
-
-        ResultActions resultActions = mockMvc.perform(
-                MockMvcRequestBuilders.get("/reservations")
-                        .param("status","NOT CONFIRMED")
-                        .param("resourceId", resourceId.toString())
-        );
-
-        resultActions.andExpect(status().isOk());
-
-        verify(reservationService, times(1)).findAllNotConfirmedReservations(anyLong(), any(Request.class));
-    }
 
 
     /**

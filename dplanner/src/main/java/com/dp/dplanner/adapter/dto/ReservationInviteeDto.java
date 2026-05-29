@@ -13,5 +13,6 @@ public class ReservationInviteeDto {
 
     private Long clubMemberId;
     private String clubMemberName;
+    private String profileImageUrl;
     private Boolean clubMemberIsDeleted;
 }

@@ -6,14 +6,16 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
 
 import static jakarta.persistence.FetchType.*;
 
-@Entity
 @Getter
+@Entity
+@Table(name = "resources")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Resource extends BaseEntity{
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,11 +34,11 @@ public class Resource extends BaseEntity{
     @JoinColumn(name = "club_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Club club;
 
-//    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
-//    private List<Lock> locks = new ArrayList<>();
+    @OneToMany(mappedBy = "resource",cascade = CascadeType.REMOVE)
+    private List<Reservation> reservations = new ArrayList();
 
-//    @OneToMany(mappedBy = "resource", cascade = CascadeType.REMOVE)
-//    private List<Reservation> reservations = new ArrayList<>();
+    @OneToMany(mappedBy = "resource",cascade = CascadeType.REMOVE)
+    private List<Lock> locks = new ArrayList();
 
     @Builder
     public Resource(String name, String info, Club club,boolean returnMessageRequired,String notice,ResourceType resourceType,Long bookableSpan) {

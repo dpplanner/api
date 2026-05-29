@@ -48,31 +48,32 @@ public interface ClubMemberRepository extends CrudRepository<ClubMember, Long> {
     );
 
     @Query(value = """
-    SELECT
-        cm.id, cm.club_id as clubId, cm.name, cm.info, cm.role, cm.is_confirmed as isConfirmed, cm.url,
-        ca2.id AS clubAuthorityId, ca2.name clubAuthorityName, ca2.clubAuthorityTypes
-    FROM
-        club_member cm
-    LEFT JOIN
-        (
-            SELECT
-                ca.*,
-                ARRAY_AGG(ct.club_authority_types) AS clubAuthorityTypes
-            FROM
-                club_authority ca
-            JOIN
-                club_authority_club_authority_types AS ct ON ca.id = ct.club_authority_id
-            GROUP BY
-                ca.id
-        ) AS ca2 ON cm.club_authority_id = ca2.id
-        WHERE cm.id = :clubMemberId AND cm.is_Deleted=false 
-""", nativeQuery = true)
-
+        SELECT
+            cm.id, cm.club_id AS clubId, cm.name, cm.info, cm.role, cm.is_confirmed AS isConfirmed, cm.url,
+            ca2.clubAuthorityId, ca2.clubAuthorityName, ca2.clubAuthorityTypes
+        FROM
+            club_member cm
+        LEFT JOIN
+            (
+                SELECT
+                    ca.id AS clubAuthorityId,
+                    ca.name AS clubAuthorityName,
+                    LISTAGG(ct.club_authority_types, ',') WITHIN GROUP (ORDER BY ct.club_authority_types) AS clubAuthorityTypes
+                FROM
+                    club_authority ca
+                JOIN
+                    club_authority_club_authority_types ct ON ca.id = ct.club_authority_id
+                GROUP BY
+                    ca.id, ca.name
+            ) ca2 ON cm.club_authority_id = ca2.clubAuthorityId
+        WHERE
+            cm.id = :clubMemberId AND cm.is_deleted = 0
+    """, nativeQuery = true)
     Optional<ClubMemberDto.ResponseMapping> findClubMemberWithClubAuthority(@Param("clubMemberId") Long clubMemberId);
 
     @Modifying
     @Query("""
     update ClubMember cm set cm.clubAuthority = null , cm.role = 'USER' where cm.clubAuthority = :authority
-""")
+    """)
     void deleteClubAuthority(@Param("authority") ClubAuthority authority);
 }

@@ -8,8 +8,9 @@ import lombok.NoArgsConstructor;
 
 import static jakarta.persistence.FetchType.*;
 
-@Entity
 @Getter
+@Entity
+@Table(name = "locks")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Lock extends BaseEntity{
 

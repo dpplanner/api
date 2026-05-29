@@ -18,7 +18,7 @@ public @interface RequiredAuthority {
 
     ClubRole role() default ClubRole.NONE;
 
-    ClubAuthorityType authority() default ClubAuthorityType.NONE;
+    ClubAuthorityType[] authority() default ClubAuthorityType.NONE;
     
 
 }
