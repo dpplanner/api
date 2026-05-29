@@ -2,14 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ "main"]
+    tags:
+      - 'v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_IMAGE_VERSION: 'latest'
 
     steps:
       - name: Checkout repository
@@ -21,6 +19,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: make firebase adminsdk json
         run: |
@@ -29,7 +30,6 @@ jobs:
         shell: bash
 
       - name: Substitute environment variables PROD
-        if: contains(github.ref,'main')
         uses: microsoft/variable-substitution@v1
         with:
           files: ./dplanner/src/main/resources/application-production.yml
@@ -40,20 +40,26 @@ jobs:
           cloud.aws.credentials.access-key: ${{secrets.AWS_S3_ACCESSKEY}}
           cloud.aws.credentials.secret-key: ${{secrets.AWS_S3_SECRETKEY}}
 
-
       - name: Build with Gradle
         run: |
           cd ./dplanner
           chmod +x ./gradlew
-          ./gradlew clean build -x test 
+          ./gradlew clean build -x test
 
       - name: Build Docker image
-        run: sudo docker build --no-cache -t dplanner/api:${{ env.DOCKER_IMAGE_VERSION }} -f ./dplanner/deploy/Dockerfile ./dplanner --platform linux/x86_64
+        run: |
+          sudo docker build --no-cache \
+            -t dplanner/api:latest \
+            -t dplanner/api:${{ steps.version.outputs.VERSION }} \
+            -f ./dplanner/deploy/Dockerfile ./dplanner --platform linux/x86_64
 
       - name: Push Docker image
         run: |
           sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          sudo docker push dplanner/api:${{ env.DOCKER_IMAGE_VERSION }}
-        
+          sudo docker push dplanner/api:latest
+          sudo docker push dplanner/api:${{ steps.version.outputs.VERSION }}
+
       - name: Clean Docker image
-        run: sudo docker rmi dplanner/api:${{ env.DOCKER_IMAGE_VERSION }}
+        run: |
+          sudo docker rmi dplanner/api:latest
+          sudo docker rmi dplanner/api:${{ steps.version.outputs.VERSION }}
