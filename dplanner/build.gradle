@@ -43,6 +43,9 @@ dependencies {
 	// Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	// Sentry
+	implementation 'io.sentry:sentry-spring-boot-starter-jakarta:7.3.0'
+
 	// Oracle
 	implementation 'com.oracle.database.jdbc:ojdbc10:19.25.0.0'
 	implementation 'com.oracle.database.security:oraclepki:19.25.0.0'
