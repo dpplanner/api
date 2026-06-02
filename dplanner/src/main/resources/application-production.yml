@@ -66,3 +66,20 @@ cloud:
 server:
   port: 8080
 
+sentry:
+  dsn: https://6b23ba8193473aedfbe23509bbb81f55@o4510871831248896.ingest.us.sentry.io/4511477619294208
+  traces-sample-rate: 1.0
+  environment: production
+  enable-tracing: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, logfile
+  endpoint:
+    health:
+      show-details: always
+    logfile:
+      enabled: true
+

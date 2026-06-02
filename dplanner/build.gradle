@@ -43,8 +43,14 @@ dependencies {
 	// Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	// Sentry
+	implementation 'io.sentry:sentry-spring-boot-starter-jakarta:7.3.0'
+
 	// Oracle
 	implementation 'com.oracle.database.jdbc:ojdbc10:19.25.0.0'
+	implementation 'com.oracle.database.security:oraclepki:19.25.0.0'
+	implementation 'com.oracle.database.security:osdt_cert:19.25.0.0'
+	implementation 'com.oracle.database.security:osdt_core:19.25.0.0'
 
     compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -58,4 +64,19 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 
+}
+
+bootRun {
+	// no jvmArgs needed
+	if (file('.env').exists()) {
+		file('.env').readLines().each { line ->
+			if (line && !line.startsWith('#')) {
+				def parts = line.split('=', 2)
+				if (parts.length == 2) {
+					def value = parts[1].trim().replaceAll(/^["']|["']$/, '')
+					environment(parts[0].trim(), value)
+				}
+			}
+		}
+	}
 }
