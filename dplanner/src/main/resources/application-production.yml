@@ -30,6 +30,10 @@ spring:
       password:
       repositories:
         enabled: false
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 50   # 클라이언트가 더 큰 size 요청해도 50으로 제한
 
   servlet:
     multipart:
@@ -76,10 +80,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, metrics, logfile
+        include: health        # metrics, logfile 공개 제거 (인증 없는 로그/지표 노출 차단)
   endpoint:
     health:
-      show-details: always
-    logfile:
-      enabled: true
+      show-details: when-authorized   # 공개 시 UP/DOWN만, 내부 컴포넌트 상세는 숨김
 

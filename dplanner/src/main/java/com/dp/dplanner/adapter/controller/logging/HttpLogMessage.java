@@ -33,8 +33,10 @@ public class HttpLogMessage {
         this.elapsedTime = elapsedTime;
         this.headers = extractHeaders(requestWrapper);
         this.requestParam = extractRequestParameters(requestWrapper);
-        this.requestBody = extractRequestBody(requestWrapper);
-        this.responseBody = extractResponseBody(responseWrapper);
+        // 인증 관련 경로는 본문에 토큰/자격증명이 포함되므로 로깅에서 마스킹
+        boolean sensitive = this.requestUri != null && this.requestUri.startsWith("/auth");
+        this.requestBody = sensitive ? "[REDACTED]" : extractRequestBody(requestWrapper);
+        this.responseBody = sensitive ? "[REDACTED]" : extractResponseBody(responseWrapper);
     }
     public String toPrettierLog() {
         return String.format(
@@ -55,8 +57,8 @@ public class HttpLogMessage {
         Enumeration<String> headerArray = requestWrapper.getHeaderNames();
         while (headerArray.hasMoreElements()) {
             String headerName = headerArray.nextElement();
-            if (headerName.equals("authorization")) {
-                headerMap.put(headerName, requestWrapper.getHeader(headerName).substring(0, 40));
+            if (headerName.equalsIgnoreCase("authorization")) {
+                headerMap.put(headerName, "***");
             }else{
                 headerMap.put(headerName, requestWrapper.getHeader(headerName));
             }
