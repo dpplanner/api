@@ -1,13 +1,10 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /dplanner
 
 ENV TZ=Asia/Seoul
 
-RUN apk --no-cache add tzdata && \
-    cp /usr/share/zoneinfo/$TZ /etc/localtime && \
-    echo $TZ > /etc/timezone \
-    apk del tzdata
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 ARG JAR_FILE=./build/libs/dplanner-0.0.1-SNAPSHOT.jar
 
