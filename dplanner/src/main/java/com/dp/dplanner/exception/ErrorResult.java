@@ -16,6 +16,7 @@ public enum ErrorResult {
     RESERVATION_UNAVAILABLE(HttpStatus.BAD_REQUEST,"예약할 수 없는 시간입니다."),
     CLUBMEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "clubMember is already exists, request is invalid"),
     REQUEST_IS_INVALID(HttpStatus.BAD_REQUEST, "request is invalid"),
+    KAKAO_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "카카오 이메일 제공 동의가 필요합니다."),
 
 
 
@@ -23,6 +24,7 @@ public enum ErrorResult {
      * 401 - 인증되지 않음
      */
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "token is invalid."),
+    KAKAO_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "kakao login failed, request is invalid"),
 
     /**
      * 403 - 권한 없음 -> 404 (to hide resource existence, change 403 -> 404 )
