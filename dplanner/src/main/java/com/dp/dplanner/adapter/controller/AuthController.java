@@ -1,6 +1,7 @@
 package com.dp.dplanner.adapter.controller;
 
 import com.dp.dplanner.adapter.dto.CommonResponse;
+import com.dp.dplanner.adapter.dto.KakaoWebLoginDto;
 import com.dp.dplanner.adapter.dto.LoginDto;
 import com.dp.dplanner.adapter.dto.LoginResponseDto;
 import com.dp.dplanner.adapter.dto.TokenDto;
@@ -46,6 +47,16 @@ public class AuthController {
     @PostMapping("/auth/login")
     public CommonResponse<LoginResponseDto> login(@RequestBody @Valid LoginDto loginDto) {
         return CommonResponse.createSuccess(authService.login(loginDto));
+    }
+
+    /**
+     * 웹 전용 카카오 로그인.
+     * 프론트(웹)가 받은 인가 코드를 서버가 카카오와 토큰 교환 후 우리 JWT 를 발급한다.
+     * 응답 형태는 기존 /auth/login 과 동일.
+     */
+    @PostMapping("/auth/login/kakao/web")
+    public CommonResponse<LoginResponseDto> kakaoWebLogin(@RequestBody @Valid KakaoWebLoginDto kakaoWebLoginDto) {
+        return CommonResponse.createSuccess(authService.loginWithKakaoWeb(kakaoWebLoginDto));
     }
 
     @PostMapping("/eula") // /auth 경로는 JwtAuthenticationFilter 타지 않기 때문에 해당 API는 /auth 접두사 붙이지 않음.

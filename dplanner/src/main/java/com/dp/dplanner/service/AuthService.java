@@ -3,6 +3,7 @@ package com.dp.dplanner.service;
 import com.dp.dplanner.adapter.dto.LoginResponseDto;
 import com.dp.dplanner.domain.Member;
 import com.dp.dplanner.domain.club.ClubMember;
+import com.dp.dplanner.adapter.dto.KakaoWebLoginDto;
 import com.dp.dplanner.adapter.dto.LoginDto;
 import com.dp.dplanner.adapter.dto.TokenDto;
 import com.dp.dplanner.service.exception.ServiceException;
@@ -29,6 +30,7 @@ public class AuthService {
     private final ClubMemberRepository clubMemberRepository;
 //    private final ClubRepository clubRepository;
     private final JwtTokenProvider tokenProvider;
+    private final KakaoOAuthClient kakaoOAuthClient;
 
     @Transactional
     public TokenDto refreshToken(TokenDto tokenDto) {
@@ -54,13 +56,35 @@ public class AuthService {
     }
     @Transactional
     public LoginResponseDto login(LoginDto loginDto) {
-        String email = loginDto.getEmail();
-        String name = loginDto.getName();
+        return issueLogin(loginDto.getEmail(), loginDto.getName());
+    }
+
+    /**
+     * 웹 전용 카카오 로그인.
+     * 프론트가 받은 인가 코드를 서버가 카카오와 토큰 교환 → 사용자 정보 조회 후
+     * 기존 로그인 로직(email+name)을 재사용해 우리 JWT 를 발급한다.
+     */
+    @Transactional
+    public LoginResponseDto loginWithKakaoWeb(KakaoWebLoginDto dto) {
+        KakaoOAuthClient.KakaoUserInfo userInfo =
+                kakaoOAuthClient.getUserInfo(dto.getAuthorizationCode(), dto.getRedirectUri());
+
+        if (userInfo.email() == null || userInfo.email().isBlank()) {
+            // 카카오 이메일 미동의/비공개 시 회원 식별 불가 → 프론트가 이메일 제공 동의를 다시 받도록 유도
+            throw new ServiceException(KAKAO_EMAIL_REQUIRED);
+        }
+        String name = (userInfo.nickname() != null && !userInfo.nickname().isBlank())
+                ? userInfo.nickname() : "카카오사용자";
+
+        return issueLogin(userInfo.email(), name);
+    }
+
+    private LoginResponseDto issueLogin(String email, String name) {
         PrincipalDetails principalDetail;
         Authentication authentication;
 
         Optional<Member> optionalMember = memberRepository.findByEmail(email);
-        Member member = optionalMember.orElseGet(() -> createMember(name,email));
+        Member member = optionalMember.orElseGet(() -> createMember(name, email));
 
         Optional<ClubMember> optionalClubMember = member.getRecentClub() != null ?
                 clubMemberRepository.findByClubIdAndMemberId(member.getRecentClub().getId(), member.getId()) :

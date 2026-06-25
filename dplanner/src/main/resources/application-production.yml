@@ -85,3 +85,7 @@ management:
     health:
       show-details: when-authorized   # 공개 시 UP/DOWN만, 내부 컴포넌트 상세는 숨김
 
+
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+  client-secret: ${KAKAO_CLIENT_SECRET:}
