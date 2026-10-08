@@ -65,7 +65,7 @@ cloud:
       secret-key: ${AWS_S3_SECRETKEY}
 
     s3:
-      bucket : dplanner-resource-server
+      bucket : baggytsk-dplanner-files
 
 server:
   port: 8080
@@ -89,3 +89,8 @@ management:
 kakao:
   rest-api-key: ${KAKAO_REST_API_KEY:}
   client-secret: ${KAKAO_CLIENT_SECRET:}
+
+app:
+  cors:
+    # 운영 웹 도메인 허용. 로컬 개발(localhost)도 함께 허용.
+    allowed-origins: https://dplanner.co.kr,https://www.dplanner.co.kr,http://localhost:*,https://localhost:*
