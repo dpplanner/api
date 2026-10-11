@@ -9,13 +9,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE member set is_deleted=true where id = ?")
+// 탈퇴: 로그인·푸시 토큰은 즉시 지우고, 이메일·이름은 30일 뒤 배치(ScheduleTasks)가 익명화한다
+@SQLDelete(sql = "UPDATE member set is_deleted=true, deleted_at=CURRENT_TIMESTAMP, refresh_token=null, fcm_token=null where id = ?")
 public class Member extends BaseEntity {
 
     @Id
@@ -27,6 +29,8 @@ public class Member extends BaseEntity {
     private String refreshToken;
     private String fcmToken;
     private Boolean isDeleted;
+    // 탈퇴 시각. 이 컬럼 추가(2026-10) 전에 탈퇴한 회원은 null
+    private LocalDateTime deletedAt;
     // 서비스 이용 약관 동의 여부
     @Column(columnDefinition = "boolean default false")
     private Boolean eula;

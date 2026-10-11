@@ -9,6 +9,9 @@ import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.service.exception.ServiceException;
+import com.dp.dplanner.service.upload.FileCleanup;
+import com.dp.dplanner.service.upload.UploadService;
+import org.springframework.mock.web.MockMultipartFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +48,10 @@ public class ClubMemberServiceTests {
     ClubAuthorityRepository clubAuthorityRepository;
     @Mock
     MessageService messageService;
+    @Mock
+    UploadService uploadService;
+    @Mock
+    FileCleanup fileCleanup;
     @InjectMocks
     ClubMemberService clubMemberService;
 
@@ -899,6 +906,41 @@ public class ClubMemberServiceTests {
         //then
         ClubMember deletedClubMember = captureFromMockRepositoryWhenDelete();
         assertThat(deletedClubMember).as("삭제된 회원은 실제 회원과 일치해야 한다.").isEqualTo(clubMember);
+    }
+
+    @Test
+    @DisplayName("클럽에서 탈퇴하면 프로필 사진 파일 삭제를 예약한다")
+    public void leaveClubThenDeleteProfileImage() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        clubMember.updateProfileUrl("bucket.s3.ap-northeast-2.amazonaws.com/profile-key");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+
+        //when
+        clubMemberService.leaveClub(clubMemberId, new ClubMemberDto.Request(clubMemberId));
+
+        //then
+        then(fileCleanup).should().deleteAfterCommit(List.of("bucket.s3.ap-northeast-2.amazonaws.com/profile-key"));
+    }
+
+    @Test
+    @DisplayName("프로필 사진을 바꾸면 이전 사진 파일 삭제를 예약한다")
+    public void changeProfileImageThenDeleteOldImage() throws Exception {
+        //given
+        Long clubMemberId = 1L;
+        ClubMember clubMember = createConfirmedClubMember(club, "member");
+        clubMember.updateProfileUrl("old-url");
+        given(clubMemberRepository.findById(clubMemberId)).willReturn(Optional.ofNullable(clubMember));
+        given(uploadService.uploadFile(any())).willReturn("new-url");
+
+        //when
+        clubMemberService.changeClubMemberProfileImage(clubMemberId,
+                new MockMultipartFile("image", "a.png", "image/png", new byte[]{1}));
+
+        //then
+        assertThat(clubMember.getUrl()).isEqualTo("new-url");
+        then(fileCleanup).should().deleteAfterCommit(List.of("old-url"));
     }
 
     @Test

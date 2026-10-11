@@ -3,6 +3,7 @@ package com.dp.dplanner.service.scheduling;
 import com.dp.dplanner.domain.Reservation;
 import com.dp.dplanner.domain.club.ClubMember;
 import com.dp.dplanner.domain.message.Message;
+import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.repository.ReservationRepository;
 import com.dp.dplanner.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,10 @@ public class ScheduleTasks {
 
     private final MessageService messageService;
     private final ReservationRepository reservationRepository;
+    private final MemberRepository memberRepository;
+
+    // 개인정보처리방침: 탈퇴 후 계정 정보(이메일·이름) 30일 보관 뒤 파기
+    static final int WITHDRAWN_MEMBER_RETENTION_DAYS = 30;
 
     // 매일 8시마다 오늘 예약 알림
     @Scheduled(cron = "0 0 8 * * *")
@@ -178,6 +183,18 @@ public class ScheduleTasks {
             log.info("ScheduleTasks4, update rows : {}  ", reservations.size());
         }catch (RuntimeException ex){
             log.error("ScheduleTasks4");
+        }
+    }
+
+    // 매일 새벽 4시, 탈퇴 후 30일 지난 회원의 계정 정보 파기
+    @Scheduled(cron = "0 0 4 * * *")
+    public void task5() {
+        try {
+            int count = memberRepository.anonymizeWithdrawnBefore(
+                    LocalDateTime.now().minusDays(WITHDRAWN_MEMBER_RETENTION_DAYS));
+            log.info("ScheduleTasks5, anonymized withdrawn members : {}", count);
+        } catch (RuntimeException ex) {
+            log.error("ScheduleTasks5", ex);
         }
     }
 
