@@ -37,6 +37,15 @@ public class UploadServiceImpl implements UploadService {
     }
 
     @Override
+    public void deleteByUrl(String url) {
+        try {
+            Files.deleteIfExists(Paths.get(url));
+        } catch (IOException e) {
+            throw new RuntimeException("Could not delete file", e);
+        }
+    }
+
+    @Override
     public String getDir() {
         return DIR;
     }

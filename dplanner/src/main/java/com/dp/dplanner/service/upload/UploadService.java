@@ -11,6 +11,9 @@ public interface UploadService {
     void init();
     String uploadFile(MultipartFile multipartFile);
 
+    /** uploadFile 이 돌려준 값(url)으로 파일을 지운다. */
+    void deleteByUrl(String url);
+
     String getDir();
 
     default FileType getFileType(String contentType){

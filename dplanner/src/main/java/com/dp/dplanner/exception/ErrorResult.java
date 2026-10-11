@@ -25,6 +25,9 @@ public enum ErrorResult {
      */
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "token is invalid."),
     KAKAO_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "kakao login failed, request is invalid"),
+    SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "social login token is invalid"),
+    SOCIAL_EMAIL_UNVERIFIED(HttpStatus.UNAUTHORIZED, "소셜 계정의 이메일이 인증되지 않았습니다."),
+    LEGACY_LOGIN_DISABLED(HttpStatus.UNAUTHORIZED, "앱을 최신 버전으로 업데이트해 주세요."),
 
     /**
      * 403 - 권한 없음 -> 404 (to hide resource existence, change 403 -> 404 )

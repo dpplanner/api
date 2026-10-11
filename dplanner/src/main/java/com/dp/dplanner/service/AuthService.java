@@ -13,6 +13,7 @@ import com.dp.dplanner.config.security.JwtTokenProvider;
 import com.dp.dplanner.config.security.PrincipalDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,11 @@ public class AuthService {
 //    private final ClubRepository clubRepository;
     private final JwtTokenProvider tokenProvider;
     private final KakaoOAuthClient kakaoOAuthClient;
+    private final SocialLoginVerifier socialLoginVerifier;
+
+    /** 옛 앱(email+name 만 보내는 방식) 허용 여부. 새 앱 보급 후 false 로 바꿔 차단한다. */
+    @Value("${auth.legacy-login.enabled:true}")
+    private boolean legacyLoginEnabled = true;
 
     @Transactional
     public TokenDto refreshToken(TokenDto tokenDto) {
@@ -56,7 +62,35 @@ public class AuthService {
     }
     @Transactional
     public LoginResponseDto login(LoginDto loginDto) {
-        return issueLogin(loginDto.getEmail(), loginDto.getName());
+        if (loginDto.getProvider() != null || loginDto.getToken() != null) {
+            SocialLoginVerifier.VerifiedUser user =
+                    socialLoginVerifier.verify(loginDto.getProvider(), loginDto.getToken());
+            // 이름은 신규 가입 시 표시용으로만 쓰인다. 애플은 토큰에 이름이 없어 앱이 보낸 값을 우선한다.
+            String name = isBlank(loginDto.getName()) ? user.name() : loginDto.getName();
+            return issueLogin(user.email(), isBlank(name) ? "." : name);
+        }
+        return legacyLogin(loginDto);
+    }
+
+    /**
+     * 전환 기간용: 토큰 검증 없이 email 로 로그인 (옛 앱 iOS v1.2.1, Android 1.3.0).
+     * 사용량은 로그의 "[legacy-login]" 으로 확인한다.
+     */
+    private LoginResponseDto legacyLogin(LoginDto loginDto) {
+        if (!legacyLoginEnabled) {
+            log.info("[legacy-login] rejected");
+            throw new ServiceException(LEGACY_LOGIN_DISABLED);
+        }
+        if (isBlank(loginDto.getEmail()) || loginDto.getName() == null) {
+            throw new ServiceException(REQUEST_IS_INVALID);
+        }
+        LoginResponseDto response = issueLogin(loginDto.getEmail(), loginDto.getName());
+        log.info("[legacy-login] accepted");
+        return response;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     /**

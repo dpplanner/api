@@ -89,6 +89,19 @@ management:
 kakao:
   rest-api-key: ${KAKAO_REST_API_KEY:}
   client-secret: ${KAKAO_CLIENT_SECRET:}
+  # 앱 로그인 토큰이 우리 카카오 앱에서 발급됐는지 확인 (카카오 개발자 콘솔 > 앱 ID, 쉼표 구분)
+  app-ids: ${KAKAO_APP_IDS:1092659}
+
+# 앱 소셜 로그인 토큰 검증 (/auth/login)
+auth:
+  apple:
+    client-ids: ${APPLE_CLIENT_IDS:com.dancepozz.dplanner}
+  google:
+    # ID 토큰 aud: Android·웹 = 웹 클라이언트, iOS = iOS 클라이언트
+    client-ids: ${GOOGLE_CLIENT_IDS:547095373091-d663tdou7mhivsltgtfoesrti7j98knl.apps.googleusercontent.com,547095373091-g01u6sh5re5g09cuu4c7b7hb54k4d46d.apps.googleusercontent.com}
+  legacy-login:
+    # 옛 앱(email+name 만 보냄) 허용. 새 앱 보급 후 false
+    enabled: ${AUTH_LEGACY_LOGIN_ENABLED:true}
 
 app:
   cors:
