@@ -10,6 +10,7 @@ import com.dp.dplanner.adapter.dto.FCMDto;
 import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
+import com.dp.dplanner.service.upload.FileCleanup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final ClubMemberRepository clubMemberRepository;
     private final ClubRepository clubRepository;
+    private final FileCleanup fileCleanup;
 
     @Transactional
     public void updateFCMToken(Long memberId, FCMDto.Request requestDto) {
@@ -47,6 +49,8 @@ public class MemberService {
     @Transactional
     public void leave(Long memberId) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(ErrorResult.MEMBER_NOT_FOUND));
+        // 탈퇴 시 클럽 회원도 함께 삭제(@SQLDelete)되며 url 이 null 로 지워지므로, 그 전에 프로필 사진 파일 삭제를 예약한다
+        fileCleanup.deleteAfterCommit(member.getClubMembers().stream().map(ClubMember::getUrl).toList());
         memberRepository.delete(member);
     }
 }

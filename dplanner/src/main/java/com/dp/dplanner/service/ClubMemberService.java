@@ -12,6 +12,7 @@ import com.dp.dplanner.repository.ClubMemberRepository;
 import com.dp.dplanner.repository.ClubRepository;
 import com.dp.dplanner.repository.MemberRepository;
 import com.dp.dplanner.repository.ClubMemberBlockRepository;
+import com.dp.dplanner.service.upload.FileCleanup;
 import com.dp.dplanner.service.upload.UploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -34,6 +35,7 @@ public class ClubMemberService {
 
     private final MessageService messageService;
     private final UploadService uploadService;
+    private final FileCleanup fileCleanup;
     private final MemberRepository memberRepository;
     private final ClubRepository clubRepository;
     private final ClubMemberRepository clubMemberRepository;
@@ -131,8 +133,12 @@ public class ClubMemberService {
     @Transactional
     public ClubMemberDto.Response changeClubMemberProfileImage(Long clubMemberId, MultipartFile image) {
         ClubMember clubMember = getClubMember(clubMemberId);
+        String oldUrl = clubMember.getUrl();
         String url = uploadService.uploadFile(image);
         clubMember.updateProfileUrl(url);
+        if (oldUrl != null && !oldUrl.equals(url)) {
+            fileCleanup.deleteAfterCommit(List.of(oldUrl));
+        }
 
         return ClubMemberDto.Response.of(clubMember);
     }
@@ -196,6 +202,7 @@ public class ClubMemberService {
                 .orElseThrow(()-> new ServiceException(CLUB_NOT_FOUND));
 
         unconfirmedClubMembers.forEach(clubMember -> checkIsSameClub(manager,clubMember.getClub().getId()));
+        deleteProfileImages(unconfirmedClubMembers);
         clubMemberRepository.deleteAll(unconfirmedClubMembers);
 
         messageService.sendFcmNotification(unconfirmedClubMembers,
@@ -212,6 +219,7 @@ public class ClubMemberService {
         assert clubMemberId.equals(requestDto.getId());
         checkIsAdmin(clubMember);
 
+        deleteProfileImages(List.of(clubMember));
         clubMemberRepository.delete(clubMember);
     }
 
@@ -228,6 +236,7 @@ public class ClubMemberService {
             throw new ServiceException(DELETE_AUTHORIZATION_DENIED);
         }
 
+        deleteProfileImages(List.of(clubMember));
         clubMemberRepository.delete(clubMember);
     }
 
@@ -245,6 +254,7 @@ public class ClubMemberService {
                 .filter(clubMember -> !invalidKickOutRequest(admin, clubMember))
                 .toList();
 
+        deleteProfileImages(deletedClubMembers);
         clubMemberRepository.deleteAll(deletedClubMembers);
 
         return ClubMemberDto.Response.ofList(deletedClubMembers);
@@ -308,5 +318,10 @@ public class ClubMemberService {
     private ClubMember getClubMember(Long managerId) {
         return clubMemberRepository.findById(managerId)
                 .orElseThrow(() -> new ServiceException(CLUBMEMBER_NOT_FOUND));
+    }
+
+    // 클럽 회원 삭제(@SQLDelete)가 url 을 null 로 지우므로, 그 전에 프로필 사진 파일 삭제를 예약한다
+    private void deleteProfileImages(List<ClubMember> clubMembers) {
+        fileCleanup.deleteAfterCommit(clubMembers.stream().map(ClubMember::getUrl).toList());
     }
 }
